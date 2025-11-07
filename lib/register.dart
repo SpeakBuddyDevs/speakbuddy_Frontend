@@ -21,7 +21,7 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _obscure2 = true;
   bool _acceptTerms = false;
 
-  static const gradientStart = Color(0xFF6C63FF);
+  static const gradientStart = Color(0xFF4A90E2);
   static const gradientEnd = Color(0xFF8A49F7);
   final _languages = const [
     'Español',

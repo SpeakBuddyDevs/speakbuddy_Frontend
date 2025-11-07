@@ -13,7 +13,7 @@ class _LoginPageState extends State<LoginPage> {
   final _passCtrl = TextEditingController();
   bool _obscure = true;
 
-  static const gradientStart = Color(0xFF6C63FF);
+  static const gradientStart = Color(0xFF4A90E2);
   static const gradientEnd = Color(0xFF8A49F7);
 
   @override

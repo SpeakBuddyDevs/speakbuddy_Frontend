@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'login.dart';
 import 'register.dart';
+import 'profile.dart';
 
 void main() => runApp(const MyApp());
 
@@ -32,6 +33,7 @@ class MyApp extends StatelessWidget {
         '/': (_) => const LoginPage(),
         '/register': (_) => const RegisterPage(),
         '/login': (_) => const LoginPage(),
+        '/profile': (_) => const ProfileScreen(),
       },
     );
   }

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'edit_profile.dart';
+import 'dart:io';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -9,7 +11,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   // TODO: Sustituir por datos reales desde el backend (/api/auth/me + /api/profile)
-  final _profile = _MockProfile(
+  var _profile = _MockProfile(
     name: 'María González',
     email: 'maria.gonzalez@email.com',
     level: 5,
@@ -21,11 +23,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     currentStreakDays: 5,
     bestStreakDays: 12,
     medals: 4,
+    // 👇 añadimos también estas dos nuevas propiedades
+    nativeLanguage: 'ES',
     learningLanguages: const [
       _LangItem(code: 'ES', name: 'Español', level: 'Intermedio', active: true),
       _LangItem(code: 'FR', name: 'Francés', level: 'Principiante'),
     ],
     isPro: true,
+    avatarPath: null,
   );
 
   @override
@@ -46,17 +51,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('LangExchange',
-                    style: TextStyle(color: color.text, fontWeight: FontWeight.w600)),
+                Text(
+                  'LangExchange',
+                  style: TextStyle(
+                    color: color.text,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 Row(
                   children: [
-                    Text('Nivel ${_profile.level}',
-                        style: TextStyle(color: color.subtle, fontSize: 12)),
+                    Text(
+                      'Nivel ${_profile.level}',
+                      style: TextStyle(color: color.subtle, fontSize: 12),
+                    ),
                     const SizedBox(width: 8),
                     _ProgressMini(
-                        value: _profile.progressPct,
-                        track: color.card,
-                        fill: color.accent),
+                      value: _profile.progressPct,
+                      track: color.card,
+                      fill: color.accent,
+                    ),
                   ],
                 ),
               ],
@@ -85,24 +98,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Column(
                 children: [
                   _StatLine(
-                      icon: Icons.access_time_rounded,
-                      label: 'Horas totales',
-                      value: '${_profile.hoursTotal}h'),
+                    icon: Icons.access_time_rounded,
+                    label: 'Horas totales',
+                    value: '${_profile.hoursTotal}h',
+                  ),
                   Divider(color: color.border, height: 1),
                   _StatLine(
-                      icon: Icons.local_fire_department_rounded,
-                      label: 'Racha actual',
-                      value: '${_profile.currentStreakDays} días'),
+                    icon: Icons.local_fire_department_rounded,
+                    label: 'Racha actual',
+                    value: '${_profile.currentStreakDays} días',
+                  ),
                   Divider(color: color.border, height: 1),
                   _StatLine(
-                      icon: Icons.emoji_events_rounded,
-                      label: 'Mejor racha',
-                      value: '${_profile.bestStreakDays} días'),
+                    icon: Icons.emoji_events_rounded,
+                    label: 'Mejor racha',
+                    value: '${_profile.bestStreakDays} días',
+                  ),
                   Divider(color: color.border, height: 1),
                   _StatLine(
-                      icon: Icons.military_tech_rounded,
-                      label: 'Medallas',
-                      value: '${_profile.medals}'),
+                    icon: Icons.military_tech_rounded,
+                    label: 'Medallas',
+                    value: '${_profile.medals}',
+                  ),
                 ],
               ),
             ),
@@ -116,10 +133,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               child: Column(
                 children: _profile.learningLanguages
-                    .map((l) => Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: _LanguageTile(lang: l),
-                        ))
+                    .map(
+                      (l) => Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: _LanguageTile(lang: l),
+                      ),
+                    )
                     .toList(),
               ),
             ),
@@ -131,7 +150,57 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _ActionTile(
                     icon: Icons.settings_rounded,
                     label: 'Ajustes',
-                    onTap: () {},
+                    onTap: () async {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => EditProfileScreen(
+                            initialName: _profile.name,
+                            initialNative: _profile.nativeLanguage,
+                            initialLearning: _profile.learningLanguages
+                                .map((e) => e.code)
+                                .toList(),
+                            initialAvatarPath: _profile.avatarPath,
+                          ),
+                        ),
+                      );
+
+                      if (!context.mounted || result == null) return;
+                      if (result is EditProfileResult) {
+                        setState(() {
+                          // 1) nombre
+                          _profile = _profile.copyWith(name: result.name);
+
+                          // 2) idioma nativo
+                          _profile = _profile.copyWith(
+                            nativeLanguage: result.nativeLanguage,
+                          );
+
+                          // 3) idiomas aprendiendo (reconstruimos _LangItem con niveles por defecto)
+                          final updatedLearning = result.learningLanguages.map((
+                            code,
+                          ) {
+                            final display = _LangItem.prettyName(code);
+                            return _LangItem(
+                              code: code,
+                              name: display,
+                              level: 'Principiante',
+                            );
+                          }).toList();
+                          _profile = _profile.copyWith(
+                            learningLanguages: updatedLearning,
+                            languagesCount: updatedLearning.length,
+                          );
+
+                          // 4) foto
+                          if (result.avatarFile != null) {
+                            _profile = _profile.copyWith(
+                              avatarPath: result.avatarFile!.path,
+                            );
+                          }
+                        });
+                      }
+                    },
                   ),
                   Divider(color: color.border, height: 1),
                   _ActionTile(
@@ -171,8 +240,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         border: Border.all(color: color.border),
       ),
       alignment: Alignment.center,
-      child: Text('LX',
-          style: TextStyle(color: color.text, fontWeight: FontWeight.bold)),
+      child: Text(
+        'LX',
+        style: TextStyle(color: color.text, fontWeight: FontWeight.bold),
+      ),
     );
   }
 
@@ -188,8 +259,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           Icon(Icons.workspace_premium_rounded, size: 16, color: c.gold),
           const SizedBox(width: 6),
-          Text('Pro',
-              style: TextStyle(color: c.gold, fontWeight: FontWeight.w600)),
+          Text(
+            'Pro',
+            style: TextStyle(color: c.gold, fontWeight: FontWeight.w600),
+          ),
         ],
       ),
     );
@@ -219,30 +292,37 @@ class _UserCard extends StatelessWidget {
             children: [
               const CircleAvatar(
                 radius: 30,
-                backgroundImage:
-                    AssetImage('assets/avatar_placeholder.jpg'), // TODO: NetworkImage si tenéis URL
+                backgroundImage: AssetImage(
+                  'assets/avatar_placeholder.jpg',
+                ), // TODO: NetworkImage si tenéis URL
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(profile.name,
-                        style: TextStyle(
-                            color: c.text,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 18)),
+                    Text(
+                      profile.name,
+                      style: TextStyle(
+                        color: c.text,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 18,
+                      ),
+                    ),
                     const SizedBox(height: 4),
-                    Text(profile.email,
-                        style: TextStyle(color: c.subtle, fontSize: 13)),
+                    Text(
+                      profile.email,
+                      style: TextStyle(color: c.subtle, fontSize: 13),
+                    ),
                     const SizedBox(height: 6),
                     Row(
                       children: [
                         Icon(Icons.public_rounded, size: 16, color: c.subtle),
                         const SizedBox(width: 6),
-                        Text('Español  →  Inglés', // TODO: construir desde datos reales
-                            style:
-                                TextStyle(color: c.subtle, fontSize: 13)),
+                        Text(
+                          '${_LangItem.prettyName(profile.nativeLanguage)}  →  ${profile.learningLanguages.isNotEmpty ? _LangItem.prettyName(profile.learningLanguages.first.code) : '-'}',
+                          style: TextStyle(color: c.subtle, fontSize: 13),
+                        ),
                       ],
                     ),
                   ],
@@ -261,9 +341,10 @@ class _UserCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Nivel ${profile.level}',
-                    style: TextStyle(
-                        color: c.text, fontWeight: FontWeight.w600)),
+                Text(
+                  'Nivel ${profile.level}',
+                  style: TextStyle(color: c.text, fontWeight: FontWeight.w600),
+                ),
                 const SizedBox(height: 8),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
@@ -276,8 +357,9 @@ class _UserCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                    '${_remaining(profile.progressPct)} intercambios hasta nivel ${profile.level + 1}',
-                    style: TextStyle(color: c.subtle, fontSize: 12)),
+                  '${_remaining(profile.progressPct)} intercambios hasta nivel ${profile.level + 1}',
+                  style: TextStyle(color: c.subtle, fontSize: 12),
+                ),
               ],
             ),
           ),
@@ -303,30 +385,39 @@ class _StatsRow extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-            child: _SmallStatCard(
-                icon: Icons.chat_bubble_rounded,
-                label: 'Intercambios',
-                value: '${profile.exchanges}')),
+          child: _SmallStatCard(
+            icon: Icons.chat_bubble_rounded,
+            label: 'Intercambios',
+            value: '${profile.exchanges}',
+          ),
+        ),
         const SizedBox(width: 10),
         Expanded(
-            child: _SmallStatCard(
-                icon: Icons.star_rounded,
-                label: 'Valoración',
-                value: profile.rating.toStringAsFixed(1))),
+          child: _SmallStatCard(
+            icon: Icons.star_rounded,
+            label: 'Valoración',
+            value: profile.rating.toStringAsFixed(1),
+          ),
+        ),
         const SizedBox(width: 10),
         Expanded(
-            child: _SmallStatCard(
-                icon: Icons.language_rounded,
-                label: 'Idiomas',
-                value: '${profile.languagesCount}')),
+          child: _SmallStatCard(
+            icon: Icons.language_rounded,
+            label: 'Idiomas',
+            value: '${profile.languagesCount}',
+          ),
+        ),
       ],
     );
   }
 }
 
 class _SmallStatCard extends StatelessWidget {
-  const _SmallStatCard(
-      {required this.icon, required this.label, required this.value});
+  const _SmallStatCard({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
   final IconData icon;
   final String label;
   final String value;
@@ -353,9 +444,14 @@ class _SmallStatCard extends StatelessWidget {
             child: Icon(icon, color: c.subtle),
           ),
           const SizedBox(height: 10),
-          Text(value,
-              style: TextStyle(
-                  color: c.text, fontWeight: FontWeight.w700, fontSize: 18)),
+          Text(
+            value,
+            style: TextStyle(
+              color: c.text,
+              fontWeight: FontWeight.w700,
+              fontSize: 18,
+            ),
+          ),
           const SizedBox(height: 2),
           Text(label, style: TextStyle(color: c.subtle, fontSize: 12)),
         ],
@@ -384,8 +480,10 @@ class _Section extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text(title,
-                  style: TextStyle(color: c.text, fontWeight: FontWeight.w700)),
+              Text(
+                title,
+                style: TextStyle(color: c.text, fontWeight: FontWeight.w700),
+              ),
               const Spacer(),
               if (trailing != null)
                 Theme(
@@ -407,8 +505,11 @@ class _Section extends StatelessWidget {
 }
 
 class _StatLine extends StatelessWidget {
-  const _StatLine(
-      {required this.icon, required this.label, required this.value});
+  const _StatLine({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
   final IconData icon;
   final String label;
   final String value;
@@ -422,9 +523,13 @@ class _StatLine extends StatelessWidget {
         children: [
           Icon(icon, color: c.subtle),
           const SizedBox(width: 14),
-          Expanded(child: Text(label, style: TextStyle(color: c.text))),
-          Text(value,
-              style: TextStyle(color: c.text, fontWeight: FontWeight.w600)),
+          Expanded(
+            child: Text(label, style: TextStyle(color: c.text)),
+          ),
+          Text(
+            value,
+            style: TextStyle(color: c.text, fontWeight: FontWeight.w600),
+          ),
         ],
       ),
     );
@@ -456,37 +561,44 @@ class _LanguageTile extends StatelessWidget {
               border: Border.all(color: c.border),
             ),
             alignment: Alignment.center,
-            child: Text(lang.code,
-                style:
-                    TextStyle(color: c.text, fontWeight: FontWeight.w700)),
+            child: Text(
+              lang.code,
+              style: TextStyle(color: c.text, fontWeight: FontWeight.w700),
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(lang.name,
-                    style: TextStyle(
-                        color: c.text, fontWeight: FontWeight.w600)),
+                Text(
+                  lang.name,
+                  style: TextStyle(color: c.text, fontWeight: FontWeight.w600),
+                ),
                 const SizedBox(height: 2),
-                Text(lang.level, style: TextStyle(color: c.subtle, fontSize: 12)),
+                Text(
+                  lang.level,
+                  style: TextStyle(color: c.subtle, fontSize: 12),
+                ),
               ],
             ),
           ),
           if (lang.active)
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
                 color: c.accent.withOpacity(.15),
                 border: Border.all(color: c.accent.withOpacity(.6)),
                 borderRadius: BorderRadius.circular(999),
               ),
-              child: Text('Activo',
-                  style: TextStyle(
-                      color: c.accent,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12)),
+              child: Text(
+                'Activo',
+                style: TextStyle(
+                  color: c.accent,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                ),
+              ),
             ),
         ],
       ),
@@ -495,12 +607,13 @@ class _LanguageTile extends StatelessWidget {
 }
 
 class _ActionTile extends StatelessWidget {
-  const _ActionTile(
-      {required this.icon,
-      required this.label,
-      required this.onTap,
-      this.danger = false,
-      this.highlight = false});
+  const _ActionTile({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.danger = false,
+    this.highlight = false,
+  });
   final IconData icon;
   final String label;
   final VoidCallback onTap;
@@ -510,9 +623,7 @@ class _ActionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = _Palette.of(context);
-    final color = danger
-        ? Colors.redAccent
-        : (highlight ? c.gold : c.text);
+    final color = danger ? Colors.redAccent : (highlight ? c.gold : c.text);
 
     return InkWell(
       borderRadius: BorderRadius.circular(10),
@@ -524,9 +635,11 @@ class _ActionTile extends StatelessWidget {
             Icon(icon, color: color),
             const SizedBox(width: 12),
             Expanded(
-                child: Text(label,
-                    style:
-                        TextStyle(color: color, fontWeight: FontWeight.w600))),
+              child: Text(
+                label,
+                style: TextStyle(color: color, fontWeight: FontWeight.w600),
+              ),
+            ),
             Icon(Icons.chevron_right_rounded, color: c.subtle),
           ],
         ),
@@ -536,8 +649,11 @@ class _ActionTile extends StatelessWidget {
 }
 
 class _ProgressMini extends StatelessWidget {
-  const _ProgressMini(
-      {required this.value, required this.track, required this.fill});
+  const _ProgressMini({
+    required this.value,
+    required this.track,
+    required this.fill,
+  });
   final double value;
   final Color track;
   final Color fill;
@@ -581,11 +697,27 @@ class _LangItem {
   final String name;
   final String level;
   final bool active;
-  const _LangItem(
-      {required this.code,
-      required this.name,
-      required this.level,
-      this.active = false});
+  const _LangItem({
+    required this.code,
+    required this.name,
+    required this.level,
+    this.active = false,
+  });
+
+  static String prettyName(String code) {
+    const mapping = {
+      'ES': 'Español',
+      'EN': 'Inglés',
+      'FR': 'Francés',
+      'DE': 'Alemán',
+      'IT': 'Italiano',
+      'PT': 'Portugués',
+      'ZH': 'Chino',
+      'JA': 'Japonés',
+      'RU': 'Ruso',
+    };
+    return mapping[code] ?? code;
+  }
 }
 
 class _MockProfile {
@@ -602,6 +734,8 @@ class _MockProfile {
   final int medals;
   final List<_LangItem> learningLanguages;
   final bool isPro;
+  final String? avatarPath;
+  final String nativeLanguage;
 
   const _MockProfile({
     required this.name,
@@ -617,5 +751,32 @@ class _MockProfile {
     required this.medals,
     required this.learningLanguages,
     required this.isPro,
+    this.avatarPath,
+    required this.nativeLanguage,
   });
+  _MockProfile copyWith({
+    String? name,
+    String? nativeLanguage,
+    List<_LangItem>? learningLanguages,
+    int? languagesCount,
+    String? avatarPath,
+  }) {
+    return _MockProfile(
+      name: name ?? this.name,
+      email: email,
+      level: level,
+      progressPct: progressPct,
+      exchanges: exchanges,
+      rating: rating,
+      languagesCount: languagesCount ?? this.languagesCount,
+      hoursTotal: hoursTotal,
+      currentStreakDays: currentStreakDays,
+      bestStreakDays: bestStreakDays,
+      medals: medals,
+      learningLanguages: learningLanguages ?? this.learningLanguages,
+      isPro: isPro,
+      nativeLanguage: nativeLanguage ?? this.nativeLanguage,
+      avatarPath: avatarPath ?? this.avatarPath,
+    );
+  }
 }

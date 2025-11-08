@@ -85,8 +85,9 @@ class _LoginPageState extends State<LoginPage> {
                         controller: _emailCtrl,
                         keyboardType: TextInputType.emailAddress,
                         validator: (v) {
-                          if (v == null || v.isEmpty)
+                          if (v == null || v.isEmpty) {
                             return 'Introduce tu correo';
+                          }
                           final ok = RegExp(
                             r'^[^@]+@[^@]+\.[^@]+',
                           ).hasMatch(v.trim());

@@ -1,3 +1,5 @@
+import 'dart:ffi';
+
 import 'package:flutter/material.dart';
 import 'edit_profile.dart';
 import 'dart:io';
@@ -32,6 +34,266 @@ class _ProfileScreenState extends State<ProfileScreen> {
     isPro: true,
     avatarPath: null,
   );
+
+  static const Map<String, String> _langs = {
+    'ES': 'Español',
+    'EN': 'Inglés',
+    'FR': 'Francés',
+    'DE': 'Alemán',
+    'IT': 'Italiano',
+    'PT': 'Portugués',
+    'ZH': 'Chino',
+    'JA': 'Japonés',
+    'RU': 'Ruso',
+  };
+  void _addLearningLanguage() async {
+    // Códigos ya en aprendizaje
+    final existing = _profile.learningLanguages.map((e) => e.code).toSet();
+
+    // Disponibles = catálogo - existentes - idioma nativo
+    final available = _langs.keys
+        .where(
+          (code) => !existing.contains(code) && code != _profile.nativeLanguage,
+        )
+        .toList();
+
+    if (available.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No hay más idiomas disponibles para añadir'),
+        ),
+      );
+      return;
+    }
+
+    String selected = available.first;
+
+    final picked = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      backgroundColor: const Color(0xFF151B2C),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        return Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButtonFormField<String>(
+                value: selected,
+                isExpanded: true,
+                dropdownColor: const Color(0xFF151B2C),
+                style: const TextStyle(color: Color(0xFFE7EAF3)), // texto claro
+                decoration: const InputDecoration(
+                  labelText: 'Selecciona un idioma',
+                  floatingLabelBehavior: FloatingLabelBehavior.always,
+                ),
+                items: available
+                    .map(
+                      (c) => DropdownMenuItem(
+                        value: c,
+                        child: Text(
+                          _langs[c]!,
+                          style: const TextStyle(color: Color(0xFFE7EAF3)),
+                        ),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (v) => selected = v ?? selected,
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx, selected),
+                  child: const Text('Añadir'),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (!mounted || picked == null) return;
+
+    setState(() {
+      // Crea un nuevo _LangItem con nivel por defecto
+      final display = _langs[picked] ?? picked;
+      final newItem = _LangItem(
+        code: picked,
+        name: display,
+        level: 'Principiante',
+      );
+      _profile = _profile.copyWith(
+        learningLanguages: [..._profile.learningLanguages, newItem],
+        languagesCount: _profile.learningLanguages.length + 1,
+      );
+    });
+  }
+
+  void _onLanguageLongPress(_LangItem lang) async {
+  // Primer menú: qué acción quieres hacer
+  final action = await showModalBottomSheet<String>(
+    context: context,
+    showDragHandle: true,
+    backgroundColor: const Color(0xFF151B2C),
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+    ),
+    builder: (ctx) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.check_circle_outline,
+                  color: Colors.lightBlueAccent),
+              title: const Text(
+                'Marcar como activo',
+                style: TextStyle(color: Color(0xFFE7EAF3)),
+              ),
+              onTap: () => Navigator.pop(ctx, 'active'),
+            ),
+            ListTile(
+              leading:
+                  const Icon(Icons.tune_rounded, color: Color(0xFF98A3B8)),
+              title: const Text(
+                'Configurar nivel',
+                style: TextStyle(color: Color(0xFFE7EAF3)),
+              ),
+              onTap: () => Navigator.pop(ctx, 'level'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete_outline,
+                  color: Colors.redAccent),
+              title: const Text(
+                'Eliminar idioma',
+                style: TextStyle(color: Color(0xFFE7EAF3)),
+              ),
+              onTap: () => Navigator.pop(ctx, 'delete'),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      );
+    },
+  );
+
+  if (!mounted || action == null) return;
+
+  // Opción 1: Marcar como activo
+  if (action == 'active') {
+    setState(() {
+      final updated = _profile.learningLanguages.map((_LangItem l) {
+        if (l.code == lang.code) {
+          return _LangItem(
+            code: l.code,
+            name: l.name,
+            level: l.level,
+            active: true, // puede haber varios activos
+          );
+        }
+        return l;
+      }).toList();
+
+      _profile = _profile.copyWith(learningLanguages: updated);
+    });
+    return;
+  }
+
+  // Opción 2: Configurar nivel
+  if (action == 'level') {
+    const levels = ['Principiante', 'Intermedio', 'Avanzado'];
+    String selected = lang.level;
+
+    final pickedLevel = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      backgroundColor: const Color(0xFF151B2C),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final lvl in levels)
+                ListTile(
+                  leading: Icon(
+                    lvl == selected
+                        ? Icons.radio_button_checked
+                        : Icons.radio_button_off,
+                    color: lvl == selected
+                        ? Colors.lightBlueAccent
+                        : const Color(0xFF98A3B8),
+                  ),
+                  title: Text(
+                    lvl,
+                    style:
+                        const TextStyle(color: Color(0xFFE7EAF3)),
+                  ),
+                  onTap: () => Navigator.pop(ctx, lvl),
+                ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (!mounted || pickedLevel == null) return;
+
+    setState(() {
+      final updated = _profile.learningLanguages.map((_LangItem l) {
+        if (l.code == lang.code) {
+          return _LangItem(
+            code: l.code,
+            name: l.name,
+            level: pickedLevel, // 👈 nuevo nivel
+            active: l.active,
+          );
+        }
+        return l;
+      }).toList();
+
+      _profile = _profile.copyWith(learningLanguages: updated);
+    });
+    return;
+  }
+
+  // Opción 3: Eliminar idioma
+  if (action == 'delete') {
+    // Opcional: impedir borrar el último idioma
+    if (_profile.learningLanguages.length <= 1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Debe haber al menos un idioma de aprendizaje.'),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      final updated = _profile.learningLanguages
+          .where((l) => l.code != lang.code)
+          .toList();
+
+      _profile = _profile.copyWith(
+        learningLanguages: updated,
+        languagesCount: updated.length,
+      );
+    });
+  }
+}
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -127,7 +389,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _Section(
               title: 'Idiomas de Aprendizaje',
               trailing: TextButton.icon(
-                onPressed: () {},
+                onPressed: _addLearningLanguage,
                 icon: const Icon(Icons.add_rounded),
                 label: const Text('Añadir'),
               ),
@@ -136,7 +398,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     .map(
                       (l) => Padding(
                         padding: const EdgeInsets.only(bottom: 10),
-                        child: _LanguageTile(lang: l),
+                        child: _LanguageTile(
+                          lang: l,
+                          onLongPress: () => _onLanguageLongPress(l),
+                        ),
                       ),
                     )
                     .toList(),
@@ -537,70 +802,82 @@ class _StatLine extends StatelessWidget {
 }
 
 class _LanguageTile extends StatelessWidget {
-  const _LanguageTile({required this.lang});
+  const _LanguageTile({required this.lang, this.onLongPress});
   final _LangItem lang;
+  final VoidCallback? onLongPress;
 
   @override
   Widget build(BuildContext context) {
     final c = _Palette.of(context);
-    return Container(
-      decoration: BoxDecoration(
-        color: c.panel,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: c.border),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: c.card,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: c.border),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              lang.code,
-              style: TextStyle(color: c.text, fontWeight: FontWeight.w700),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  lang.name,
-                  style: TextStyle(color: c.text, fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  lang.level,
-                  style: TextStyle(color: c.subtle, fontSize: 12),
-                ),
-              ],
-            ),
-          ),
-          if (lang.active)
+    return InkWell(
+      // 👈 para detectar long press
+      borderRadius: BorderRadius.circular(14),
+      onLongPress: onLongPress,
+      child: Container(
+        decoration: BoxDecoration(
+          color: c.panel,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: c.border),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        child: Row(
+          children: [
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              width: 36,
+              height: 36,
               decoration: BoxDecoration(
-                color: c.accent.withOpacity(.15),
-                border: Border.all(color: c.accent.withOpacity(.6)),
-                borderRadius: BorderRadius.circular(999),
+                color: c.card,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: c.border),
               ),
+              alignment: Alignment.center,
               child: Text(
-                'Activo',
-                style: TextStyle(
-                  color: c.accent,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 12,
-                ),
+                lang.code,
+                style: TextStyle(color: c.text, fontWeight: FontWeight.w700),
               ),
             ),
-        ],
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    lang.name,
+                    style: TextStyle(
+                      color: c.text,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    lang.level,
+                    style: TextStyle(color: c.subtle, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            if (lang.active)
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: c.accent.withOpacity(.15),
+                  border: Border.all(color: c.accent.withOpacity(.6)),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  'Activo',
+                  style: TextStyle(
+                    color: c.accent,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

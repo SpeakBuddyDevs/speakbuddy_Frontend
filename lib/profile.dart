@@ -14,8 +14,8 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   // TODO: Sustituir por datos reales desde el backend (/api/auth/me + /api/profile)
   var _profile = _MockProfile(
-    name: 'María González',
-    email: 'maria.gonzalez@email.com',
+    name: 'Sergio Arjona',
+    email: 'sergioarjona@gmail.com',
     level: 5,
     progressPct: 0.40,
     exchanges: 12,
@@ -136,82 +136,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _onLanguageLongPress(_LangItem lang) async {
-  // Primer menú: qué acción quieres hacer
-  final action = await showModalBottomSheet<String>(
-    context: context,
-    showDragHandle: true,
-    backgroundColor: const Color(0xFF151B2C),
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-    ),
-    builder: (ctx) {
-      return Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.check_circle_outline,
-                  color: Colors.lightBlueAccent),
-              title: const Text(
-                'Marcar como activo',
-                style: TextStyle(color: Color(0xFFE7EAF3)),
-              ),
-              onTap: () => Navigator.pop(ctx, 'active'),
-            ),
-            ListTile(
-              leading:
-                  const Icon(Icons.tune_rounded, color: Color(0xFF98A3B8)),
-              title: const Text(
-                'Configurar nivel',
-                style: TextStyle(color: Color(0xFFE7EAF3)),
-              ),
-              onTap: () => Navigator.pop(ctx, 'level'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.delete_outline,
-                  color: Colors.redAccent),
-              title: const Text(
-                'Eliminar idioma',
-                style: TextStyle(color: Color(0xFFE7EAF3)),
-              ),
-              onTap: () => Navigator.pop(ctx, 'delete'),
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      );
-    },
-  );
+    final isActive = lang.active;
 
-  if (!mounted || action == null) return;
-
-  // Opción 1: Marcar como activo
-  if (action == 'active') {
-    setState(() {
-      final updated = _profile.learningLanguages.map((_LangItem l) {
-        if (l.code == lang.code) {
-          return _LangItem(
-            code: l.code,
-            name: l.name,
-            level: l.level,
-            active: true, // puede haber varios activos
-          );
-        }
-        return l;
-      }).toList();
-
-      _profile = _profile.copyWith(learningLanguages: updated);
-    });
-    return;
-  }
-
-  // Opción 2: Configurar nivel
-  if (action == 'level') {
-    const levels = ['Principiante', 'Intermedio', 'Avanzado'];
-    String selected = lang.level;
-
-    final pickedLevel = await showModalBottomSheet<String>(
+    // Primer menú: qué acción quieres hacer
+    final action = await showModalBottomSheet<String>(
       context: context,
       showDragHandle: true,
       backgroundColor: const Color(0xFF151B2C),
@@ -224,23 +152,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              for (final lvl in levels)
-                ListTile(
-                  leading: Icon(
-                    lvl == selected
-                        ? Icons.radio_button_checked
-                        : Icons.radio_button_off,
-                    color: lvl == selected
-                        ? Colors.lightBlueAccent
-                        : const Color(0xFF98A3B8),
-                  ),
-                  title: Text(
-                    lvl,
-                    style:
-                        const TextStyle(color: Color(0xFFE7EAF3)),
-                  ),
-                  onTap: () => Navigator.pop(ctx, lvl),
+              // 🔁 Opción dinámica según esté activo o no
+              ListTile(
+                leading: Icon(
+                  isActive
+                      ? Icons.radio_button_unchecked
+                      : Icons.check_circle_outline,
+                  color: isActive
+                      ? const Color(0xFF98A3B8)
+                      : Colors.lightBlueAccent,
                 ),
+                title: Text(
+                  isActive ? 'Desmarcar como activo' : 'Marcar como activo',
+                  style: const TextStyle(color: Color(0xFFE7EAF3)),
+                ),
+                onTap: () =>
+                    Navigator.pop(ctx, isActive ? 'unactive' : 'active'),
+              ),
+              ListTile(
+                leading: const Icon(
+                  Icons.tune_rounded,
+                  color: Color(0xFF98A3B8),
+                ),
+                title: const Text(
+                  'Configurar nivel',
+                  style: TextStyle(color: Color(0xFFE7EAF3)),
+                ),
+                onTap: () => Navigator.pop(ctx, 'level'),
+              ),
+              ListTile(
+                leading: const Icon(
+                  Icons.delete_outline,
+                  color: Colors.redAccent,
+                ),
+                title: const Text(
+                  'Eliminar idioma',
+                  style: TextStyle(color: Color(0xFFE7EAF3)),
+                ),
+                onTap: () => Navigator.pop(ctx, 'delete'),
+              ),
               const SizedBox(height: 8),
             ],
           ),
@@ -248,52 +198,135 @@ class _ProfileScreenState extends State<ProfileScreen> {
       },
     );
 
-    if (!mounted || pickedLevel == null) return;
+    if (!mounted || action == null) return;
 
-    setState(() {
-      final updated = _profile.learningLanguages.map((_LangItem l) {
-        if (l.code == lang.code) {
-          return _LangItem(
-            code: l.code,
-            name: l.name,
-            level: pickedLevel, // 👈 nuevo nivel
-            active: l.active,
-          );
-        }
-        return l;
-      }).toList();
+    // ✅ Opción 1: Marcar como activo
+    if (action == 'active') {
+      setState(() {
+        final updated = _profile.learningLanguages.map((_LangItem l) {
+          if (l.code == lang.code) {
+            return _LangItem(
+              code: l.code,
+              name: l.name,
+              level: l.level,
+              active: true, // lo activamos (no tocamos los demás)
+            );
+          }
+          return l;
+        }).toList();
 
-      _profile = _profile.copyWith(learningLanguages: updated);
-    });
-    return;
-  }
-
-  // Opción 3: Eliminar idioma
-  if (action == 'delete') {
-    // Opcional: impedir borrar el último idioma
-    if (_profile.learningLanguages.length <= 1) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Debe haber al menos un idioma de aprendizaje.'),
-        ),
-      );
+        _profile = _profile.copyWith(learningLanguages: updated);
+      });
       return;
     }
 
-    setState(() {
-      final updated = _profile.learningLanguages
-          .where((l) => l.code != lang.code)
-          .toList();
+    // ✅ Opción 1b: Desmarcar como activo
+    if (action == 'unactive') {
+      setState(() {
+        final updated = _profile.learningLanguages.map((_LangItem l) {
+          if (l.code == lang.code) {
+            return _LangItem(
+              code: l.code,
+              name: l.name,
+              level: l.level,
+              active: false, // lo desmarcamos
+            );
+          }
+          return l;
+        }).toList();
 
-      _profile = _profile.copyWith(
-        learningLanguages: updated,
-        languagesCount: updated.length,
+        _profile = _profile.copyWith(learningLanguages: updated);
+      });
+      return;
+    }
+
+    // ✅ Opción 2: Configurar nivel (igual que ya tenías)
+    if (action == 'level') {
+      const levels = ['Principiante', 'Intermedio', 'Avanzado'];
+      String selected = lang.level;
+
+      final pickedLevel = await showModalBottomSheet<String>(
+        context: context,
+        showDragHandle: true,
+        backgroundColor: const Color(0xFF151B2C),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        builder: (ctx) {
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final lvl in levels)
+                  ListTile(
+                    leading: Icon(
+                      lvl == selected
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_off,
+                      color: lvl == selected
+                          ? Colors.lightBlueAccent
+                          : const Color(0xFF98A3B8),
+                    ),
+                    title: const Text(
+                      ' ', // sobreescribimos abajo
+                    ),
+                    subtitle: Text(
+                      lvl,
+                      style: const TextStyle(color: Color(0xFFE7EAF3)),
+                    ),
+                    onTap: () => Navigator.pop(ctx, lvl),
+                  ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          );
+        },
       );
-    });
+
+      if (!mounted || pickedLevel == null) return;
+
+      setState(() {
+        final updated = _profile.learningLanguages.map((_LangItem l) {
+          if (l.code == lang.code) {
+            return _LangItem(
+              code: l.code,
+              name: l.name,
+              level: pickedLevel,
+              active: l.active,
+            );
+          }
+          return l;
+        }).toList();
+
+        _profile = _profile.copyWith(learningLanguages: updated);
+      });
+      return;
+    }
+
+    // ✅ Opción 3: Eliminar idioma (igual que antes)
+    if (action == 'delete') {
+      if (_profile.learningLanguages.length <= 1) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Debe haber al menos un idioma de aprendizaje.'),
+          ),
+        );
+        return;
+      }
+
+      setState(() {
+        final updated = _profile.learningLanguages
+            .where((l) => l.code != lang.code)
+            .toList();
+
+        _profile = _profile.copyWith(
+          learningLanguages: updated,
+          languagesCount: updated.length,
+        );
+      });
+    }
   }
-}
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -543,7 +576,6 @@ class _UserCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = _Palette.of(context);
-
     return Container(
       decoration: BoxDecoration(
         color: c.card,
@@ -555,11 +587,10 @@ class _UserCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const CircleAvatar(
+              CircleAvatar(
                 radius: 30,
-                backgroundImage: AssetImage(
-                  'assets/avatar_placeholder.jpg',
-                ), // TODO: NetworkImage si tenéis URL
+                backgroundImage: const AssetImage('lib\\assets\\images\\ArjonaSergio.jpg'),
+                backgroundColor: c.panel,
               ),
               const SizedBox(width: 12),
               Expanded(

@@ -169,7 +169,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       backgroundColor: bg,
       appBar: AppBar(
         backgroundColor: bg,
-        surfaceTintColor: Colors.transparent,
+        surfaceTintColor: const Color.fromARGB(0, 224, 221, 221),
         title: const Text('Editar perfil'),
       ),
       body: SingleChildScrollView(
@@ -189,7 +189,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               ),
               floatingLabelBehavior: FloatingLabelBehavior.always,
               labelStyle: TextStyle(color: Color.fromARGB(255, 255, 0, 0)),
-              floatingLabelStyle: TextStyle(color: Color.fromARGB(255, 255, 0, 0)),
+              floatingLabelStyle: TextStyle(
+                color: Color.fromARGB(255, 255, 0, 0),
+              ),
             ),
           ),
           child: Form(
@@ -241,22 +243,49 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
                   padding: const EdgeInsets.all(16),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Etiqueta arriba del campo de texto
+                      const Text(
+                        'Nombre',
+                        style: TextStyle(
+                          color: Color.fromARGB(
+                            255,
+                            253,
+                            253,
+                            253,
+                          ), // mismo rojo que el tema
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
                       TextFormField(
                         controller: _nameCtrl,
                         decoration: const InputDecoration(
-                          labelText: 'Nombre',
-                          floatingLabelBehavior: FloatingLabelBehavior.always,
+                          // sin labelText para que no aparezca dentro de la caja
                         ),
                         validator: (v) => (v == null || v.trim().isEmpty)
                             ? 'Escribe tu nombre'
                             : null,
                       ),
-                      const SizedBox(height: 12),
+
+                      const SizedBox(height: 16),
+
+                      // Etiqueta arriba del combo
+                      const Text(
+                        'Idioma nativo',
+                        style: TextStyle(
+                          color: Color.fromARGB(255, 255, 255, 255),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
                       DropdownButtonFormField<String>(
                         initialValue: _native,
                         decoration: const InputDecoration(
-                          labelText: 'Idioma nativo',
+                          // también sin labelText
                         ),
                         items: _langs.entries
                             .map(
@@ -268,11 +297,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             .toList(),
                         onChanged: (v) {
                           if (v == null) return;
-                          setState(() {
-                            _native = v;
-                            // si el nativo está en "aprendiendo", lo mantenemos (permitido),
-                            // pero evitamos duplicados al añadir nuevos.
-                          });
+                          setState(() => _native = v);
                         },
                       ),
                       const SizedBox(height: 16),
@@ -328,6 +353,26 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 Text(
                   'Los cambios se aplicarán al volver al perfil.',
                   style: TextStyle(color: subtle, fontSize: 12),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Colors.redAccent),
+                      foregroundColor: Colors.redAccent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    onPressed: () {
+                      // TODO: conectar con backend para eliminar la cuenta
+                      // Por ahora solo interfaz
+                    },
+                    icon: const Icon(Icons.delete_forever_rounded),
+                    label: const Text('Eliminar perfil'),
+                  ),
                 ),
               ],
             ),

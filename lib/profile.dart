@@ -13,7 +13,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   // TODO: Sustituir por datos reales desde el backend (/api/auth/me + /api/profile)
-  var _profile = _MockProfile(
+    var _profile = _MockProfile(
     name: 'Sergio Arjona',
     email: 'sergioarjona@gmail.com',
     level: 5,
@@ -25,7 +25,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     currentStreakDays: 5,
     bestStreakDays: 12,
     medals: 4,
-    // 👇 añadimos también estas dos nuevas propiedades
     nativeLanguage: 'ES',
     learningLanguages: const [
       _LangItem(code: 'ES', name: 'Español', level: 'Intermedio', active: true),
@@ -33,7 +32,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     ],
     isPro: true,
     avatarPath: null,
+    description:
+        '¡Hola! Soy Sergio, estudiante de idiomas. Quiero mejorar mi inglés '
+        'para poder viajar y trabajar en el extranjero. Me encanta conocer '
+        'gente de otros países y practicar a diario.', // 👈 texto ejemplo
   );
+
 
   static const Map<String, String> _langs = {
     'ES': 'Español',
@@ -46,6 +50,52 @@ class _ProfileScreenState extends State<ProfileScreen> {
     'JA': 'Japonés',
     'RU': 'Ruso',
   };
+
+    Future<void> _editDescription() async {
+    final controller = TextEditingController(text: _profile.description);
+
+    final newText = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        final c = _Palette.of(context);
+        return AlertDialog(
+          backgroundColor: c.bg,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text('Editar descripción'),
+          content: TextField(
+            controller: controller,
+            maxLines: 6,
+            decoration: const InputDecoration(
+              labelText: 'Descripción del perfil',
+              alignLabelWithHint: true,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () =>
+                  Navigator.of(context).pop(controller.text.trim()),
+              child: const Text('Guardar'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (newText == null || newText.isEmpty) return;
+
+    setState(() {
+      _profile = _profile.copyWith(description: newText);
+    });
+  }
+
+
+
   void _addLearningLanguage() async {
     // Códigos ya en aprendizaje
     final existing = _profile.learningLanguages.map((e) => e.code).toSet();
@@ -83,7 +133,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               DropdownButtonFormField<String>(
-                value: selected,
+                initialValue: selected,
                 isExpanded: true,
                 dropdownColor: const Color(0xFF151B2C),
                 style: const TextStyle(color: Color(0xFFE7EAF3)), // texto claro
@@ -347,7 +397,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'LangExchange',
+                  'SpeakBuddy',
                   style: TextStyle(
                     color: color.text,
                     fontWeight: FontWeight.w600,
@@ -385,6 +435,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Column(
           children: [
             _UserCard(profile: _profile),
+            const SizedBox(height: 16),
+            _Section(
+              title: 'Descripción del perfil',
+              trailing: IconButton(
+                onPressed: _editDescription,
+                icon: const Icon(Icons.edit_rounded),
+                tooltip: 'Editar descripción',
+              ),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  _profile.description,
+                  style: TextStyle(
+                    color: color.text,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ),
             const SizedBox(height: 16),
             _StatsRow(profile: _profile),
             const SizedBox(height: 16),
@@ -539,7 +608,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       alignment: Alignment.center,
       child: Text(
-        'LX',
+        'SB',
         style: TextStyle(color: color.text, fontWeight: FontWeight.bold),
       ),
     );
@@ -1044,6 +1113,7 @@ class _MockProfile {
   final bool isPro;
   final String? avatarPath;
   final String nativeLanguage;
+  final String description; // 👈 NUEVO
 
   const _MockProfile({
     required this.name,
@@ -1059,32 +1129,46 @@ class _MockProfile {
     required this.medals,
     required this.learningLanguages,
     required this.isPro,
-    this.avatarPath,
     required this.nativeLanguage,
+    required this.description, // 👈 NUEVO
+    this.avatarPath,
   });
+
   _MockProfile copyWith({
     String? name,
-    String? nativeLanguage,
-    List<_LangItem>? learningLanguages,
+    String? email,
+    int? level,
+    double? progressPct,
+    int? exchanges,
+    double? rating,
     int? languagesCount,
+    int? hoursTotal,
+    int? currentStreakDays,
+    int? bestStreakDays,
+    int? medals,
+    List<_LangItem>? learningLanguages,
+    bool? isPro,
+    String? nativeLanguage,
     String? avatarPath,
+    String? description, // 👈 NUEVO
   }) {
     return _MockProfile(
       name: name ?? this.name,
-      email: email,
-      level: level,
-      progressPct: progressPct,
-      exchanges: exchanges,
-      rating: rating,
+      email: email ?? this.email,
+      level: level ?? this.level,
+      progressPct: progressPct ?? this.progressPct,
+      exchanges: exchanges ?? this.exchanges,
+      rating: rating ?? this.rating,
       languagesCount: languagesCount ?? this.languagesCount,
-      hoursTotal: hoursTotal,
-      currentStreakDays: currentStreakDays,
-      bestStreakDays: bestStreakDays,
-      medals: medals,
+      hoursTotal: hoursTotal ?? this.hoursTotal,
+      currentStreakDays: currentStreakDays ?? this.currentStreakDays,
+      bestStreakDays: bestStreakDays ?? this.bestStreakDays,
+      medals: medals ?? this.medals,
       learningLanguages: learningLanguages ?? this.learningLanguages,
-      isPro: isPro,
+      isPro: isPro ?? this.isPro,
       nativeLanguage: nativeLanguage ?? this.nativeLanguage,
       avatarPath: avatarPath ?? this.avatarPath,
+      description: description ?? this.description,
     );
   }
 }

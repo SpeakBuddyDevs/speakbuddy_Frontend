@@ -1,5 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import '../services/auth_service.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -14,6 +15,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   final _pass2Ctrl = TextEditingController();
+  final _authService = AuthService();
 
   String? _nativeLang;
   String? _learningLang;
@@ -33,6 +35,51 @@ class _RegisterPageState extends State<RegisterPage> {
     'Chino',
     'Japonés'
   ];
+
+  final Map<String, int> _languageMap = {
+    'Español': 1,
+    'Inglés': 2,
+    'Francés': 3,
+    'Alemán': 4,
+    // los demás idiomas que haya en la bd
+  };
+
+  void _onCreate() async { 
+    // Validación extra: asegurarse de que seleccionó idiomas
+    if (!_isFormValid) return;
+
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('Creando cuenta...')));
+
+    // Convertir String a ID
+    int? nativeId = _languageMap[_nativeLang];
+    int? learnId = _languageMap[_learningLang]; // Aunque el registro backend actual igual no lo usa aún
+
+    if (nativeId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error: Idioma no válido')));
+        return;
+    }
+
+    final success = await _authService.register(
+      _nameCtrl.text,
+      _emailCtrl.text,
+      _passCtrl.text,
+      nativeId,
+      learnId ?? 0, 
+    );
+
+    if (!mounted) return;
+
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Cuenta creada. Por favor inicia sesión.')));
+      // Volver al login
+      Navigator.pop(context); 
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(backgroundColor: Colors.red, content: Text('Error al registrar usuario')));
+    }
+  }
 
   @override
   void dispose() {
@@ -345,11 +392,6 @@ class _RegisterPageState extends State<RegisterPage> {
             child: Icon(Icons.chat_bubble_outline,
                 color: Colors.white, size: 30)),
       );
-
-  void _onCreate() {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text('Creando cuenta...')));
-  }
 }
 
 class _SocialButton extends StatelessWidget {

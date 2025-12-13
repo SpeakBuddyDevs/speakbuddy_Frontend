@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -11,6 +12,7 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
+  final _authService = AuthService(); // Instancia el servicio
   bool _obscure = true;
 
   static const gradientStart = Color(0xFF4A90E2);
@@ -192,11 +194,33 @@ class _LoginPageState extends State<LoginPage> {
                 color: Colors.white, size: 30)),
       );
 
-  void _onLogin() {
+  void _onLogin() async { 
     final ok = _formKey.currentState?.validate() ?? false;
     if (!ok) return;
+
+    // Mostrar feedback visual
     ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text('Iniciando sesión...')));
+        .showSnackBar(const SnackBar(content: Text('Conectando con servidor...')));
+
+    // Llamar al backend
+    final success = await _authService.login(
+      _emailCtrl.text.trim(),
+      _passCtrl.text.trim(),
+    );
+
+    if (!mounted) return; // Buena práctica en Flutter async
+
+    if (success) {
+      // Si el login es correcto, navegamos a la pantalla principal (Home)
+      // Aún no hay Home, así que solo mostramos mensaje
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('¡Login correcto! Token guardado.')));
+          
+      // Navigator.pushReplacementNamed(context, '/home'); // Cuando tengas la Home
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(backgroundColor: Colors.red, content: Text('Error: Credenciales incorrectas')));
+    }
   }
 }
 

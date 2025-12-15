@@ -1,21 +1,23 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../constants/api_endpoints.dart';
+import '../constants/app_constants.dart';
+import '../models/auth_result.dart';
+import '../models/auth_error.dart';
 
 class AuthService {
-  // ip del PC.
-  final String baseUrl = 'http://10.0.2.2:8080/api/auth'; 
-  
   final _storage = const FlutterSecureStorage();
 
   // --- LOGIN ---
-  Future<bool> login(String email, String password) async {
-    final url = Uri.parse('$baseUrl/login');
+  Future<AuthResult> login(String email, String password) async {
+    final url = Uri.parse(ApiEndpoints.login);
     
     try {
       final response = await http.post(
         url,
-        headers: {'Content-Type': 'application/json'},
+        headers: AppConstants.jsonHeaders,
         body: jsonEncode({
           'email': email,
           'password': password,
@@ -27,22 +29,24 @@ class AuthService {
         final token = data['accessToken']; 
 
         // Guardamos el token en el almacenamiento seguro del móvil
-        await _storage.write(key: 'jwt_token', value: token);
-        print("Login Exitoso. Token guardado.");
-        return true;
+        await _storage.write(key: AppConstants.jwtTokenKey, value: token);
+        debugPrint("Login Exitoso. Token guardado.");
+        return AuthResult.success(token: token);
       } else {
-        print("Error Login: ${response.body}");
-        return false;
+        debugPrint("Error Login: ${response.body}");
+        return AuthResult.failure(
+          AuthError.fromResponse(response.statusCode, response.body),
+        );
       }
     } catch (e) {
-      print("Error de conexión: $e");
-      return false;
+      debugPrint("Error de conexión: $e");
+      return AuthResult.failure(NetworkError());
     }
   }
 
   // --- REGISTER ---
-  Future<bool> register(String name, String email, String password, int nativeLangId, int learnLangId) async {
-    final url = Uri.parse('$baseUrl/register');
+  Future<AuthResult> register(String name, String email, String password, int nativeLangId, int learnLangId) async {
+    final url = Uri.parse(ApiEndpoints.register);
 
     
     List<String> names = name.split(" ");
@@ -52,7 +56,7 @@ class AuthService {
     try {
       final response = await http.post(
         url,
-        headers: {'Content-Type': 'application/json'},
+        headers: AppConstants.jsonHeaders,
         body: jsonEncode({
           'name': firstName,
           'surname': lastName,
@@ -62,7 +66,6 @@ class AuthService {
           // El backend espera una lista o un ID para aprender. 
           // Ajusta esto según tu AddLearningLanguageDTO o RegisterDTO
           // Asumiremos que el backend acepta IDs simples por ahora en el registro
-          'nativeLanguageId': nativeLangId 
           // NOTA: Tu register actual en Java solo pedía nativeLanguageId.
           // El idioma a aprender se añade DESPUÉS en la HU 1.2.
           // Así que en el registro inicial solo mandamos el nativo.
@@ -70,25 +73,27 @@ class AuthService {
       );
 
       if (response.statusCode == 201 || response.statusCode == 200) {
-        print("Registro Exitoso");
-        return true;
+        debugPrint("Registro Exitoso");
+        return AuthResult.success();
       } else {
-        print("Error Registro: ${response.body}");
-        return false;
+        debugPrint("Error Registro: ${response.body}");
+        return AuthResult.failure(
+          AuthError.fromResponse(response.statusCode, response.body),
+        );
       }
     } catch (e) {
-      print("Error de conexión: $e");
-      return false;
+      debugPrint("Error de conexión: $e");
+      return AuthResult.failure(NetworkError());
     }
   }
 
   // Método para obtener el token guardado 
   Future<String?> getToken() async {
-    return await _storage.read(key: 'jwt_token');
+    return await _storage.read(key: AppConstants.jwtTokenKey);
   }
   
   // Logout
   Future<void> logout() async {
-    await _storage.delete(key: 'jwt_token');
+    await _storage.delete(key: AppConstants.jwtTokenKey);
   }
 }

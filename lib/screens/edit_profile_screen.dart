@@ -1,21 +1,13 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-
-/// Resultado que devolveremos al guardar
-class EditProfileResult {
-  final String name;
-  final String nativeLanguage; // código: 'ES','EN','FR',...
-  final List<String> learningLanguages; // lista de códigos
-  final File? avatarFile; // foto nueva (si se cambió)
-
-  EditProfileResult({
-    required this.name,
-    required this.nativeLanguage,
-    required this.learningLanguages,
-    this.avatarFile,
-  });
-}
+import '../constants/languages.dart';
+import '../models/edit_profile_result.dart';
+import '../theme/app_theme.dart';
+import '../utils/validators.dart';
+import '../utils/image_helpers.dart';
+import '../widgets/common/language_selector_bottom_sheet.dart';
+import '../constants/dimensions.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({
@@ -42,16 +34,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late List<String> _learning; // códigos
   File? _pickedImage;
 
-  // catálogo simple de idiomas (código -> nombre)
-  static const Map<String, String> _langs = {
-    'ES': 'Español',
-    'EN': 'Inglés',
-    'FR': 'Francés',
-    'DE': 'Alemán',
-    'IT': 'Italiano',
-    'PT': 'Portugués',
-  };
-
   @override
   void initState() {
     super.initState();
@@ -70,7 +52,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final picker = ImagePicker();
     final x = await picker.pickImage(
       source: ImageSource.gallery,
-      imageQuality: 85,
+      imageQuality: AppDimensions.imageQuality,
     );
     if (x != null) {
       setState(() => _pickedImage = File(x.path));
@@ -78,7 +60,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   void _addLearningLanguage() async {
-    final available = _langs.keys
+    final available = AppLanguages.availableCodes
         .where((code) => !_learning.contains(code) && code != _native)
         .toList();
 
@@ -90,46 +72,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
 
     String selected = available.first;
-    await showModalBottomSheet(
-      context: context,
-      showDragHandle: true,
-      backgroundColor: const Color(0xFF151B2C),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (_) {
-        return Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              DropdownButtonFormField<String>(
-                initialValue: selected,
-                dropdownColor: const Color(0xFF151B2C),
-                style: const TextStyle(color: Color(0xFFE7EAF3)),
-                decoration: const InputDecoration(labelText: 'Idioma'),
-                items: available
-                    .map(
-                      (c) =>
-                          DropdownMenuItem(value: c, child: Text(_langs[c]!)),
-                    )
-                    .toList(),
-                onChanged: (v) => selected = v ?? selected,
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context, selected);
-                  },
-                  child: const Text('Añadir'),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+    await showLanguageSelectorBottomSheet(
+      context,
+      available,
+      selected,
     ).then((value) {
       if (value is String && !_learning.contains(value)) {
         setState(() => _learning.add(value));
@@ -138,7 +84,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   void _save() {
-    if (!_formKey.currentState!.validate()) return;
+    if (!FormValidators.isFormValid(_formKey)) return;
     Navigator.pop(
       context,
       EditProfileResult(
@@ -152,45 +98,37 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final bg = const Color(0xFF0E1320);
-    final card = const Color(0xFF151B2C);
-    final border = const Color(0xFF2B3246);
-    final text = const Color(0xFFE7EAF3);
-    final subtle = const Color(0xFF98A3B8);
-
-    ImageProvider? avatarProvider;
-    if (_pickedImage != null) {
-      avatarProvider = FileImage(_pickedImage!);
-    } else if (widget.initialAvatarPath != null) {
-      avatarProvider = FileImage(File(widget.initialAvatarPath!));
-    }
+    final avatarProvider = getAvatarImageProvider(
+      pickedFile: _pickedImage,
+      filePath: widget.initialAvatarPath,
+    );
 
     return Scaffold(
-      backgroundColor: bg,
+      backgroundColor: AppTheme.background,
       appBar: AppBar(
-        backgroundColor: bg,
-        surfaceTintColor: const Color.fromARGB(0, 224, 221, 221),
+        backgroundColor: AppTheme.background,
+        surfaceTintColor: Colors.transparent,
         title: const Text('Editar perfil'),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        padding: AppDimensions.paddingScreen,
         child: Theme(
           data: Theme.of(context).copyWith(
-            inputDecorationTheme: const InputDecorationTheme(
+            inputDecorationTheme: InputDecorationTheme(
               filled: true,
-              fillColor: Color.fromARGB(255, 255, 255, 255),
+              fillColor: AppTheme.card,
               border: OutlineInputBorder(
                 borderSide: BorderSide.none,
-                borderRadius: BorderRadius.all(Radius.circular(12)),
+                borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
               ),
               contentPadding: EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 20,
+                horizontal: AppDimensions.paddingInput.horizontal,
+                vertical: AppDimensions.paddingInputVertical.vertical,
               ),
               floatingLabelBehavior: FloatingLabelBehavior.always,
-              labelStyle: TextStyle(color: Color.fromARGB(255, 255, 0, 0)),
+              labelStyle: TextStyle(color: AppTheme.text),
               floatingLabelStyle: TextStyle(
-                color: Color.fromARGB(255, 255, 0, 0),
+                color: AppTheme.text,
               ),
             ),
           ),
@@ -201,27 +139,27 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 // tarjeta avatar
                 Container(
                   decoration: BoxDecoration(
-                    color: card,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: border),
+                    color: AppTheme.card,
+                    borderRadius: BorderRadius.circular(AppDimensions.radiusL),
+                    border: Border.all(color: AppTheme.border),
                   ),
-                  padding: const EdgeInsets.all(16),
+                  padding: AppDimensions.paddingCard,
                   child: Row(
                     children: [
                       CircleAvatar(
-                        radius: 36,
+                        radius: AppDimensions.avatarSizeM,
                         backgroundImage: avatarProvider, // ✅ usa avatarProvider
-                        backgroundColor: const Color(0xFF111726),
+                        backgroundColor: AppTheme.panel,
                         child: avatarProvider == null
                             ? const Icon(
                                 Icons.person,
-                                size: 36,
-                                color: Colors.white54,
+                                size: AppDimensions.iconSizeXL,
+                                color: AppTheme.subtle,
                               )
                             : null,
                       ),
 
-                      const SizedBox(width: 16),
+                      const SizedBox(width: AppDimensions.spacingL),
                       Expanded(
                         child: ElevatedButton.icon(
                           onPressed: _pickImage,
@@ -232,62 +170,55 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppDimensions.spacingL),
 
                 // tarjeta datos
                 Container(
                   decoration: BoxDecoration(
-                    color: card,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: border),
+                    color: AppTheme.card,
+                    borderRadius: BorderRadius.circular(AppDimensions.radiusL),
+                    border: Border.all(color: AppTheme.border),
                   ),
-                  padding: const EdgeInsets.all(16),
+                  padding: AppDimensions.paddingCard,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Etiqueta arriba del campo de texto
-                      const Text(
+                      Text(
                         'Nombre',
                         style: TextStyle(
-                          color: Color.fromARGB(
-                            255,
-                            253,
-                            253,
-                            253,
-                          ), // mismo rojo que el tema
-                          fontSize: 13,
+                          color: AppTheme.text,
+                          fontSize: AppDimensions.fontSizeS,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: AppDimensions.spacingS),
                       TextFormField(
                         controller: _nameCtrl,
                         decoration: const InputDecoration(
                           // sin labelText para que no aparezca dentro de la caja
                         ),
-                        validator: (v) => (v == null || v.trim().isEmpty)
-                            ? 'Escribe tu nombre'
-                            : null,
+                        validator: FormValidators.validateNameRequired,
                       ),
 
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppDimensions.spacingL),
 
                       // Etiqueta arriba del combo
-                      const Text(
+                      Text(
                         'Idioma nativo',
                         style: TextStyle(
-                          color: Color.fromARGB(255, 255, 255, 255),
-                          fontSize: 13,
+                          color: AppTheme.text,
+                          fontSize: AppDimensions.fontSizeS,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: AppDimensions.spacingS),
                       DropdownButtonFormField<String>(
                         initialValue: _native,
                         decoration: const InputDecoration(
                           // también sin labelText
                         ),
-                        items: _langs.entries
+                        items: AppLanguages.codeToName.entries
                             .map(
                               (e) => DropdownMenuItem(
                                 value: e.key,
@@ -300,18 +231,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           setState(() => _native = v);
                         },
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppDimensions.spacingL),
                       Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
                           'Idiomas que estás aprendiendo',
                           style: TextStyle(
-                            color: text,
+                            color: AppTheme.text,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppDimensions.spacingSM),
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
@@ -319,12 +250,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           for (final code in _learning)
                             Chip(
                               label: Text(
-                                _langs[code] ?? code,
-                                style: const TextStyle(
-                                  color: Color(0xFFE7EAF3),
-                                ), // 👈 texto claro
+                                AppLanguages.getName(code),
+                                style: TextStyle(
+                                  color: AppTheme.text,
+                                ),
                               ),
-                              backgroundColor: const Color(0xFF111726),
+                              backgroundColor: AppTheme.panel,
                               onDeleted: () {
                                 setState(() => _learning.remove(code));
                               },
@@ -339,7 +270,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: AppDimensions.spacingXXXL),
 
                 SizedBox(
                   width: double.infinity,
@@ -349,12 +280,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     label: const Text('Guardar cambios'),
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppDimensions.spacingSM),
                 Text(
                   'Los cambios se aplicarán al volver al perfil.',
-                  style: TextStyle(color: subtle, fontSize: 12),
+                  style: TextStyle(color: AppTheme.subtle, fontSize: AppDimensions.fontSizeXS),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: AppDimensions.spacingXXXL),
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
@@ -362,9 +293,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       side: const BorderSide(color: Colors.redAccent),
                       foregroundColor: Colors.redAccent,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(999),
+                        borderRadius: BorderRadius.circular(AppDimensions.radiusCircular),
                       ),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      padding: AppDimensions.paddingButtonLarge,
                     ),
                     onPressed: () {
                       // TODO: conectar con backend para eliminar la cuenta
@@ -382,3 +313,4 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 }
+

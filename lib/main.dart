@@ -1,39 +1,26 @@
 import 'package:flutter/material.dart';
-import 'login.dart';
-import 'register.dart';
-import 'profile.dart';
+import 'screens/login_screen.dart';
+import 'screens/register_screen.dart';
+import 'screens/profile_screen.dart';
+import 'theme/app_theme.dart';
+import 'constants/routes.dart';
 
 void main() => runApp(const MyApp());
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  static const seed = Color(0xFF7B61FF);
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Proyecto Idiomas',
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: seed),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: const Color(0xFFF6F7FB),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
-          ),
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
-        ),
-      ),
+      theme: AppTheme.darkTheme(),
       routes: {
-        '/': (_) => const LoginPage(),
-        '/register': (_) => const RegisterPage(),
-        '/login': (_) => const LoginPage(),
-        '/profile': (_) => const ProfileScreen(),
+        AppRoutes.home: (_) => const LoginScreen(),
+        AppRoutes.register: (_) => const RegisterScreen(),
+        AppRoutes.login: (_) => const LoginScreen(),
+        AppRoutes.profile: (_) => const ProfileScreen(),
       },
     );
   }

@@ -1,15 +1,21 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
-import 'profile.dart';
+import 'profile_screen.dart';
+import '../theme/app_theme.dart';
+import '../widgets/common/app_logo.dart';
+import '../widgets/common/social_button.dart';
+import '../utils/validators.dart';
+import '../constants/routes.dart';
+import '../constants/dimensions.dart';
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
@@ -28,85 +34,79 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isLargeScreen = screenWidth > AppDimensions.breakpointLarge;
+    
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFFF4F6FF), Colors.white],
-          ),
-        ),
+      backgroundColor: AppTheme.background,
+      body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 420),
-            child: Card(
-              elevation: 8,
-              shadowColor: Colors.black12,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
+            constraints: BoxConstraints(
+              maxWidth: isLargeScreen ? AppDimensions.maxCardWidth : double.infinity,
+            ),
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: isLargeScreen ? 0 : AppDimensions.spacingL,
+                vertical: AppDimensions.spacingXXXL,
               ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 22,
-                  vertical: 26,
+              child: Card(
+                elevation: 0,
+                color: AppTheme.card,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusXL),
                 ),
+                child: Padding(
+                padding: AppDimensions.paddingForm,
                 child: Form(
                   key: _formKey,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      _logo(),
-                      const SizedBox(height: 12),
-                      const Text(
+                      const AppLogo(),
+                      const SizedBox(height: AppDimensions.spacingMD),
+                      Text(
                         'Bienvenido de nuevo',
                         style: TextStyle(
-                          fontSize: 20,
+                          fontSize: AppDimensions.fontSizeXL,
                           fontWeight: FontWeight.w600,
+                          color: AppTheme.text,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: AppDimensions.spacingXS),
                       Text(
                         'Continúa tu viaje de intercambio de idiomas',
                         textAlign: TextAlign.center,
-                        style: Theme.of(
-                          context,
-                        ).textTheme.bodyMedium!.copyWith(color: Colors.black54),
+                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                          color: AppTheme.subtle,
+                        ),
                       ),
-                      const SizedBox(height: 22),
+                      const SizedBox(height: AppDimensions.spacingXXL),
 
                       Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
                           'Correo electrónico',
-                          style: TextStyle(color: Colors.black87),
+                          style: TextStyle(color: AppTheme.text),
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppDimensions.spacingSM),
                       TextFormField(
                         controller: _emailCtrl,
                         keyboardType: TextInputType.emailAddress,
-                        validator: (v) {
-                          if (v == null || v.isEmpty) {
-                            return 'Introduce tu correo';
-                          }
-                          final ok = RegExp(
-                            r'^[^@]+@[^@]+\.[^@]+',
-                          ).hasMatch(v.trim());
-                          return ok ? null : 'Correo no válido';
-                        },
+                        validator: FormValidators.validateEmail,
                         decoration: const InputDecoration(
                           prefixIcon: Icon(Icons.email_outlined),
                           hintText: 'tu@email.com',
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppDimensions.spacingL),
 
                       Row(
                         children: [
-                          const Text(
+                          Text(
                             'Contraseña',
-                            style: TextStyle(color: Colors.black87),
+                            style: TextStyle(color: AppTheme.text),
                           ),
                           const Spacer(),
                           TextButton(
@@ -115,16 +115,17 @@ class _LoginPageState extends State<LoginPage> {
                               padding: EdgeInsets.zero,
                               minimumSize: Size.zero,
                             ),
-                            child: const Text('¿Olvidaste tu contraseña?'),
+                            child: Text(
+                              '¿Olvidaste tu contraseña?',
+                              style: TextStyle(color: AppTheme.accent),
+                            ),
                           ),
                         ],
                       ),
                       TextFormField(
                         controller: _passCtrl,
                         obscureText: _obscure,
-                        validator: (v) => (v == null || v.isEmpty)
-                            ? 'Introduce tu contraseña'
-                            : null,
+                        validator: FormValidators.validatePasswordRequired,
                         decoration: InputDecoration(
                           prefixIcon: const Icon(Icons.lock_outline),
                           hintText: '•••••••',
@@ -139,17 +140,17 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 18),
+                      const SizedBox(height: AppDimensions.spacingXL),
 
                       SizedBox(
                         width: double.infinity,
-                        height: 44,
+                        height: AppDimensions.buttonHeight,
                         child: DecoratedBox(
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
                               colors: [gradientStart, gradientEnd],
                             ),
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
                           ),
                           child: ElevatedButton(
                             onPressed: _onLogin,
@@ -157,7 +158,7 @@ class _LoginPageState extends State<LoginPage> {
                               backgroundColor: Colors.transparent,
                               shadowColor: Colors.transparent,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
                               ),
                               padding: EdgeInsets.zero,
                             ),
@@ -171,8 +172,8 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 18),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppDimensions.spacingXL),
+                      const SizedBox(height: AppDimensions.spacingL),
                       TextButton(
                         onPressed: () {
                           Navigator.push(
@@ -182,47 +183,61 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           );
                         },
-                        child: const Text('Ver perfil (modo prueba)'),
+                        child: Text(
+                          'Ver perfil (modo prueba)',
+                          style: TextStyle(color: AppTheme.accent),
+                        ),
                       ),
                       Row(
                         children: [
-                          const Expanded(child: Divider(color: Colors.black12)),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 10),
-                            child: Text(
-                              'o continúa con',
-                              style: TextStyle(color: Colors.black54),
+                          Expanded(
+                            child: Divider(
+                              color: AppTheme.border.withValues(alpha: AppDimensions.opacityDivider),
                             ),
                           ),
-                          const Expanded(child: Divider(color: Colors.black12)),
+                          Padding(
+                            padding: AppDimensions.paddingDivider,
+                            child: Text(
+                              'o continúa con',
+                              style: TextStyle(color: AppTheme.subtle),
+                            ),
+                          ),
+                          Expanded(
+                            child: Divider(
+                              color: AppTheme.border.withValues(alpha: AppDimensions.opacityDivider),
+                            ),
+                          ),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: AppDimensions.spacingMD),
 
                       Row(
                         children: const [
                           Expanded(
-                            child: _SocialButton(text: 'Google', icon: 'G'),
+                            child: SocialButton(text: 'Google', icon: 'G'),
                           ),
-                          SizedBox(width: 12),
+                          SizedBox(width: AppDimensions.spacingMD),
                           Expanded(
-                            child: _SocialButton(text: 'Facebook', icon: 'f'),
+                            child: SocialButton(text: 'Facebook', icon: 'f'),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 18),
+                      const SizedBox(height: AppDimensions.spacingXL),
 
                       Wrap(
                         alignment: WrapAlignment.center,
                         children: [
-                          const Text('¿No tienes una cuenta? '),
+                          Text(
+                            '¿No tienes una cuenta? ',
+                            style: TextStyle(color: AppTheme.subtle),
+                          ),
                           InkWell(
                             onTap: () =>
-                                Navigator.pushNamed(context, '/register'),
-                            child: const Text(
+                                Navigator.pushNamed(context, AppRoutes.register),
+                            child: Text(
                               'Regístrate aquí',
                               style: TextStyle(
-                                color: gradientStart,
+                                color: AppTheme.accent,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -237,27 +252,12 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ),
       ),
+    ),
     );
   }
 
-  Widget _logo() => Container(
-    width: 62,
-    height: 62,
-    decoration: const BoxDecoration(
-      shape: BoxShape.circle,
-      gradient: LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [gradientStart, gradientEnd],
-      ),
-    ),
-    child: const Center(
-      child: Icon(Icons.chat_bubble_outline, color: Colors.white, size: 30),
-    ),
-  );
-
   void _onLogin() async { 
-    final ok = _formKey.currentState?.validate() ?? false;
+    final ok = FormValidators.isFormValid(_formKey);
     if (!ok) return;
 
     // Mostrar feedback visual
@@ -265,14 +265,14 @@ class _LoginPageState extends State<LoginPage> {
         .showSnackBar(const SnackBar(content: Text('Conectando con servidor...')));
 
     // Llamar al backend
-    final success = await _authService.login(
+    final result = await _authService.login(
       _emailCtrl.text.trim(),
       _passCtrl.text.trim(),
     );
 
     if (!mounted) return; // Buena práctica en Flutter async
 
-    if (success) {
+    if (result.success) {
       // Si el login es correcto, navegamos a la pantalla principal (Home)
       // Aún no hay Home, así que solo mostramos mensaje
       ScaffoldMessenger.of(context).showSnackBar(
@@ -280,47 +280,17 @@ class _LoginPageState extends State<LoginPage> {
           
       // Navigator.pushReplacementNamed(context, '/home'); // Cuando tengas la Home
     } else {
+      // Mostrar mensaje específico según el tipo de error
+      String errorMessage;
+      if (result.error != null) {
+        errorMessage = result.error!.message;
+      } else {
+        errorMessage = 'Error inesperado. Intenta nuevamente.';
+      }
+      
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(backgroundColor: Colors.red, content: Text('Error: Credenciales incorrectas')));
+          SnackBar(backgroundColor: Colors.red, content: Text(errorMessage)));
     }
   }
 }
 
-class _SocialButton extends StatelessWidget {
-  final String text;
-  final String icon;
-  const _SocialButton({required this.text, required this.icon});
-
-  @override
-  Widget build(BuildContext context) {
-    return OutlinedButton.icon(
-      onPressed: () {},
-      icon: _MonoLogo(text: icon),
-      label: Text(text),
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
-  }
-}
-
-class _MonoLogo extends StatelessWidget {
-  final String text;
-  const _MonoLogo({required this.text});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 22,
-      height: 22,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.black26),
-        borderRadius: BorderRadius.circular(4),
-        color: Colors.white,
-      ),
-      child: Text(text, style: const TextStyle(fontWeight: FontWeight.w700)),
-    );
-  }
-}

@@ -1,15 +1,23 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import '../widgets/common/app_logo.dart';
+import '../widgets/common/social_button.dart';
+import '../theme/app_theme.dart';
+import '../utils/validators.dart';
+import '../constants/routes.dart';
+import '../constants/dimensions.dart';
+import '../constants/languages.dart';
+import '../constants/language_ids.dart';
 
-class RegisterPage extends StatefulWidget {
-  const RegisterPage({super.key});
+class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
 
   @override
-  State<RegisterPage> createState() => _RegisterPageState();
+  State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterPageState extends State<RegisterPage> {
+class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
@@ -25,24 +33,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
   static const gradientStart = Color(0xFF4A90E2);
   static const gradientEnd = Color(0xFF8A49F7);
-  final _languages = const [
-    'Español',
-    'Inglés',
-    'Francés',
-    'Alemán',
-    'Italiano',
-    'Portugués',
-    'Chino',
-    'Japonés'
-  ];
-
-  final Map<String, int> _languageMap = {
-    'Español': 1,
-    'Inglés': 2,
-    'Francés': 3,
-    'Alemán': 4,
-    // los demás idiomas que haya en la bd
-  };
 
   void _onCreate() async { 
     // Validación extra: asegurarse de que seleccionó idiomas
@@ -51,16 +41,16 @@ class _RegisterPageState extends State<RegisterPage> {
     ScaffoldMessenger.of(context)
         .showSnackBar(const SnackBar(content: Text('Creando cuenta...')));
 
-    // Convertir String a ID
-    int? nativeId = _languageMap[_nativeLang];
-    int? learnId = _languageMap[_learningLang]; // Aunque el registro backend actual igual no lo usa aún
+    // Convertir código a ID del backend
+    int? nativeId = LanguageIds.getId(_nativeLang ?? '');
+    int? learnId = LanguageIds.getId(_learningLang ?? ''); // Aunque el registro backend actual igual no lo usa aún
 
     if (nativeId == null) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error: Idioma no válido')));
         return;
     }
 
-    final success = await _authService.register(
+    final result = await _authService.register(
       _nameCtrl.text,
       _emailCtrl.text,
       _passCtrl.text,
@@ -70,14 +60,22 @@ class _RegisterPageState extends State<RegisterPage> {
 
     if (!mounted) return;
 
-    if (success) {
+    if (result.success) {
       ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Cuenta creada. Por favor inicia sesión.')));
       // Volver al login
       Navigator.pop(context); 
     } else {
+      // Mostrar mensaje específico según el tipo de error
+      String errorMessage;
+      if (result.error != null) {
+        errorMessage = result.error!.message;
+      } else {
+        errorMessage = 'Error inesperado. Intenta nuevamente.';
+      }
+      
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(backgroundColor: Colors.red, content: Text('Error al registrar usuario')));
+          SnackBar(backgroundColor: Colors.red, content: Text(errorMessage)));
     }
   }
 
@@ -91,10 +89,8 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   bool get _isFormValid {
-    final form = _formKey.currentState;
-    return form != null &&
-        form.validate() &&
-        _nativeLang != null &&
+    if (!FormValidators.isFormValid(_formKey)) return false;
+    return _nativeLang != null &&
         _learningLang != null &&
         _acceptTerms;
   }
@@ -102,74 +98,59 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-              colors: [Color(0xFFF4F6FF), Colors.white],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight),
-        ),
-        child: Center(
+      backgroundColor: AppTheme.background,
+      body: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 420),
+            constraints: const BoxConstraints(maxWidth: AppDimensions.maxCardWidth),
             child: Card(
-              elevation: 8,
-              shadowColor: Colors.black12,
+              elevation: 0,
+              color: AppTheme.card,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18)),
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusXL)),
               child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 22, vertical: 26),
+                padding: AppDimensions.paddingForm,
                 child: Form(
                   key: _formKey,
                   onChanged: () => setState(() {}),
                   child: SingleChildScrollView(
                     child: Column(mainAxisSize: MainAxisSize.min, children: [
-                      _logo(),
-                      const SizedBox(height: 12),
+                      const AppLogo(),
+                      const SizedBox(height: AppDimensions.spacingMD),
                       const Text('Únete a la comunidad',
                           style: TextStyle(
-                              fontSize: 20, fontWeight: FontWeight.w600)),
-                      const SizedBox(height: 4),
+                              fontSize: AppDimensions.fontSizeXL, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: AppDimensions.spacingXS),
                       Text('Comienza tu aventura de aprendizaje de idiomas',
                           textAlign: TextAlign.center,
                           style: Theme.of(context)
                               .textTheme
                               .bodyMedium!
-                              .copyWith(color: Colors.black54)),
-                      const SizedBox(height: 22),
+                              .copyWith(color: AppTheme.subtle)),
+                      const SizedBox(height: AppDimensions.spacingXXL),
 
                       _label('Nombre completo'),
                       TextFormField(
                         controller: _nameCtrl,
                         textCapitalization: TextCapitalization.words,
-                        validator: (v) =>
-                            (v == null || v.trim().length < 3)
-                                ? 'Introduce tu nombre'
-                                : null,
+                        validator: (v) => FormValidators.validateName(v, minLength: 3),
                         decoration: const InputDecoration(
                           prefixIcon: Icon(Icons.person_outline),
                           hintText: 'Tu nombre',
                         ),
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: AppDimensions.spacingML),
 
                       _label('Correo electrónico'),
                       TextFormField(
                         controller: _emailCtrl,
                         keyboardType: TextInputType.emailAddress,
-                        validator: (v) {
-                          if (v == null || v.isEmpty) return 'Introduce tu correo';
-                          final ok =
-                              RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(v.trim());
-                          return ok ? null : 'Correo no válido';
-                        },
+                        validator: FormValidators.validateEmail,
                         decoration: const InputDecoration(
                           prefixIcon: Icon(Icons.email_outlined),
                           hintText: 'tu@email.com',
                         ),
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: AppDimensions.spacingML),
 
                       Row(children: [
                         Expanded(
@@ -179,22 +160,23 @@ class _RegisterPageState extends State<RegisterPage> {
                               _label('Idioma nativo'),
                               DropdownButtonFormField<String>(
                                 initialValue: _nativeLang,
-                                items: _languages
-                                    .map((e) =>
-                                        DropdownMenuItem(value: e, child: Text(e)))
+                                items: AppLanguages.availableCodes
+                                    .map((code) => DropdownMenuItem(
+                                          value: code,
+                                          child: Text(AppLanguages.getName(code)),
+                                        ))
                                     .toList(),
                                 onChanged: (v) => setState(() => _nativeLang = v),
                                 decoration: const InputDecoration(
                                   prefixIcon: Icon(Icons.public),
                                   hintText: 'Selecciona',
                                 ),
-                                validator: (v) =>
-                                    v == null ? 'Selecciona un idioma' : null,
+                                validator: (v) => FormValidators.validateRequired(v, 'Selecciona un idioma'),
                               ),
                             ],
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: AppDimensions.spacingMD),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -202,31 +184,30 @@ class _RegisterPageState extends State<RegisterPage> {
                               _label('Aprendiendo'),
                               DropdownButtonFormField<String>(
                                 initialValue: _learningLang,
-                                items: _languages
-                                    .map((e) =>
-                                        DropdownMenuItem(value: e, child: Text(e)))
+                                items: AppLanguages.availableCodes
+                                    .map((code) => DropdownMenuItem(
+                                          value: code,
+                                          child: Text(AppLanguages.getName(code)),
+                                        ))
                                     .toList(),
                                 onChanged: (v) => setState(() => _learningLang = v),
                                 decoration: const InputDecoration(
                                   prefixIcon: Icon(Icons.public),
                                   hintText: 'Selecciona',
                                 ),
-                                validator: (v) =>
-                                    v == null ? 'Selecciona un idioma' : null,
+                                validator: (v) => FormValidators.validateRequired(v, 'Selecciona un idioma'),
                               ),
                             ],
                           ),
                         ),
                       ]),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: AppDimensions.spacingML),
 
                       _label('Contraseña'),
                       TextFormField(
                         controller: _passCtrl,
                         obscureText: _obscure1,
-                        validator: (v) => (v == null || v.length < 6)
-                            ? 'Mínimo 6 caracteres'
-                            : null,
+                        validator: (v) => FormValidators.validatePassword(v, minLength: 6),
                         decoration: InputDecoration(
                           prefixIcon: const Icon(Icons.lock_outline),
                           hintText: '•••••••',
@@ -239,21 +220,13 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: AppDimensions.spacingML),
 
                       _label('Confirmar contraseña'),
                       TextFormField(
                         controller: _pass2Ctrl,
                         obscureText: _obscure2,
-                        validator: (v) {
-                          if (v == null || v.isEmpty) {
-                            return 'Repite la contraseña';
-                          }
-                          if (v != _passCtrl.text) {
-                            return 'Las contraseñas no coinciden';
-                          }
-                          return null;
-                        },
+                        validator: (v) => FormValidators.validatePasswordMatch(v, _passCtrl.text),
                         decoration: InputDecoration(
                           prefixIcon: const Icon(Icons.lock_outline),
                           hintText: '•••••••',
@@ -266,7 +239,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: AppDimensions.spacingM),
 
                       Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Checkbox(
@@ -274,7 +247,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           onChanged: (v) =>
                               setState(() => _acceptTerms = v ?? false),
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(4)),
+                              borderRadius: BorderRadius.circular(AppDimensions.radiusXS)),
                         ),
                         Expanded(
                           child: RichText(
@@ -282,7 +255,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               style: Theme.of(context)
                                   .textTheme
                                   .bodyMedium!
-                                  .copyWith(color: Colors.black87),
+                                  .copyWith(color: AppTheme.text),
                               children: [
                                 const TextSpan(text: 'Acepto los '),
                                 TextSpan(
@@ -305,18 +278,18 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                         ),
                       ]),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: AppDimensions.spacingS),
 
                       SizedBox(
                         width: double.infinity,
-                        height: 44,
+                        height: AppDimensions.buttonHeight,
                         child: Opacity(
-                          opacity: _isFormValid ? 1 : 0.5,
+                          opacity: _isFormValid ? 1 : AppDimensions.opacityDisabled,
                           child: DecoratedBox(
                             decoration: BoxDecoration(
                               gradient: const LinearGradient(
                                   colors: [gradientStart, gradientEnd]),
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
                             ),
                             child: ElevatedButton(
                               onPressed: _isFormValid ? _onCreate : null,
@@ -324,7 +297,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                 backgroundColor: Colors.transparent,
                                 shadowColor: Colors.transparent,
                                 shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12)),
+                                    borderRadius: BorderRadius.circular(AppDimensions.radiusMD)),
                                 padding: EdgeInsets.zero,
                               ),
                               child: const Text('Crear cuenta',
@@ -335,30 +308,30 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: AppDimensions.spacingML),
 
-                      Row(children: const [
-                        Expanded(child: Divider(color: Colors.black12)),
+                      Row(children: [
+                        Expanded(child: Divider(color: AppTheme.border.withValues(alpha: AppDimensions.opacityDivider))),
                         Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 10),
+                          padding: AppDimensions.paddingDivider,
                           child: Text('o regístrate con',
-                              style: TextStyle(color: Colors.black54)),
+                              style: TextStyle(color: AppTheme.subtle)),
                         ),
-                        Expanded(child: Divider(color: Colors.black12)),
+                        Expanded(child: Divider(color: AppTheme.border.withValues(alpha: AppDimensions.opacityDivider))),
                       ]),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: AppDimensions.spacingMD),
 
                       Row(children: const [
-                        Expanded(child: _SocialButton(text: 'Google', icon: 'G')),
-                        SizedBox(width: 12),
-                        Expanded(child: _SocialButton(text: 'Facebook', icon: 'f')),
+                        Expanded(child: SocialButton(text: 'Google', icon: 'G')),
+                        SizedBox(width: AppDimensions.spacingMD),
+                        Expanded(child: SocialButton(text: 'Facebook', icon: 'f')),
                       ]),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppDimensions.spacingL),
 
                       Wrap(alignment: WrapAlignment.center, children: [
                         const Text('¿Ya tienes una cuenta? '),
                         InkWell(
-                          onTap: () => Navigator.pushReplacementNamed(context, '/login'),
+                          onTap: () => Navigator.pushReplacementNamed(context, AppRoutes.login),
                           child: const Text('Inicia sesión',
                               style: TextStyle(
                                   color: gradientStart,
@@ -371,64 +344,10 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
             ),
           ),
-        ),
       ),
     );
   }
 
-  Text _label(String t) => Text(t, style: const TextStyle(color: Colors.black87));
-
-  Widget _logo() => Container(
-        width: 62,
-        height: 62,
-        decoration: const BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [gradientStart, gradientEnd]),
-        ),
-        child: const Center(
-            child: Icon(Icons.chat_bubble_outline,
-                color: Colors.white, size: 30)),
-      );
+  Text _label(String t) => Text(t, style: TextStyle(color: AppTheme.text));
 }
 
-class _SocialButton extends StatelessWidget {
-  final String text;
-  final String icon;
-  const _SocialButton({required this.text, required this.icon});
-
-  @override
-  Widget build(BuildContext context) {
-    return OutlinedButton.icon(
-      onPressed: () {},
-      icon: _MonoLogo(text: icon),
-      label: Text(text),
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
-  }
-}
-
-class _MonoLogo extends StatelessWidget {
-  final String text;
-  const _MonoLogo({required this.text});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 22,
-      height: 22,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.black26),
-        borderRadius: BorderRadius.circular(4),
-        color: Colors.white,
-      ),
-      child: Text(text, style: const TextStyle(fontWeight: FontWeight.w700)),
-    );
-  }
-}

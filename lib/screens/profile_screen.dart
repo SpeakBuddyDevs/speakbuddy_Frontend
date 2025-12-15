@@ -1,8 +1,15 @@
-import 'dart:ffi';
-
 import 'package:flutter/material.dart';
-import 'edit_profile.dart';
-import 'dart:io';
+import 'edit_profile_screen.dart';
+import '../constants/languages.dart';
+import '../theme/app_theme.dart';
+import '../models/language_item.dart';
+import '../models/user_profile.dart';
+import '../models/edit_profile_result.dart';
+import '../utils/image_helpers.dart';
+import '../widgets/common/language_selector_bottom_sheet.dart';
+import '../widgets/common/language_action_bottom_sheet.dart';
+import '../widgets/common/level_selector_bottom_sheet.dart';
+import '../constants/dimensions.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -13,7 +20,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   // TODO: Sustituir por datos reales desde el backend (/api/auth/me + /api/profile)
-    var _profile = _MockProfile(
+    var _profile = UserProfile(
     name: 'Sergio Arjona',
     email: 'sergioarjona@gmail.com',
     level: 5,
@@ -27,8 +34,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     medals: 4,
     nativeLanguage: 'ES',
     learningLanguages: const [
-      _LangItem(code: 'ES', name: 'Español', level: 'Intermedio', active: true),
-      _LangItem(code: 'FR', name: 'Francés', level: 'Principiante'),
+      LanguageItem(code: 'ES', name: 'Español', level: 'Intermedio', active: true),
+      LanguageItem(code: 'FR', name: 'Francés', level: 'Principiante'),
     ],
     isPro: true,
     avatarPath: null,
@@ -38,30 +45,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
         'gente de otros países y practicar a diario.', // 👈 texto ejemplo
   );
 
-
-  static const Map<String, String> _langs = {
-    'ES': 'Español',
-    'EN': 'Inglés',
-    'FR': 'Francés',
-    'DE': 'Alemán',
-    'IT': 'Italiano',
-    'PT': 'Portugués',
-    'ZH': 'Chino',
-    'JA': 'Japonés',
-    'RU': 'Ruso',
-  };
-
-    Future<void> _editDescription() async {
+  Future<void> _editDescription() async {
     final controller = TextEditingController(text: _profile.description);
 
     final newText = await showDialog<String>(
       context: context,
       builder: (context) {
-        final c = _Palette.of(context);
         return AlertDialog(
-          backgroundColor: c.bg,
+          backgroundColor: AppTheme.background,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppDimensions.radiusL),
           ),
           title: const Text('Editar descripción'),
           content: TextField(
@@ -101,7 +94,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final existing = _profile.learningLanguages.map((e) => e.code).toSet();
 
     // Disponibles = catálogo - existentes - idioma nativo
-    final available = _langs.keys
+    final available = AppLanguages.availableCodes
         .where(
           (code) => !existing.contains(code) && code != _profile.nativeLanguage,
         )
@@ -119,61 +112,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     String selected = available.first;
 
-    final picked = await showModalBottomSheet<String>(
-      context: context,
-      showDragHandle: true,
-      backgroundColor: const Color(0xFF151B2C),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (ctx) {
-        return Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              DropdownButtonFormField<String>(
-                initialValue: selected,
-                isExpanded: true,
-                dropdownColor: const Color(0xFF151B2C),
-                style: const TextStyle(color: Color(0xFFE7EAF3)), // texto claro
-                decoration: const InputDecoration(
-                  labelText: 'Selecciona un idioma',
-                  floatingLabelBehavior: FloatingLabelBehavior.always,
-                ),
-                items: available
-                    .map(
-                      (c) => DropdownMenuItem(
-                        value: c,
-                        child: Text(
-                          _langs[c]!,
-                          style: const TextStyle(color: Color(0xFFE7EAF3)),
-                        ),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (v) => selected = v ?? selected,
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(ctx, selected),
-                  child: const Text('Añadir'),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+    final picked = await showLanguageSelectorBottomSheet(
+      context,
+      available,
+      selected,
     );
 
     if (!mounted || picked == null) return;
 
     setState(() {
-      // Crea un nuevo _LangItem con nivel por defecto
-      final display = _langs[picked] ?? picked;
-      final newItem = _LangItem(
+      // Crea un nuevo LanguageItem con nivel por defecto
+      final display = AppLanguages.getName(picked);
+      final newItem = LanguageItem(
         code: picked,
         name: display,
         level: 'Principiante',
@@ -185,67 +135,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
-  void _onLanguageLongPress(_LangItem lang) async {
+  void _onLanguageLongPress(LanguageItem lang) async {
     final isActive = lang.active;
 
     // Primer menú: qué acción quieres hacer
-    final action = await showModalBottomSheet<String>(
-      context: context,
-      showDragHandle: true,
-      backgroundColor: const Color(0xFF151B2C),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (ctx) {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 🔁 Opción dinámica según esté activo o no
-              ListTile(
-                leading: Icon(
-                  isActive
-                      ? Icons.radio_button_unchecked
-                      : Icons.check_circle_outline,
-                  color: isActive
-                      ? const Color(0xFF98A3B8)
-                      : Colors.lightBlueAccent,
-                ),
-                title: Text(
-                  isActive ? 'Desmarcar como activo' : 'Marcar como activo',
-                  style: const TextStyle(color: Color(0xFFE7EAF3)),
-                ),
-                onTap: () =>
-                    Navigator.pop(ctx, isActive ? 'unactive' : 'active'),
-              ),
-              ListTile(
-                leading: const Icon(
-                  Icons.tune_rounded,
-                  color: Color(0xFF98A3B8),
-                ),
-                title: const Text(
-                  'Configurar nivel',
-                  style: TextStyle(color: Color(0xFFE7EAF3)),
-                ),
-                onTap: () => Navigator.pop(ctx, 'level'),
-              ),
-              ListTile(
-                leading: const Icon(
-                  Icons.delete_outline,
-                  color: Colors.redAccent,
-                ),
-                title: const Text(
-                  'Eliminar idioma',
-                  style: TextStyle(color: Color(0xFFE7EAF3)),
-                ),
-                onTap: () => Navigator.pop(ctx, 'delete'),
-              ),
-              const SizedBox(height: 8),
-            ],
-          ),
-        );
-      },
+    final action = await showLanguageActionBottomSheet(
+      context,
+      isActive,
     );
 
     if (!mounted || action == null) return;
@@ -253,9 +149,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     // ✅ Opción 1: Marcar como activo
     if (action == 'active') {
       setState(() {
-        final updated = _profile.learningLanguages.map((_LangItem l) {
+        final updated = _profile.learningLanguages.map((LanguageItem l) {
           if (l.code == lang.code) {
-            return _LangItem(
+            return LanguageItem(
               code: l.code,
               name: l.name,
               level: l.level,
@@ -273,9 +169,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     // ✅ Opción 1b: Desmarcar como activo
     if (action == 'unactive') {
       setState(() {
-        final updated = _profile.learningLanguages.map((_LangItem l) {
+        final updated = _profile.learningLanguages.map((LanguageItem l) {
           if (l.code == lang.code) {
-            return _LangItem(
+            return LanguageItem(
               code: l.code,
               name: l.name,
               level: l.level,
@@ -295,51 +191,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
       const levels = ['Principiante', 'Intermedio', 'Avanzado'];
       String selected = lang.level;
 
-      final pickedLevel = await showModalBottomSheet<String>(
-        context: context,
-        showDragHandle: true,
-        backgroundColor: const Color(0xFF151B2C),
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-        ),
-        builder: (ctx) {
-          return Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                for (final lvl in levels)
-                  ListTile(
-                    leading: Icon(
-                      lvl == selected
-                          ? Icons.radio_button_checked
-                          : Icons.radio_button_off,
-                      color: lvl == selected
-                          ? Colors.lightBlueAccent
-                          : const Color(0xFF98A3B8),
-                    ),
-                    title: const Text(
-                      ' ', // sobreescribimos abajo
-                    ),
-                    subtitle: Text(
-                      lvl,
-                      style: const TextStyle(color: Color(0xFFE7EAF3)),
-                    ),
-                    onTap: () => Navigator.pop(ctx, lvl),
-                  ),
-                const SizedBox(height: 8),
-              ],
-            ),
-          );
-        },
+      final pickedLevel = await showLevelSelectorBottomSheet(
+        context,
+        levels,
+        selected,
       );
 
       if (!mounted || pickedLevel == null) return;
 
       setState(() {
-        final updated = _profile.learningLanguages.map((_LangItem l) {
+        final updated = _profile.learningLanguages.map((LanguageItem l) {
           if (l.code == lang.code) {
-            return _LangItem(
+            return LanguageItem(
               code: l.code,
               name: l.name,
               level: pickedLevel,
@@ -380,26 +243,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final color = _Palette.of(context);
-
     return Scaffold(
-      backgroundColor: color.bg,
+      backgroundColor: AppTheme.background,
       appBar: AppBar(
-        backgroundColor: color.bg,
+        backgroundColor: AppTheme.background,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         titleSpacing: 0,
         title: Row(
           children: [
             _brandBadge(),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppDimensions.spacingSM),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'SpeakBuddy',
                   style: TextStyle(
-                    color: color.text,
+                    color: AppTheme.text,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -407,35 +268,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   children: [
                     Text(
                       'Nivel ${_profile.level}',
-                      style: TextStyle(color: color.subtle, fontSize: 12),
+                      style: TextStyle(color: AppTheme.subtle, fontSize: AppDimensions.fontSizeXS),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppDimensions.spacingSM),
                     _ProgressMini(
                       value: _profile.progressPct,
-                      track: color.card,
-                      fill: color.accent,
+                      track: AppTheme.card,
+                      fill: AppTheme.accent,
                     ),
                   ],
                 ),
               ],
             ),
             const Spacer(),
-            if (_profile.isPro) _proChip(color),
-            const SizedBox(width: 8),
+            if (_profile.isPro) _proChip(),
+            const SizedBox(width: AppDimensions.spacingSM),
             IconButton(
               onPressed: () {},
-              icon: Icon(Icons.notifications_none_rounded, color: color.subtle),
+              icon: Icon(Icons.notifications_none_rounded, color: AppTheme.subtle),
               tooltip: 'Notificaciones',
             ),
           ],
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        padding: AppDimensions.paddingScreen,
         child: Column(
           children: [
             _UserCard(profile: _profile),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppDimensions.spacingL),
             _Section(
               title: 'Descripción del perfil',
               trailing: IconButton(
@@ -448,15 +309,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Text(
                   _profile.description,
                   style: TextStyle(
-                    color: color.text,
-                    height: 1.4,
+                    color: AppTheme.text,
+                    height: AppDimensions.lineHeight,
                   ),
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppDimensions.spacingL),
             _StatsRow(profile: _profile),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppDimensions.spacingL),
             _Section(
               title: 'Estadísticas Detalladas',
               child: Column(
@@ -466,19 +327,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     label: 'Horas totales',
                     value: '${_profile.hoursTotal}h',
                   ),
-                  Divider(color: color.border, height: 1),
+                  Divider(color: AppTheme.border, height: 1),
                   _StatLine(
                     icon: Icons.local_fire_department_rounded,
                     label: 'Racha actual',
                     value: '${_profile.currentStreakDays} días',
                   ),
-                  Divider(color: color.border, height: 1),
+                  Divider(color: AppTheme.border, height: 1),
                   _StatLine(
                     icon: Icons.emoji_events_rounded,
                     label: 'Mejor racha',
                     value: '${_profile.bestStreakDays} días',
                   ),
-                  Divider(color: color.border, height: 1),
+                  Divider(color: AppTheme.border, height: 1),
                   _StatLine(
                     icon: Icons.military_tech_rounded,
                     label: 'Medallas',
@@ -487,7 +348,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppDimensions.spacingL),
             _Section(
               title: 'Idiomas de Aprendizaje',
               trailing: TextButton.icon(
@@ -499,7 +360,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: _profile.learningLanguages
                     .map(
                       (l) => Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
+                        padding: const EdgeInsets.only(bottom: AppDimensions.spacingM),
                         child: _LanguageTile(
                           lang: l,
                           onLongPress: () => _onLanguageLongPress(l),
@@ -509,7 +370,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     .toList(),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppDimensions.spacingL),
             _Section(
               title: 'Configuración',
               child: Column(
@@ -543,12 +404,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             nativeLanguage: result.nativeLanguage,
                           );
 
-                          // 3) idiomas aprendiendo (reconstruimos _LangItem con niveles por defecto)
+                          // 3) idiomas aprendiendo (reconstruimos LanguageItem con niveles por defecto)
                           final updatedLearning = result.learningLanguages.map((
                             code,
                           ) {
-                            final display = _LangItem.prettyName(code);
-                            return _LangItem(
+                            final display = AppLanguages.getName(code);
+                            return LanguageItem(
                               code: code,
                               name: display,
                               level: 'Principiante',
@@ -569,7 +430,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       }
                     },
                   ),
-                  Divider(color: color.border, height: 1),
+                  Divider(color: AppTheme.border, height: 1),
                   _ActionTile(
                     // Reemplazo de Icons.crown_rounded (no existe en Material)
                     icon: Icons.workspace_premium_rounded,
@@ -577,7 +438,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     onTap: () {},
                     highlight: true,
                   ),
-                  Divider(color: color.border, height: 1),
+                  Divider(color: AppTheme.border, height: 1),
                   _ActionTile(
                     icon: Icons.logout_rounded,
                     label: 'Cerrar sesión',
@@ -597,38 +458,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _brandBadge() {
-    final color = _Palette.of(context);
     return Container(
-      width: 38,
-      height: 38,
+      width: AppDimensions.badgeSize,
+      height: AppDimensions.badgeSize,
       decoration: BoxDecoration(
-        color: color.card,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.border),
+        color: AppTheme.card,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+        border: Border.all(color: AppTheme.border),
       ),
       alignment: Alignment.center,
       child: Text(
         'SB',
-        style: TextStyle(color: color.text, fontWeight: FontWeight.bold),
+        style: TextStyle(color: AppTheme.text, fontWeight: FontWeight.bold),
       ),
     );
   }
 
-  Widget _proChip(_Palette c) {
+  Widget _proChip() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: AppDimensions.spacingM, vertical: AppDimensions.spacingS),
       decoration: BoxDecoration(
-        color: c.gold.withOpacity(.12),
-        border: Border.all(color: c.gold.withOpacity(.5)),
-        borderRadius: BorderRadius.circular(999),
+        color: AppTheme.gold.withValues(alpha: .12),
+        border: Border.all(color: AppTheme.gold.withValues(alpha: .5)),
+        borderRadius: BorderRadius.circular(AppDimensions.radiusCircular),
       ),
       child: Row(
         children: [
-          Icon(Icons.workspace_premium_rounded, size: 16, color: c.gold),
-          const SizedBox(width: 6),
+          Icon(Icons.workspace_premium_rounded, size: AppDimensions.iconSizeS, color: AppTheme.gold),
+          const SizedBox(width: AppDimensions.spacingS),
           Text(
             'Pro',
-            style: TextStyle(color: c.gold, fontWeight: FontWeight.w600),
+            style: TextStyle(color: AppTheme.gold, fontWeight: FontWeight.w600),
           ),
         ],
       ),
@@ -640,28 +500,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
 class _UserCard extends StatelessWidget {
   const _UserCard({required this.profile});
-  final _MockProfile profile;
+  final UserProfile profile;
 
   @override
   Widget build(BuildContext context) {
-    final c = _Palette.of(context);
     return Container(
       decoration: BoxDecoration(
-        color: c.card,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: c.border),
+        color: AppTheme.card,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusL),
+        border: Border.all(color: AppTheme.border),
       ),
-      padding: const EdgeInsets.all(16),
+      padding: AppDimensions.paddingCard,
       child: Column(
         children: [
           Row(
             children: [
               CircleAvatar(
-                radius: 30,
-                backgroundImage: const AssetImage('lib\\assets\\images\\ArjonaSergio.jpg'),
-                backgroundColor: c.panel,
+                radius: AppDimensions.avatarSizeS,
+                backgroundImage: getAvatarImageProvider(
+                  filePath: profile.avatarPath,
+                  assetPath: 'lib/assets/images/ArjonaSergio.jpg',
+                ),
+                backgroundColor: AppTheme.panel,
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppDimensions.spacingMD),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -669,24 +531,24 @@ class _UserCard extends StatelessWidget {
                     Text(
                       profile.name,
                       style: TextStyle(
-                        color: c.text,
+                        color: AppTheme.text,
                         fontWeight: FontWeight.w700,
-                        fontSize: 18,
+                        fontSize: AppDimensions.fontSizeL,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: AppDimensions.spacingXS),
                     Text(
                       profile.email,
-                      style: TextStyle(color: c.subtle, fontSize: 13),
+                      style: TextStyle(color: AppTheme.subtle, fontSize: AppDimensions.fontSizeS),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: AppDimensions.spacingS),
                     Row(
                       children: [
-                        Icon(Icons.public_rounded, size: 16, color: c.subtle),
-                        const SizedBox(width: 6),
+                        Icon(Icons.public_rounded, size: AppDimensions.iconSizeS, color: AppTheme.subtle),
+                        const SizedBox(width: AppDimensions.spacingS),
                         Text(
-                          '${_LangItem.prettyName(profile.nativeLanguage)}  →  ${profile.learningLanguages.isNotEmpty ? _LangItem.prettyName(profile.learningLanguages.first.code) : '-'}',
-                          style: TextStyle(color: c.subtle, fontSize: 13),
+                          '${AppLanguages.getName(profile.nativeLanguage)}  →  ${profile.learningLanguages.isNotEmpty ? AppLanguages.getName(profile.learningLanguages.first.code) : '-'}',
+                          style: TextStyle(color: AppTheme.subtle, fontSize: AppDimensions.fontSizeS),
                         ),
                       ],
                     ),
@@ -695,35 +557,35 @@ class _UserCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: AppDimensions.spacingML),
           Container(
             decoration: BoxDecoration(
-              color: c.panel,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: c.border),
+              color: AppTheme.panel,
+              borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
+              border: Border.all(color: AppTheme.border),
             ),
-            padding: const EdgeInsets.all(12),
+            padding: AppDimensions.paddingCardSmall,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Nivel ${profile.level}',
-                  style: TextStyle(color: c.text, fontWeight: FontWeight.w600),
+                  style: TextStyle(color: AppTheme.text, fontWeight: FontWeight.w600),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppDimensions.spacingSM),
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(AppDimensions.spacingSM),
                   child: LinearProgressIndicator(
                     value: profile.progressPct,
                     minHeight: 10,
-                    backgroundColor: c.progressBg,
-                    valueColor: AlwaysStoppedAnimation<Color>(c.accent),
+                    backgroundColor: AppTheme.progressBg,
+                    valueColor: AlwaysStoppedAnimation<Color>(AppTheme.accent),
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppDimensions.spacingSM),
                 Text(
                   '${_remaining(profile.progressPct)} intercambios hasta nivel ${profile.level + 1}',
-                  style: TextStyle(color: c.subtle, fontSize: 12),
+                  style: TextStyle(color: AppTheme.subtle, fontSize: AppDimensions.fontSizeXS),
                 ),
               ],
             ),
@@ -742,11 +604,10 @@ class _UserCard extends StatelessWidget {
 
 class _StatsRow extends StatelessWidget {
   const _StatsRow({required this.profile});
-  final _MockProfile profile;
+  final UserProfile profile;
 
   @override
   Widget build(BuildContext context) {
-    final c = _Palette.of(context);
     return Row(
       children: [
         Expanded(
@@ -756,7 +617,7 @@ class _StatsRow extends StatelessWidget {
             value: '${profile.exchanges}',
           ),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: AppDimensions.spacingM),
         Expanded(
           child: _SmallStatCard(
             icon: Icons.star_rounded,
@@ -764,7 +625,7 @@ class _StatsRow extends StatelessWidget {
             value: profile.rating.toStringAsFixed(1),
           ),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: AppDimensions.spacingM),
         Expanded(
           child: _SmallStatCard(
             icon: Icons.language_rounded,
@@ -789,36 +650,35 @@ class _SmallStatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = _Palette.of(context);
     return Container(
       decoration: BoxDecoration(
-        color: c.card,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: c.border),
+        color: AppTheme.card,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusL),
+        border: Border.all(color: AppTheme.border),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+      padding: AppDimensions.paddingInput,
       child: Column(
         children: [
           Container(
             decoration: BoxDecoration(
-              color: c.panel,
+              color: AppTheme.panel,
               shape: BoxShape.circle,
-              border: Border.all(color: c.border),
+              border: Border.all(color: AppTheme.border),
             ),
-            padding: const EdgeInsets.all(10),
-            child: Icon(icon, color: c.subtle),
+            padding: const EdgeInsets.all(AppDimensions.spacingM),
+            child: Icon(icon, color: AppTheme.subtle),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: AppDimensions.spacingM),
           Text(
             value,
             style: TextStyle(
-              color: c.text,
+              color: AppTheme.text,
               fontWeight: FontWeight.w700,
-              fontSize: 18,
+              fontSize: AppDimensions.fontSizeL,
             ),
           ),
           const SizedBox(height: 2),
-          Text(label, style: TextStyle(color: c.subtle, fontSize: 12)),
+          Text(label, style: TextStyle(color: AppTheme.subtle, fontSize: AppDimensions.fontSizeXS)),
         ],
       ),
     );
@@ -833,35 +693,34 @@ class _Section extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = _Palette.of(context);
     return Container(
       decoration: BoxDecoration(
-        color: c.card,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: c.border),
+        color: AppTheme.card,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusL),
+        border: Border.all(color: AppTheme.border),
       ),
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+      padding: EdgeInsets.fromLTRB(AppDimensions.spacingL, AppDimensions.spacingML, AppDimensions.spacingL, AppDimensions.spacingMD),
       child: Column(
         children: [
           Row(
             children: [
               Text(
                 title,
-                style: TextStyle(color: c.text, fontWeight: FontWeight.w700),
+                style: TextStyle(color: AppTheme.text, fontWeight: FontWeight.w700),
               ),
               const Spacer(),
               if (trailing != null)
                 Theme(
                   data: Theme.of(context).copyWith(
                     textButtonTheme: TextButtonThemeData(
-                      style: TextButton.styleFrom(foregroundColor: c.text),
+                      style: TextButton.styleFrom(foregroundColor: AppTheme.text),
                     ),
                   ),
                   child: trailing!,
                 ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppDimensions.spacingMD),
           child,
         ],
       ),
@@ -881,19 +740,18 @@ class _StatLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = _Palette.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Row(
-        children: [
-          Icon(icon, color: c.subtle),
-          const SizedBox(width: 14),
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppDimensions.spacingM),
+        child: Row(
+          children: [
+            Icon(icon, color: AppTheme.subtle),
+            const SizedBox(width: AppDimensions.spacingML),
           Expanded(
-            child: Text(label, style: TextStyle(color: c.text)),
+            child: Text(label, style: TextStyle(color: AppTheme.text)),
           ),
           Text(
             value,
-            style: TextStyle(color: c.text, fontWeight: FontWeight.w600),
+            style: TextStyle(color: AppTheme.text, fontWeight: FontWeight.w600),
           ),
         ],
       ),
@@ -903,40 +761,39 @@ class _StatLine extends StatelessWidget {
 
 class _LanguageTile extends StatelessWidget {
   const _LanguageTile({required this.lang, this.onLongPress});
-  final _LangItem lang;
+  final LanguageItem lang;
   final VoidCallback? onLongPress;
 
   @override
   Widget build(BuildContext context) {
-    final c = _Palette.of(context);
     return InkWell(
       // 👈 para detectar long press
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(AppDimensions.radiusML),
       onLongPress: onLongPress,
       child: Container(
         decoration: BoxDecoration(
-          color: c.panel,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: c.border),
+          color: AppTheme.panel,
+          borderRadius: BorderRadius.circular(AppDimensions.radiusML),
+          border: Border.all(color: AppTheme.border),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: AppDimensions.spacingMD, vertical: AppDimensions.spacingMD),
         child: Row(
           children: [
             Container(
-              width: 36,
-              height: 36,
+              width: AppDimensions.avatarSizeM,
+              height: AppDimensions.avatarSizeM,
               decoration: BoxDecoration(
-                color: c.card,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: c.border),
+                color: AppTheme.card,
+                borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+                border: Border.all(color: AppTheme.border),
               ),
               alignment: Alignment.center,
               child: Text(
                 lang.code,
-                style: TextStyle(color: c.text, fontWeight: FontWeight.w700),
+                style: TextStyle(color: AppTheme.text, fontWeight: FontWeight.w700),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: AppDimensions.spacingMD),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -944,14 +801,14 @@ class _LanguageTile extends StatelessWidget {
                   Text(
                     lang.name,
                     style: TextStyle(
-                      color: c.text,
+                      color: AppTheme.text,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     lang.level,
-                    style: TextStyle(color: c.subtle, fontSize: 12),
+                    style: TextStyle(color: AppTheme.subtle, fontSize: AppDimensions.fontSizeXS),
                   ),
                 ],
               ),
@@ -959,20 +816,20 @@ class _LanguageTile extends StatelessWidget {
             if (lang.active)
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
+                  horizontal: AppDimensions.spacingM,
+                  vertical: AppDimensions.spacingS,
                 ),
                 decoration: BoxDecoration(
-                  color: c.accent.withOpacity(.15),
-                  border: Border.all(color: c.accent.withOpacity(.6)),
-                  borderRadius: BorderRadius.circular(999),
+                  color: AppTheme.accent.withValues(alpha: .15),
+                  border: Border.all(color: AppTheme.accent.withValues(alpha: .6)),
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusCircular),
                 ),
                 child: Text(
                   'Activo',
                   style: TextStyle(
-                    color: c.accent,
+                    color: AppTheme.accent,
                     fontWeight: FontWeight.w600,
-                    fontSize: 12,
+                    fontSize: AppDimensions.fontSizeXS,
                   ),
                 ),
               ),
@@ -999,25 +856,24 @@ class _ActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = _Palette.of(context);
-    final color = danger ? Colors.redAccent : (highlight ? c.gold : c.text);
+    final color = danger ? Colors.redAccent : (highlight ? AppTheme.gold : AppTheme.text);
 
     return InkWell(
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(AppDimensions.radiusM),
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        padding: AppDimensions.paddingButton,
         child: Row(
           children: [
             Icon(icon, color: color),
-            const SizedBox(width: 12),
+            const SizedBox(width: AppDimensions.spacingMD),
             Expanded(
               child: Text(
                 label,
                 style: TextStyle(color: color, fontWeight: FontWeight.w600),
               ),
             ),
-            Icon(Icons.chevron_right_rounded, color: c.subtle),
+            Icon(Icons.chevron_right_rounded, color: AppTheme.subtle),
           ],
         ),
       ),
@@ -1038,10 +894,10 @@ class _ProgressMini extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 80,
-      height: 6,
+      width: AppDimensions.progressBarWidth,
+      height: AppDimensions.progressBarHeight,
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(AppDimensions.radiusCircular),
         child: LinearProgressIndicator(
           value: value,
           backgroundColor: track,
@@ -1052,123 +908,3 @@ class _ProgressMini extends StatelessWidget {
   }
 }
 
-/* ------------------------ Theme helpers ------------------------ */
-
-class _Palette {
-  final BuildContext context;
-  _Palette.of(this.context);
-
-  Color get bg => const Color(0xFF0E1320);
-  Color get card => const Color(0xFF151B2C);
-  Color get panel => const Color(0xFF111726);
-  Color get border => const Color(0xFF2B3246);
-  Color get text => const Color(0xFFE7EAF3);
-  Color get subtle => const Color(0xFF98A3B8);
-  Color get accent => const Color(0xFF4DA3FF);
-  Color get progressBg => const Color(0xFF27334A);
-  Color get gold => const Color(0xFFF3C86A);
-}
-
-class _LangItem {
-  final String code;
-  final String name;
-  final String level;
-  final bool active;
-  const _LangItem({
-    required this.code,
-    required this.name,
-    required this.level,
-    this.active = false,
-  });
-
-  static String prettyName(String code) {
-    const mapping = {
-      'ES': 'Español',
-      'EN': 'Inglés',
-      'FR': 'Francés',
-      'DE': 'Alemán',
-      'IT': 'Italiano',
-      'PT': 'Portugués',
-      'ZH': 'Chino',
-      'JA': 'Japonés',
-      'RU': 'Ruso',
-    };
-    return mapping[code] ?? code;
-  }
-}
-
-class _MockProfile {
-  final String name;
-  final String email;
-  final int level;
-  final double progressPct;
-  final int exchanges;
-  final double rating;
-  final int languagesCount;
-  final int hoursTotal;
-  final int currentStreakDays;
-  final int bestStreakDays;
-  final int medals;
-  final List<_LangItem> learningLanguages;
-  final bool isPro;
-  final String? avatarPath;
-  final String nativeLanguage;
-  final String description; // 👈 NUEVO
-
-  const _MockProfile({
-    required this.name,
-    required this.email,
-    required this.level,
-    required this.progressPct,
-    required this.exchanges,
-    required this.rating,
-    required this.languagesCount,
-    required this.hoursTotal,
-    required this.currentStreakDays,
-    required this.bestStreakDays,
-    required this.medals,
-    required this.learningLanguages,
-    required this.isPro,
-    required this.nativeLanguage,
-    required this.description, // 👈 NUEVO
-    this.avatarPath,
-  });
-
-  _MockProfile copyWith({
-    String? name,
-    String? email,
-    int? level,
-    double? progressPct,
-    int? exchanges,
-    double? rating,
-    int? languagesCount,
-    int? hoursTotal,
-    int? currentStreakDays,
-    int? bestStreakDays,
-    int? medals,
-    List<_LangItem>? learningLanguages,
-    bool? isPro,
-    String? nativeLanguage,
-    String? avatarPath,
-    String? description, // 👈 NUEVO
-  }) {
-    return _MockProfile(
-      name: name ?? this.name,
-      email: email ?? this.email,
-      level: level ?? this.level,
-      progressPct: progressPct ?? this.progressPct,
-      exchanges: exchanges ?? this.exchanges,
-      rating: rating ?? this.rating,
-      languagesCount: languagesCount ?? this.languagesCount,
-      hoursTotal: hoursTotal ?? this.hoursTotal,
-      currentStreakDays: currentStreakDays ?? this.currentStreakDays,
-      bestStreakDays: bestStreakDays ?? this.bestStreakDays,
-      medals: medals ?? this.medals,
-      learningLanguages: learningLanguages ?? this.learningLanguages,
-      isPro: isPro ?? this.isPro,
-      nativeLanguage: nativeLanguage ?? this.nativeLanguage,
-      avatarPath: avatarPath ?? this.avatarPath,
-      description: description ?? this.description,
-    );
-  }
-}

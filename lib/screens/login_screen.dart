@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
-import 'profile_screen.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common/app_logo.dart';
 import '../widgets/common/social_button.dart';
@@ -176,12 +175,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: AppDimensions.spacingL),
                       TextButton(
                         onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const ProfileScreen(),
-                            ),
-                          );
+                          Navigator.pushReplacementNamed(context, AppRoutes.main);
                         },
                         child: Text(
                           'Ver perfil (modo prueba)',
@@ -273,12 +267,11 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return; // Buena práctica en Flutter async
 
     if (result.success) {
-      // Si el login es correcto, navegamos a la pantalla principal (Home)
-      // Aún no hay Home, así que solo mostramos mensaje
+      // Si el login es correcto, navegamos a la pantalla principal
       ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('¡Login correcto! Token guardado.')));
           
-      // Navigator.pushReplacementNamed(context, '/home'); // Cuando tengas la Home
+      Navigator.pushReplacementNamed(context, AppRoutes.main);
     } else {
       // Mostrar mensaje específico según el tipo de error
       String errorMessage;

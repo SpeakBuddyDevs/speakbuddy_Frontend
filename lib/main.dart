@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/profile_screen.dart';
+import 'screens/main_shell.dart';
 import 'theme/app_theme.dart';
 import 'constants/routes.dart';
 
@@ -21,6 +22,7 @@ class MyApp extends StatelessWidget {
         AppRoutes.register: (_) => const RegisterScreen(),
         AppRoutes.login: (_) => const LoginScreen(),
         AppRoutes.profile: (_) => const ProfileScreen(),
+        AppRoutes.main: (_) => const MainShell(),
       },
     );
   }

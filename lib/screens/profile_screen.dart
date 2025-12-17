@@ -21,8 +21,10 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  // TODO: Sustituir por datos reales desde el backend (/api/auth/me + /api/profile)
-    var _profile = UserProfile(
+  // BACKEND: Cargar perfil real desde GET /api/auth/me o GET /api/profile
+  // TODO(FE): Llamar al backend en initState y mostrar loading mientras carga
+  // TODO(FE): Implementar UserProfile.fromJson para parsear respuesta
+  var _profile = UserProfile(
     name: 'Sergio Arjona',
     email: 'sergioarjona@gmail.com',
     level: 5,

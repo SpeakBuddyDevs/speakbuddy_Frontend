@@ -1,4 +1,8 @@
 /// Filtros para la búsqueda de usuarios
+/// 
+/// BACKEND: Estos filtros se envían como query params a GET /api/users/search
+/// Query params esperados: ?q=&page=&pageSize=&online=&pro=&minRating=&nativeLang=&targetLang=&country=
+/// TODO(BE): Soportar todos estos filtros en el endpoint de búsqueda
 class FindFilters {
   final bool onlineOnly;
   final bool proOnly;

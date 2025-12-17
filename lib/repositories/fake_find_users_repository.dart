@@ -4,6 +4,9 @@ import '../models/find_filters.dart';
 import 'find_users_repository.dart';
 
 /// Implementación fake del repositorio de usuarios para desarrollo
+/// 
+/// TODO(FE): Eliminar este archivo cuando exista ApiFindUsersRepository
+/// BACKEND: Sustituir por ApiFindUsersRepository que consuma GET /api/users/search
 class FakeFindUsersRepository implements FindUsersRepository {
   static final _random = Random();
 
@@ -20,6 +23,7 @@ class FakeFindUsersRepository implements FindUsersRepository {
       level: 8,
       rating: 4.9,
       exchanges: 45,
+      bio: '¡Hola! Soy profesora de inglés y me encanta aprender español. Busco compañeros para practicar conversación sobre viajes, cultura y música.',
     ),
     const FindUser(
       id: '2',
@@ -32,6 +36,7 @@ class FakeFindUsersRepository implements FindUsersRepository {
       level: 5,
       rating: 4.7,
       exchanges: 23,
+      bio: 'Ingeniero de software buscando mejorar mi inglés para el trabajo. Me gusta hablar de tecnología, videojuegos y cocina mexicana.',
     ),
     const FindUser(
       id: '3',
@@ -44,6 +49,7 @@ class FakeFindUsersRepository implements FindUsersRepository {
       level: 6,
       rating: 4.8,
       exchanges: 31,
+      bio: 'Estudiante de literatura apasionada por los idiomas. Quiero practicar español para leer a García Márquez en su idioma original.',
     ),
     const FindUser(
       id: '4',
@@ -56,6 +62,7 @@ class FakeFindUsersRepository implements FindUsersRepository {
       level: 4,
       rating: 4.5,
       exchanges: 12,
+      bio: 'Arquitecto alemán aprendiendo inglés. Me interesan el diseño, la fotografía y los viajes por Europa.',
     ),
     const FindUser(
       id: '5',

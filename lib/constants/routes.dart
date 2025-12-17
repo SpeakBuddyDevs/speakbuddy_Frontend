@@ -17,5 +17,11 @@ class AppRoutes {
 
   /// Ruta principal con navegación por tabs (después del login)
   static const String main = '/main';
+
+  /// Ruta de perfil público de usuario
+  static const String publicProfile = '/public-profile';
+
+  /// Ruta de chat con usuario
+  static const String chat = '/chat';
 }
 

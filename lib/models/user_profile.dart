@@ -1,5 +1,13 @@
 import 'language_item.dart';
 
+// BACKEND: Mapea respuesta de GET /api/auth/me o GET /api/profile
+// TODO(BE): Endpoint debe devolver todos estos campos en formato JSON
+// TODO(FE): Implementar factory UserProfile.fromJson(Map<String, dynamic>)
+// Response esperado: { name, email, level, progressPct, exchanges, rating, languagesCount,
+//   hoursTotal, currentStreakDays, bestStreakDays, medals, learningLanguages[], isPro,
+//   avatarUrl?, nativeLanguage, description }
+
+/// Perfil completo del usuario autenticado
 class UserProfile {
   final String name;
   final String email;
@@ -14,7 +22,7 @@ class UserProfile {
   final int medals;
   final List<LanguageItem> learningLanguages;
   final bool isPro;
-  final String? avatarPath;
+  final String? avatarPath; // TODO(FE): Renombrar a avatarUrl cuando BE devuelva URL
   final String nativeLanguage;
   final String description;
 

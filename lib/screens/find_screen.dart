@@ -2,8 +2,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../constants/dimensions.dart';
+import '../constants/routes.dart';
 import '../models/find_user.dart';
 import '../models/find_filters.dart';
+import '../models/public_user_profile.dart';
+import '../navigation/public_profile_args.dart';
+import '../navigation/chat_args.dart';
 import '../repositories/fake_find_users_repository.dart';
 import '../widgets/find/find_search_bar.dart';
 import '../widgets/find/filters_button.dart';
@@ -19,6 +23,8 @@ class FindScreen extends StatefulWidget {
 }
 
 class _FindScreenState extends State<FindScreen> {
+  // BACKEND: Sustituir FakeFindUsersRepository por ApiFindUsersRepository
+  // TODO(FE): Inyectar repositorio o usar provider/riverpod para cambiar implementación
   final _repository = FakeFindUsersRepository();
   final _searchController = TextEditingController();
   final _scrollController = ScrollController();
@@ -125,14 +131,24 @@ class _FindScreenState extends State<FindScreen> {
   }
 
   void _onChat(FindUser user) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Chat con ${user.name} próximamente')),
+    Navigator.pushNamed(
+      context,
+      AppRoutes.chat,
+      arguments: ChatArgs(
+        otherUserId: user.id,
+        prefetchedUser: PublicUserProfile.fromFindUser(user),
+      ),
     );
   }
 
   void _onViewProfile(FindUser user) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Perfil de ${user.name} próximamente')),
+    Navigator.pushNamed(
+      context,
+      AppRoutes.publicProfile,
+      arguments: PublicProfileArgs(
+        userId: user.id,
+        prefetched: PublicUserProfile.fromFindUser(user),
+      ),
     );
   }
 

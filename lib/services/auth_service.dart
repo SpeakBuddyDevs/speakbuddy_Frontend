@@ -7,10 +7,22 @@ import '../constants/app_constants.dart';
 import '../models/auth_result.dart';
 import '../models/auth_error.dart';
 
+/// BACKEND: Servicio de autenticación que consume la API REST.
+/// 
+/// Contrato esperado del backend:
+/// - POST /api/auth/login: { email, password } → { accessToken, refreshToken?, expiresIn?, user? }
+/// - POST /api/auth/register: { name, surname, email, password, nativeLanguageId } → 201
+/// - POST /api/auth/logout: Invalida token (opcional)
+/// - POST /api/auth/refresh: { refreshToken } → { accessToken, expiresIn }
 class AuthService {
   final _storage = const FlutterSecureStorage();
 
   // --- LOGIN ---
+  // BACKEND: POST /api/auth/login
+  // Request: { "email": string, "password": string }
+  // Response 200: { "accessToken": string, "refreshToken"?: string, "expiresIn"?: int, "user"?: UserDTO }
+  // TODO(BE): Incluir refreshToken y expiresIn en la respuesta para manejo de sesión
+  // TODO(FE): Guardar refreshToken y programar renovación antes de expiración
   Future<AuthResult> login(String email, String password) async {
     final url = Uri.parse(ApiEndpoints.login);
     
@@ -45,6 +57,10 @@ class AuthService {
   }
 
   // --- REGISTER ---
+  // BACKEND: POST /api/auth/register
+  // Request: { "name": string, "surname": string, "email": string, "password": string, "nativeLanguageId": int }
+  // Response 201: Usuario creado (opcionalmente devolver { userId } o auto-login con token)
+  // TODO(BE): Validar email único (409 si ya existe), password mínimo 6 chars
   Future<AuthResult> register(String name, String email, String password, int nativeLangId, int learnLangId) async {
     final url = Uri.parse(ApiEndpoints.register);
 
@@ -63,12 +79,8 @@ class AuthService {
           'email': email,
           'password': password,
           'nativeLanguageId': nativeLangId,
-          // El backend espera una lista o un ID para aprender. 
-          // Ajusta esto según tu AddLearningLanguageDTO o RegisterDTO
-          // Asumiremos que el backend acepta IDs simples por ahora en el registro
-          // NOTA: Tu register actual en Java solo pedía nativeLanguageId.
-          // El idioma a aprender se añade DESPUÉS en la HU 1.2.
-          // Así que en el registro inicial solo mandamos el nativo.
+          // BACKEND: El idioma a aprender se añade después del registro (HU 1.2)
+          // TODO(BE): Endpoint POST /api/profile/languages para añadir idiomas de aprendizaje
         }),
       );
 
@@ -87,12 +99,13 @@ class AuthService {
     }
   }
 
-  // Método para obtener el token guardado 
+  /// Obtiene el token JWT guardado en almacenamiento seguro
   Future<String?> getToken() async {
     return await _storage.read(key: AppConstants.jwtTokenKey);
   }
   
-  // Logout
+  /// Cierra sesión eliminando el token local
+  // TODO(BE): Llamar POST /api/auth/logout para invalidar token en servidor (opcional)
   Future<void> logout() async {
     await _storage.delete(key: AppConstants.jwtTokenKey);
   }

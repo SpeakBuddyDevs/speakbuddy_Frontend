@@ -1,3 +1,8 @@
+// BACKEND: Mapea cada elemento del array en GET /api/users/search
+// TODO(FE): Implementar factory FindUser.fromJson(Map<String, dynamic>)
+// Response esperado: { id, name, country, avatarUrl?, isOnline, isPro, nativeLanguage,
+//   targetLanguage, level, rating, exchanges, bio? }
+
 /// Modelo para usuarios en la pantalla de búsqueda
 class FindUser {
   final String id;
@@ -11,6 +16,7 @@ class FindUser {
   final int level;
   final double rating;
   final int exchanges;
+  final String? bio;
 
   const FindUser({
     required this.id,
@@ -24,6 +30,7 @@ class FindUser {
     required this.level,
     required this.rating,
     required this.exchanges,
+    this.bio,
   });
 }
 

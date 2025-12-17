@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'edit_profile_screen.dart';
 import '../constants/languages.dart';
+import '../constants/routes.dart';
 import '../theme/app_theme.dart';
 import '../models/language_item.dart';
 import '../models/user_profile.dart';
 import '../models/edit_profile_result.dart';
+import '../services/auth_service.dart';
 import '../utils/image_helpers.dart';
 import '../widgets/common/language_selector_bottom_sheet.dart';
 import '../widgets/common/language_action_bottom_sheet.dart';
@@ -241,6 +243,54 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  /// Cierra sesión y navega al login
+  Future<void> _onLogout() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.card,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppDimensions.radiusL),
+        ),
+        title: const Text('Cerrar sesión'),
+        content: const Text('¿Estás seguro de que quieres cerrar sesión?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(
+              'Cerrar sesión',
+              style: TextStyle(color: Colors.redAccent),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true || !mounted) return;
+
+    try {
+      await AuthService().logout();
+      if (!mounted) return;
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRoutes.login,
+        (route) => false,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: Colors.red,
+          content: Text('Error al cerrar sesión. Inténtalo de nuevo.'),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -443,10 +493,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     icon: Icons.logout_rounded,
                     label: 'Cerrar sesión',
                     danger: true,
-                    onTap: () {
-                      // TODO: Llamar a vuestro logout real y navegar al Login
-                      Navigator.of(context).maybePop();
-                    },
+                    onTap: () => _onLogout(),
                   ),
                 ],
               ),

@@ -14,5 +14,8 @@ class AppRoutes {
 
   /// Ruta de perfil
   static const String profile = '/profile';
+
+  /// Ruta principal con navegación por tabs (después del login)
+  static const String main = '/main';
 }
 

@@ -9,14 +9,16 @@ import 'profile_screen.dart';
 /// Contenedor principal con navegación por tabs.
 /// Usa IndexedStack para mantener el estado de cada pantalla.
 class MainShell extends StatefulWidget {
-  const MainShell({super.key});
+  final int? initialIndex;
+  
+  const MainShell({super.key, this.initialIndex});
 
   @override
   State<MainShell> createState() => _MainShellState();
 }
 
 class _MainShellState extends State<MainShell> {
-  int _currentIndex = 0;
+  late int _currentIndex;
 
   // Lista de pantallas para cada tab
   final List<Widget> _screens = const [
@@ -26,6 +28,12 @@ class _MainShellState extends State<MainShell> {
     AchievementsScreen(),
     ProfileScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex ?? 0;
+  }
 
   void _onTabTapped(int index) {
     setState(() {

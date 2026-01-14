@@ -5,6 +5,8 @@ import 'screens/profile_screen.dart';
 import 'screens/main_shell.dart';
 import 'screens/public_profile_screen.dart';
 import 'screens/chat_screen.dart';
+import 'screens/public_exchanges_screen.dart';
+import 'screens/create_exchange_screen.dart';
 import 'theme/app_theme.dart';
 import 'constants/routes.dart';
 
@@ -24,9 +26,15 @@ class MyApp extends StatelessWidget {
         AppRoutes.register: (_) => const RegisterScreen(),
         AppRoutes.login: (_) => const LoginScreen(),
         AppRoutes.profile: (_) => const ProfileScreen(),
-        AppRoutes.main: (_) => const MainShell(),
+        AppRoutes.main: (context) {
+          final args = ModalRoute.of(context)?.settings.arguments;
+          final initialIndex = args is int ? args : null;
+          return MainShell(initialIndex: initialIndex);
+        },
         AppRoutes.publicProfile: (_) => const PublicProfileScreen(),
         AppRoutes.chat: (_) => const ChatScreen(),
+        AppRoutes.publicExchanges: (_) => const PublicExchangesScreen(),
+        AppRoutes.createExchange: (_) => const CreateExchangeScreen(),
       },
     );
   }

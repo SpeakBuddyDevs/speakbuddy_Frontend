@@ -23,5 +23,11 @@ class AppRoutes {
 
   /// Ruta de chat con usuario
   static const String chat = '/chat';
+
+  /// Ruta de intercambios públicos
+  static const String publicExchanges = '/public-exchanges';
+
+  /// Ruta de creación de intercambio
+  static const String createExchange = '/create-exchange';
 }
 

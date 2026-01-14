@@ -25,7 +25,7 @@ class CurrentUserService {
   String getDisplayName() {
     // TODO(BE): Obtener desde backend
     // TODO(FE): Sustituir por llamada al repositorio real
-    return 'SpeakBuddy';
+    return 'Sergio Arjona';
   }
 
   /// Obtiene el nivel actual del usuario.

@@ -182,7 +182,7 @@ class _FindScreenState extends State<FindScreen> {
         child: CustomScrollView(
           controller: _scrollController,
           slivers: [
-            // Barra de búsqueda y filtros
+            // Barra de búsqueda, botón de intercambios y filtros
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.all(AppDimensions.spacingL),
@@ -193,9 +193,40 @@ class _FindScreenState extends State<FindScreen> {
                       onChanged: _onSearchChanged,
                     ),
                     const SizedBox(height: AppDimensions.spacingMD),
-                    FiltersButton(
-                      onPressed: _onFiltersPressed,
-                      hasActiveFilters: _filters.hasActiveFilters,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              Navigator.pushNamed(context, AppRoutes.publicExchanges);
+                            },
+                            icon: Icon(
+                              Icons.group_rounded,
+                              size: AppDimensions.iconSizeM,
+                              color: AppTheme.accent,
+                            ),
+                            label: Text(
+                              'Intercambios Públicos',
+                              style: TextStyle(color: AppTheme.accent),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppDimensions.spacingL,
+                                vertical: AppDimensions.spacingMD,
+                              ),
+                              side: BorderSide(color: AppTheme.accent),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: AppDimensions.spacingMD),
+                        FiltersButton(
+                          onPressed: _onFiltersPressed,
+                          hasActiveFilters: _filters.hasActiveFilters,
+                        ),
+                      ],
                     ),
                   ],
                 ),

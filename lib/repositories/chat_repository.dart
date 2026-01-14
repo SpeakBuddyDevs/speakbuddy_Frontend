@@ -15,6 +15,10 @@ abstract class ChatRepository {
   /// BACKEND: POST /api/chats { otherUserId } o GET /api/chats/with/{otherUserId}
   Future<String> getOrCreateChatId({required String otherUserId});
 
+  /// Obtiene o crea un chatId para un intercambio grupal
+  /// BACKEND: POST /api/chats/exchange { exchangeId } o GET /api/chats/exchange/{exchangeId}
+  Future<String> getOrCreateExchangeChatId({required String exchangeId});
+
   /// Stream de mensajes para un chat específico
   /// BACKEND: Implementar con WebSocket para tiempo real
   /// TODO(FE): Cambiar a WebSocket cuando BE lo implemente, mapear eventos "message_created"

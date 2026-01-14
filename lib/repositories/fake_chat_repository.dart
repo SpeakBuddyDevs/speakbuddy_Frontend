@@ -43,6 +43,21 @@ class FakeChatRepository implements ChatRepository {
   }
 
   @override
+  Future<String> getOrCreateExchangeChatId({required String exchangeId}) async {
+    await Future.delayed(const Duration(milliseconds: 100));
+    
+    // Genera un chatId para el intercambio
+    final chatId = 'exchange_$exchangeId';
+    
+    // Inicializar mensajes si no existen
+    if (!_messages.containsKey(chatId)) {
+      _messages[chatId] = _generateExchangeInitialMessages(chatId);
+    }
+    
+    return chatId;
+  }
+
+  @override
   Stream<List<ChatMessage>> watchMessages({required String chatId}) {
     // Crear controller si no existe
     if (!_controllers.containsKey(chatId)) {
@@ -93,6 +108,42 @@ class FakeChatRepository implements ChatRepository {
     }
     
     return messages;
+  }
+
+  /// Genera mensajes iniciales mock para un chat de intercambio
+  /// BACKEND: Los mensajes iniciales deben venir del backend o no generarse automáticamente
+  List<ChatMessage> _generateExchangeInitialMessages(String chatId) {
+    // Extraer exchangeId del chatId (formato: exchange_{exchangeId})
+    final exchangeId = chatId.replaceFirst('exchange_', '');
+    
+    // Usar IDs de participantes reales según el intercambio
+    // BACKEND: Estos mensajes deben venir del historial real del chat
+    String firstParticipantId;
+    if (exchangeId == 'joined-1') {
+      firstParticipantId = '1'; // Sarah Johnson
+    } else if (exchangeId == 'joined-2') {
+      firstParticipantId = '3'; // Marie Dupont
+    } else {
+      firstParticipantId = 'system_bot';
+    }
+    
+    return [
+      ChatMessage(
+        id: 'msg_exchange_1_$chatId',
+        chatId: chatId,
+        senderId: 'system_bot', // Mensaje del sistema
+        text: 'Bienvenidos al chat del intercambio. Aquí podéis coordinar la sesión, compartir notas y resolver dudas.',
+        createdAt: DateTime.now().subtract(const Duration(hours: 1)),
+      ),
+      if (firstParticipantId != 'system_bot')
+        ChatMessage(
+          id: 'msg_exchange_2_$chatId',
+          chatId: chatId,
+          senderId: firstParticipantId,
+          text: '¡Hola a todos! ¿A qué hora nos conectamos?',
+          createdAt: DateTime.now().subtract(const Duration(minutes: 30)),
+        ),
+    ];
   }
 }
 

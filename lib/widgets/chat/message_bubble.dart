@@ -7,12 +7,14 @@ class MessageBubble extends StatelessWidget {
   final String text;
   final bool isMine;
   final DateTime createdAt;
+  final String? senderName; // Nombre del remitente (solo para chats grupales)
 
   const MessageBubble({
     super.key,
     required this.text,
     required this.isMine,
     required this.createdAt,
+    this.senderName,
   });
 
   @override
@@ -43,8 +45,20 @@ class MessageBubble extends StatelessWidget {
           border: isMine ? null : Border.all(color: AppTheme.border),
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Mostrar nombre del remitente solo en chats grupales y si no es nuestro mensaje
+            if (senderName != null && !isMine) ...[
+              Text(
+                senderName!,
+                style: TextStyle(
+                  color: AppTheme.subtle,
+                  fontSize: AppDimensions.fontSizeXS,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: AppDimensions.spacingXS),
+            ],
             Text(
               text,
               style: TextStyle(
@@ -53,11 +67,14 @@ class MessageBubble extends StatelessWidget {
               ),
             ),
             const SizedBox(height: AppDimensions.spacingXS),
-            Text(
-              _formatTime(createdAt),
-              style: TextStyle(
-                color: isMine ? Colors.white70 : AppTheme.subtle,
-                fontSize: AppDimensions.fontSizeXS,
+            Align(
+              alignment: Alignment.centerRight,
+              child: Text(
+                _formatTime(createdAt),
+                style: TextStyle(
+                  color: isMine ? Colors.white70 : AppTheme.subtle,
+                  fontSize: AppDimensions.fontSizeXS,
+                ),
               ),
             ),
           ],

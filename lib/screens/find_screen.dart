@@ -160,7 +160,22 @@ class _FindScreenState extends State<FindScreen> {
 
     return Scaffold(
       backgroundColor: AppTheme.background,
-      appBar: _buildAppBar(),
+      appBar: AppHeader(
+        userName: userService.getDisplayName(),
+        level: userService.getLevel(),
+        levelProgress: userService.getProgressToNextLevel(),
+        isPro: userService.isPro(),
+        onNotificationsTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Notificaciones próximamente')),
+          );
+        },
+        onProTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Pro próximamente')),
+          );
+        },
+      ),
       body: RefreshIndicator(
         onRefresh: _loadUsers,
         color: AppTheme.accent,
@@ -247,133 +262,7 @@ class _FindScreenState extends State<FindScreen> {
                 ),
               ),
           ],
-      appBar: AppHeader(
-        userName: userService.getDisplayName(),
-        level: userService.getLevel(),
-        levelProgress: userService.getProgressToNextLevel(),
-        isPro: userService.isPro(),
-        onNotificationsTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Notificaciones próximamente')),
-          );
-        },
-        onProTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Pro próximamente')),
-          );
-        },
-      ),
-      body: Center(
-        child: Text(
-          'Pantalla de Encontrar',
-          style: TextStyle(color: AppTheme.text, fontSize: 18),
         ),
-      ),
-    );
-  }
-
-  PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      backgroundColor: AppTheme.background,
-      surfaceTintColor: Colors.transparent,
-      elevation: 0,
-      titleSpacing: AppDimensions.spacingL,
-      title: Row(
-        children: [
-          _BrandBadge(),
-          const SizedBox(width: AppDimensions.spacingSM),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'SpeakBuddy',
-                style: TextStyle(
-                  color: AppTheme.text,
-                  fontWeight: FontWeight.w600,
-                  fontSize: AppDimensions.fontSizeM,
-                ),
-              ),
-              Row(
-                children: [
-                  Text(
-                    'Nivel 5',
-                    style: TextStyle(
-                      color: AppTheme.subtle,
-                      fontSize: AppDimensions.fontSizeXS,
-                    ),
-                  ),
-                  const SizedBox(width: AppDimensions.spacingSM),
-                  SizedBox(
-                    width: AppDimensions.progressBarWidth,
-                    height: AppDimensions.progressBarHeight,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusCircular),
-                      child: LinearProgressIndicator(
-                        value: 0.4,
-                        backgroundColor: AppTheme.card,
-                        valueColor: AlwaysStoppedAnimation<Color>(AppTheme.accent),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const Spacer(),
-          _ProChip(),
-          const SizedBox(width: AppDimensions.spacingSM),
-          IconButton(
-            onPressed: () {},
-            icon: Icon(Icons.notifications_none_rounded, color: AppTheme.subtle),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _BrandBadge extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: AppDimensions.badgeSize,
-      height: AppDimensions.badgeSize,
-      decoration: BoxDecoration(
-        color: AppTheme.card,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusM),
-        border: Border.all(color: AppTheme.border),
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        'SB',
-        style: TextStyle(color: AppTheme.text, fontWeight: FontWeight.bold),
-      ),
-    );
-  }
-}
-
-class _ProChip extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppDimensions.spacingM,
-        vertical: AppDimensions.spacingS,
-      ),
-      decoration: BoxDecoration(
-        color: AppTheme.gold.withValues(alpha: 0.12),
-        border: Border.all(color: AppTheme.gold.withValues(alpha: 0.5)),
-        borderRadius: BorderRadius.circular(AppDimensions.radiusCircular),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.workspace_premium_rounded, size: AppDimensions.iconSizeS, color: AppTheme.gold),
-          const SizedBox(width: AppDimensions.spacingS),
-          Text(
-            'Pro',
-            style: TextStyle(color: AppTheme.gold, fontWeight: FontWeight.w600),
-          ),
-        ],
       ),
     );
   }

@@ -5,12 +5,8 @@ import '../../constants/dimensions.dart';
 class SocialButton extends StatelessWidget {
   final String text;
   final String icon;
-  
-  const SocialButton({
-    super.key,
-    required this.text,
-    required this.icon,
-  });
+
+  const SocialButton({super.key, required this.text, required this.icon});
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +16,9 @@ class SocialButton extends StatelessWidget {
       label: Text(text),
       style: OutlinedButton.styleFrom(
         padding: AppDimensions.paddingButton,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimensions.radiusMD)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
+        ),
         side: BorderSide(color: AppTheme.border),
       ),
     );
@@ -29,7 +27,7 @@ class SocialButton extends StatelessWidget {
 
 class _MonoLogo extends StatelessWidget {
   final String text;
-  
+
   const _MonoLogo({required this.text});
 
   @override
@@ -45,12 +43,8 @@ class _MonoLogo extends StatelessWidget {
       ),
       child: Text(
         text,
-        style: TextStyle(
-          fontWeight: FontWeight.w700,
-          color: AppTheme.text,
-        ),
+        style: TextStyle(fontWeight: FontWeight.w700, color: AppTheme.text),
       ),
     );
   }
 }
-

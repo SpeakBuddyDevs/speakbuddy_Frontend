@@ -7,13 +7,13 @@ import '../models/language_item.dart';
 import '../models/user_profile.dart';
 import '../models/edit_profile_result.dart';
 import '../services/auth_service.dart';
-import '../services/current_user_service.dart';
 import '../utils/image_helpers.dart';
 import '../widgets/common/language_selector_bottom_sheet.dart';
 import '../widgets/common/language_action_bottom_sheet.dart';
 import '../widgets/common/level_selector_bottom_sheet.dart';
 import '../widgets/common/app_header.dart';
 import '../constants/dimensions.dart';
+import '../repositories/api_users_repository.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -23,36 +23,37 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  // BACKEND: Cargar perfil real desde GET /api/auth/me o GET /api/profile
-  // TODO(FE): Llamar al backend en initState y mostrar loading mientras carga
-  // TODO(FE): Implementar UserProfile.fromJson para parsear respuesta
-  var _profile = UserProfile(
-    name: 'Sergio Arjona',
-    email: 'sergioarjona@gmail.com',
-    level: 5,
-    progressPct: 0.40,
-    exchanges: 12,
-    rating: 4.8,
-    languagesCount: 2,
-    hoursTotal: 18,
-    currentStreakDays: 5,
-    bestStreakDays: 12,
-    medals: 4,
-    nativeLanguage: 'ES',
-    learningLanguages: const [
-      LanguageItem(code: 'EN', name: 'Inglés', level: 'Intermedio', active: true),
-      LanguageItem(code: 'FR', name: 'Francés', level: 'Principiante'),
-    ],
-    isPro: true,
-    avatarPath: null,
-    description:
-        '¡Hola! Soy Sergio, estudiante de idiomas. Quiero mejorar mi inglés '
-        'para poder viajar y trabajar en el extranjero. Me encanta conocer '
-        'gente de otros países y practicar a diario.', // 👈 texto ejemplo
-  );
+  // Estado del perfil (puede ser nulo mientras carga)
+  UserProfile? _profile;
+  bool _isLoading = true;
+
+  // Repositorio real conectado al Backend
+  final _usersRepo = ApiUsersRepository();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserProfile();
+  }
+
+  Future<void> _loadUserProfile() async {
+    setState(() => _isLoading = true);
+
+    // Llamada al endpoint GET /api/users/me
+    final profile = await _usersRepo.getMyProfile();
+
+    if (mounted) {
+      setState(() {
+        _profile = profile;
+        _isLoading = false;
+      });
+    }
+  }
 
   Future<void> _editDescription() async {
-    final controller = TextEditingController(text: _profile.description);
+    if (_profile == null) return;
+
+    final controller = TextEditingController(text: _profile!.description);
 
     final newText = await showDialog<String>(
       context: context,
@@ -89,20 +90,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (newText == null || newText.isEmpty) return;
 
     setState(() {
-      _profile = _profile.copyWith(description: newText);
+      _profile = _profile!.copyWith(description: newText);
     });
+    // TODO: Llamar al backend para guardar cambios
   }
 
-
-
   void _addLearningLanguage() async {
+    if (_profile == null) return;
+
     // Códigos ya en aprendizaje
-    final existing = _profile.learningLanguages.map((e) => e.code).toSet();
+    final existing = _profile!.learningLanguages.map((e) => e.code).toSet();
 
     // Disponibles = catálogo - existentes - idioma nativo
     final available = AppLanguages.availableCodes
         .where(
-          (code) => !existing.contains(code) && code != _profile.nativeLanguage,
+          (code) =>
+              !existing.contains(code) && code != _profile!.nativeLanguage,
         )
         .toList();
 
@@ -127,72 +130,69 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (!mounted || picked == null) return;
 
     setState(() {
-      // Crea un nuevo LanguageItem con nivel por defecto
       final display = AppLanguages.getName(picked);
       final newItem = LanguageItem(
         code: picked,
         name: display,
         level: 'Principiante',
       );
-      _profile = _profile.copyWith(
-        learningLanguages: [..._profile.learningLanguages, newItem],
-        languagesCount: _profile.learningLanguages.length + 1,
+      _profile = _profile!.copyWith(
+        learningLanguages: [..._profile!.learningLanguages, newItem],
+        languagesCount: _profile!.learningLanguages.length + 1,
       );
     });
+    // TODO: Llamar al backend
   }
 
   void _onLanguageLongPress(LanguageItem lang) async {
-    final isActive = lang.active;
+    if (_profile == null) return;
 
-    // Primer menú: qué acción quieres hacer
-    final action = await showLanguageActionBottomSheet(
-      context,
-      isActive,
-    );
+    final isActive = lang.active;
+    final action = await showLanguageActionBottomSheet(context, isActive);
 
     if (!mounted || action == null) return;
 
-    // ✅ Opción 1: Marcar como activo
+    // Opción 1: Marcar como activo
     if (action == 'active') {
       setState(() {
-        final updated = _profile.learningLanguages.map((LanguageItem l) {
+        final updated = _profile!.learningLanguages.map((LanguageItem l) {
           if (l.code == lang.code) {
             return LanguageItem(
               code: l.code,
               name: l.name,
               level: l.level,
-              active: true, // lo activamos (no tocamos los demás)
+              active: true,
             );
           }
           return l;
         }).toList();
 
-        _profile = _profile.copyWith(learningLanguages: updated);
+        _profile = _profile!.copyWith(learningLanguages: updated);
       });
       return;
     }
 
-    // ✅ Opción 1b: Desmarcar como activo
+    // Opción 1b: Desmarcar como activo
     if (action == 'unactive') {
       setState(() {
-        final updated = _profile.learningLanguages.map((LanguageItem l) {
+        final updated = _profile!.learningLanguages.map((LanguageItem l) {
           if (l.code == lang.code) {
             return LanguageItem(
               code: l.code,
               name: l.name,
               level: l.level,
-              active: false, // lo desmarcamos
+              active: false,
             );
           }
           return l;
         }).toList();
 
-        _profile = _profile.copyWith(learningLanguages: updated);
+        _profile = _profile!.copyWith(learningLanguages: updated);
       });
       return;
     }
 
-    // ✅ Opción 2: Configurar nivel (igual que ya tenías)
+    // Opción 2: Configurar nivel
     if (action == 'level') {
       const levels = ['Principiante', 'Intermedio', 'Avanzado'];
       String selected = lang.level;
@@ -206,7 +206,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (!mounted || pickedLevel == null) return;
 
       setState(() {
-        final updated = _profile.learningLanguages.map((LanguageItem l) {
+        final updated = _profile!.learningLanguages.map((LanguageItem l) {
           if (l.code == lang.code) {
             return LanguageItem(
               code: l.code,
@@ -218,14 +218,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
           return l;
         }).toList();
 
-        _profile = _profile.copyWith(learningLanguages: updated);
+        _profile = _profile!.copyWith(learningLanguages: updated);
       });
       return;
     }
 
-    // ✅ Opción 3: Eliminar idioma (igual que antes)
+    // Opción 3: Eliminar idioma
     if (action == 'delete') {
-      if (_profile.learningLanguages.length <= 1) {
+      if (_profile!.learningLanguages.length <= 1) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Debe haber al menos un idioma de aprendizaje.'),
@@ -235,11 +235,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
 
       setState(() {
-        final updated = _profile.learningLanguages
+        final updated = _profile!.learningLanguages
             .where((l) => l.code != lang.code)
             .toList();
 
-        _profile = _profile.copyWith(
+        _profile = _profile!.copyWith(
           learningLanguages: updated,
           languagesCount: updated.length,
         );
@@ -247,7 +247,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  /// Cierra sesión y navega al login
   Future<void> _onLogout() async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -265,7 +264,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text(
+            child: const Text(
               'Cerrar sesión',
               style: TextStyle(color: Colors.redAccent),
             ),
@@ -297,31 +296,64 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final userService = CurrentUserService();
+    // 1. Loading
+    if (_isLoading) {
+      return const Scaffold(
+        backgroundColor: AppTheme.background,
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
 
+    // 2. Error / No Profile
+    if (_profile == null) {
+      return Scaffold(
+        backgroundColor: AppTheme.background,
+        appBar: AppBar(title: const Text('Perfil')),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text('Error cargando el perfil'),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _loadUserProfile,
+                child: const Text('Reintentar'),
+              ),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: _onLogout,
+                child: const Text("Cerrar sesión"),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // 3. UI Principal con datos reales
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppHeader(
-        userName: userService.getDisplayName(),
-        level: userService.getLevel(),
-        levelProgress: userService.getProgressToNextLevel(),
-        isPro: userService.isPro(),
+        userName: _profile!.name,
+        level: _profile!.level,
+        levelProgress: _profile!.progressPct,
+        isPro: _profile!.isPro,
         onNotificationsTap: () {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Notificaciones próximamente')),
           );
         },
         onProTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Pro próximamente')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Pro próximamente')));
         },
       ),
       body: SingleChildScrollView(
         padding: AppDimensions.paddingScreen,
         child: Column(
           children: [
-            _UserCard(profile: _profile),
+            _UserCard(profile: _profile!), // Perfil real
             const SizedBox(height: AppDimensions.spacingL),
             _Section(
               title: 'Descripción del perfil',
@@ -333,7 +365,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  _profile.description,
+                  _profile!.description.isEmpty
+                      ? 'Añade una descripción...'
+                      : _profile!.description,
                   style: TextStyle(
                     color: AppTheme.text,
                     height: AppDimensions.lineHeight,
@@ -342,7 +376,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             const SizedBox(height: AppDimensions.spacingL),
-            _StatsRow(profile: _profile),
+            _StatsRow(profile: _profile!),
             const SizedBox(height: AppDimensions.spacingL),
             _Section(
               title: 'Estadísticas Detalladas',
@@ -351,25 +385,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _StatLine(
                     icon: Icons.access_time_rounded,
                     label: 'Horas totales',
-                    value: '${_profile.hoursTotal}h',
+                    value: '${_profile!.hoursTotal}h',
                   ),
                   Divider(color: AppTheme.border, height: 1),
                   _StatLine(
                     icon: Icons.local_fire_department_rounded,
                     label: 'Racha actual',
-                    value: '${_profile.currentStreakDays} días',
+                    value: '${_profile!.currentStreakDays} días',
                   ),
                   Divider(color: AppTheme.border, height: 1),
                   _StatLine(
                     icon: Icons.emoji_events_rounded,
                     label: 'Mejor racha',
-                    value: '${_profile.bestStreakDays} días',
+                    value: '${_profile!.bestStreakDays} días',
                   ),
                   Divider(color: AppTheme.border, height: 1),
                   _StatLine(
                     icon: Icons.military_tech_rounded,
                     label: 'Medallas',
-                    value: '${_profile.medals}',
+                    value: '${_profile!.medals}',
                   ),
                 ],
               ),
@@ -383,10 +417,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 label: const Text('Añadir'),
               ),
               child: Column(
-                children: _profile.learningLanguages
+                children: _profile!.learningLanguages
                     .map(
                       (l) => Padding(
-                        padding: const EdgeInsets.only(bottom: AppDimensions.spacingM),
+                        padding: const EdgeInsets.only(
+                          bottom: AppDimensions.spacingM,
+                        ),
                         child: _LanguageTile(
                           lang: l,
                           onLongPress: () => _onLanguageLongPress(l),
@@ -409,12 +445,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         context,
                         MaterialPageRoute(
                           builder: (_) => EditProfileScreen(
-                            initialName: _profile.name,
-                            initialNative: _profile.nativeLanguage,
-                            initialLearning: _profile.learningLanguages
+                            initialName: _profile!.name,
+                            initialNative: _profile!.nativeLanguage,
+                            initialLearning: _profile!.learningLanguages
                                 .map((e) => e.code)
                                 .toList(),
-                            initialAvatarPath: _profile.avatarPath,
+                            initialAvatarPath: _profile!.avatarPath,
                           ),
                         ),
                       );
@@ -422,15 +458,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       if (!context.mounted || result == null) return;
                       if (result is EditProfileResult) {
                         setState(() {
-                          // 1) nombre
-                          _profile = _profile.copyWith(name: result.name);
-
-                          // 2) idioma nativo
-                          _profile = _profile.copyWith(
+                          _profile = _profile!.copyWith(
+                            name: result.name,
                             nativeLanguage: result.nativeLanguage,
                           );
 
-                          // 3) idiomas aprendiendo (reconstruimos LanguageItem con niveles por defecto)
                           final updatedLearning = result.learningLanguages.map((
                             code,
                           ) {
@@ -441,14 +473,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               level: 'Principiante',
                             );
                           }).toList();
-                          _profile = _profile.copyWith(
+
+                          _profile = _profile!.copyWith(
                             learningLanguages: updatedLearning,
                             languagesCount: updatedLearning.length,
                           );
 
-                          // 4) foto
                           if (result.avatarFile != null) {
-                            _profile = _profile.copyWith(
+                            _profile = _profile!.copyWith(
                               avatarPath: result.avatarFile!.path,
                             );
                           }
@@ -458,7 +490,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   Divider(color: AppTheme.border, height: 1),
                   _ActionTile(
-                    // Reemplazo de Icons.crown_rounded (no existe en Material)
                     icon: Icons.workspace_premium_rounded,
                     label: 'Mejorar a Premium',
                     onTap: () {},
@@ -479,10 +510,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
-
 }
 
-/* ------------------------ UI Pieces ------------------------ */
+/* ------------------------ UI Pieces (Clases originales) ------------------------ */
 
 class _UserCard extends StatelessWidget {
   const _UserCard({required this.profile});
@@ -525,16 +555,26 @@ class _UserCard extends StatelessWidget {
                     const SizedBox(height: AppDimensions.spacingXS),
                     Text(
                       profile.email,
-                      style: TextStyle(color: AppTheme.subtle, fontSize: AppDimensions.fontSizeS),
+                      style: TextStyle(
+                        color: AppTheme.subtle,
+                        fontSize: AppDimensions.fontSizeS,
+                      ),
                     ),
                     const SizedBox(height: AppDimensions.spacingS),
                     Row(
                       children: [
-                        Icon(Icons.public_rounded, size: AppDimensions.iconSizeS, color: AppTheme.subtle),
+                        Icon(
+                          Icons.public_rounded,
+                          size: AppDimensions.iconSizeS,
+                          color: AppTheme.subtle,
+                        ),
                         const SizedBox(width: AppDimensions.spacingS),
                         Text(
-                          '${AppLanguages.getName(profile.nativeLanguage)}  →  ${profile.learningLanguages.isNotEmpty ? AppLanguages.getName(profile.learningLanguages.first.code) : '-'}',
-                          style: TextStyle(color: AppTheme.subtle, fontSize: AppDimensions.fontSizeS),
+                          '${AppLanguages.getName(profile.nativeLanguage)}  →  ${profile.learningLanguages.isNotEmpty ? AppLanguages.getName(profile.learningLanguages.first.code) : '-'}',
+                          style: TextStyle(
+                            color: AppTheme.subtle,
+                            fontSize: AppDimensions.fontSizeS,
+                          ),
                         ),
                       ],
                     ),
@@ -556,7 +596,10 @@ class _UserCard extends StatelessWidget {
               children: [
                 Text(
                   'Nivel ${profile.level}',
-                  style: TextStyle(color: AppTheme.text, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    color: AppTheme.text,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 const SizedBox(height: AppDimensions.spacingSM),
                 ClipRRect(
@@ -571,7 +614,10 @@ class _UserCard extends StatelessWidget {
                 const SizedBox(height: AppDimensions.spacingSM),
                 Text(
                   '${_remaining(profile.progressPct)} intercambios hasta nivel ${profile.level + 1}',
-                  style: TextStyle(color: AppTheme.subtle, fontSize: AppDimensions.fontSizeXS),
+                  style: TextStyle(
+                    color: AppTheme.subtle,
+                    fontSize: AppDimensions.fontSizeXS,
+                  ),
                 ),
               ],
             ),
@@ -582,7 +628,6 @@ class _UserCard extends StatelessWidget {
   }
 
   int _remaining(double pct) {
-    // Maqueta: asumimos que 5 intercambios = 100%
     final completed = (pct * 5).round();
     return (5 - completed).clamp(0, 5);
   }
@@ -664,7 +709,13 @@ class _SmallStatCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 2),
-          Text(label, style: TextStyle(color: AppTheme.subtle, fontSize: AppDimensions.fontSizeXS)),
+          Text(
+            label,
+            style: TextStyle(
+              color: AppTheme.subtle,
+              fontSize: AppDimensions.fontSizeXS,
+            ),
+          ),
         ],
       ),
     );
@@ -685,21 +736,31 @@ class _Section extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppDimensions.radiusL),
         border: Border.all(color: AppTheme.border),
       ),
-      padding: EdgeInsets.fromLTRB(AppDimensions.spacingL, AppDimensions.spacingML, AppDimensions.spacingL, AppDimensions.spacingMD),
+      padding: EdgeInsets.fromLTRB(
+        AppDimensions.spacingL,
+        AppDimensions.spacingML,
+        AppDimensions.spacingL,
+        AppDimensions.spacingMD,
+      ),
       child: Column(
         children: [
           Row(
             children: [
               Text(
                 title,
-                style: TextStyle(color: AppTheme.text, fontWeight: FontWeight.w700),
+                style: TextStyle(
+                  color: AppTheme.text,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const Spacer(),
               if (trailing != null)
                 Theme(
                   data: Theme.of(context).copyWith(
                     textButtonTheme: TextButtonThemeData(
-                      style: TextButton.styleFrom(foregroundColor: AppTheme.text),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppTheme.text,
+                      ),
                     ),
                   ),
                   child: trailing!,
@@ -726,12 +787,12 @@ class _StatLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppDimensions.spacingM),
-        child: Row(
-          children: [
-            Icon(icon, color: AppTheme.subtle),
-            const SizedBox(width: AppDimensions.spacingML),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppDimensions.spacingM),
+      child: Row(
+        children: [
+          Icon(icon, color: AppTheme.subtle),
+          const SizedBox(width: AppDimensions.spacingML),
           Expanded(
             child: Text(label, style: TextStyle(color: AppTheme.text)),
           ),
@@ -753,7 +814,6 @@ class _LanguageTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      // 👈 para detectar long press
       borderRadius: BorderRadius.circular(AppDimensions.radiusML),
       onLongPress: onLongPress,
       child: Container(
@@ -762,7 +822,10 @@ class _LanguageTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppDimensions.radiusML),
           border: Border.all(color: AppTheme.border),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: AppDimensions.spacingMD, vertical: AppDimensions.spacingMD),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppDimensions.spacingMD,
+          vertical: AppDimensions.spacingMD,
+        ),
         child: Row(
           children: [
             Container(
@@ -776,7 +839,10 @@ class _LanguageTile extends StatelessWidget {
               alignment: Alignment.center,
               child: Text(
                 lang.code,
-                style: TextStyle(color: AppTheme.text, fontWeight: FontWeight.w700),
+                style: TextStyle(
+                  color: AppTheme.text,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
             const SizedBox(width: AppDimensions.spacingMD),
@@ -794,7 +860,10 @@ class _LanguageTile extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     lang.level,
-                    style: TextStyle(color: AppTheme.subtle, fontSize: AppDimensions.fontSizeXS),
+                    style: TextStyle(
+                      color: AppTheme.subtle,
+                      fontSize: AppDimensions.fontSizeXS,
+                    ),
                   ),
                 ],
               ),
@@ -807,8 +876,12 @@ class _LanguageTile extends StatelessWidget {
                 ),
                 decoration: BoxDecoration(
                   color: AppTheme.accent.withValues(alpha: .15),
-                  border: Border.all(color: AppTheme.accent.withValues(alpha: .6)),
-                  borderRadius: BorderRadius.circular(AppDimensions.radiusCircular),
+                  border: Border.all(
+                    color: AppTheme.accent.withValues(alpha: .6),
+                  ),
+                  borderRadius: BorderRadius.circular(
+                    AppDimensions.radiusCircular,
+                  ),
                 ),
                 child: Text(
                   'Activo',
@@ -842,7 +915,9 @@ class _ActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = danger ? Colors.redAccent : (highlight ? AppTheme.gold : AppTheme.text);
+    final color = danger
+        ? Colors.redAccent
+        : (highlight ? AppTheme.gold : AppTheme.text);
 
     return InkWell(
       borderRadius: BorderRadius.circular(AppDimensions.radiusM),
@@ -866,5 +941,3 @@ class _ActionTile extends StatelessWidget {
     );
   }
 }
-
-

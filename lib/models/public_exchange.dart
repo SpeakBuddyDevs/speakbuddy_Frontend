@@ -3,7 +3,7 @@
 // Response esperado: { id, title, description, creatorId, creatorName, creatorAvatarUrl?,
 //   creatorIsPro, requiredLevel, minLevel, date, durationMinutes, currentParticipants,
 //   maxParticipants, nativeLanguage, targetLanguage, topics[]?, isEligible,
-//   unmetRequirements[]? }
+//   unmetRequirements[]?, isPublic, shareLink? }
 //
 // Concepto: Intercambio mutuo de idiomas. El creador ofrece su idioma nativo (nativeLanguage)
 // a cambio de practicar otro idioma (targetLanguage). La conversación se divide a partes
@@ -29,6 +29,8 @@ class PublicExchange {
   final List<String>? topics; // Temas/categorías opcionales
   final bool isEligible; // Si el usuario actual cumple requisitos
   final List<String>? unmetRequirements; // Requisitos no cumplidos si !isEligible
+  final bool isPublic; // true = público, false = privado
+  final String? shareLink; // Enlace compartible para intercambios privados
 
   const PublicExchange({
     required this.id,
@@ -49,5 +51,7 @@ class PublicExchange {
     this.topics,
     required this.isEligible,
     this.unmetRequirements,
+    this.isPublic = true, // Por defecto público
+    this.shareLink,
   });
 }

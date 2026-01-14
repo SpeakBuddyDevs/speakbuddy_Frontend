@@ -26,5 +26,8 @@ class AppRoutes {
 
   /// Ruta de intercambios públicos
   static const String publicExchanges = '/public-exchanges';
+
+  /// Ruta de creación de intercambio
+  static const String createExchange = '/create-exchange';
 }
 

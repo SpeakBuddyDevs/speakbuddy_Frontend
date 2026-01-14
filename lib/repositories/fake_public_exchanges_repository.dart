@@ -3,6 +3,7 @@ import '../models/public_exchange.dart';
 import '../models/public_exchange_filters.dart';
 import 'public_exchanges_repository.dart';
 import '../constants/languages.dart';
+import '../services/current_user_service.dart';
 
 /// Implementación fake del repositorio de intercambios públicos para desarrollo
 /// 
@@ -10,6 +11,9 @@ import '../constants/languages.dart';
 /// BACKEND: Sustituir por ApiPublicExchangesRepository que consuma GET /api/exchanges/public
 class FakePublicExchangesRepository implements PublicExchangesRepository {
   static final _random = Random();
+  
+  // Lista mutable para añadir intercambios creados dinámicamente
+  static final List<PublicExchange> _createdExchanges = [];
   
   // Datos mock del usuario de prueba (deben coincidir con profile_screen.dart)
   // Usuario nativo: Español
@@ -89,6 +93,8 @@ class FakePublicExchangesRepository implements PublicExchangesRepository {
       topics: null, // Sin temas específicos
       isEligible: false, // Se calculará dinámicamente
       unmetRequirements: null, // Se calculará dinámicamente
+      isPublic: true, // Todos los mock son públicos
+      shareLink: null,
     ),
     // Intercambio 2: Francés ↔ Español (Usuario: Marie Dupont - ID: 3, Francés nativo, aprendiendo Español, PRO)
     PublicExchange(
@@ -110,6 +116,8 @@ class FakePublicExchangesRepository implements PublicExchangesRepository {
       topics: ['Viajes', 'turismo', 'cultura'],
       isEligible: false, // Se calculará dinámicamente
       unmetRequirements: null, // Se calculará dinámicamente
+      isPublic: true, // Todos los mock son públicos
+      shareLink: null,
     ),
     // Intercambio 3: Inglés ↔ Español (Usuario: Sarah Johnson - ID: 1, Inglés nativo, aprendiendo Español, PRO)
     PublicExchange(
@@ -131,6 +139,8 @@ class FakePublicExchangesRepository implements PublicExchangesRepository {
       topics: ['Negocios', 'presentaciones', 'profesional'],
       isEligible: false, // Se calculará dinámicamente
       unmetRequirements: null, // Se calculará dinámicamente
+      isPublic: true, // Todos los mock son públicos
+      shareLink: null,
     ),
     // Intercambio 4: Alemán ↔ Español (Usuario: Hans Mueller - ID: 4, Alemán nativo, aprendiendo Inglés)
     // Nota: Este usuario aprende Inglés, pero crea un intercambio Alemán-Español (puede aprender ambos)
@@ -153,6 +163,8 @@ class FakePublicExchangesRepository implements PublicExchangesRepository {
       topics: null, // Sin temas específicos
       isEligible: false, // Se calculará dinámicamente
       unmetRequirements: null, // Se calculará dinámicamente
+      isPublic: true, // Todos los mock son públicos
+      shareLink: null,
     ),
     // Intercambio 5: Italiano ↔ Español (Usuario: Marco Rossi - ID: 9, Italiano nativo, aprendiendo Inglés)
     PublicExchange(
@@ -174,6 +186,8 @@ class FakePublicExchangesRepository implements PublicExchangesRepository {
       topics: ['Literatura', 'cultura', 'arte'],
       isEligible: false, // Se calculará dinámicamente
       unmetRequirements: null, // Se calculará dinámicamente
+      isPublic: true, // Todos los mock son públicos
+      shareLink: null,
     ),
     // Intercambio 6: Portugués ↔ Español (Usuario: Lucas Silva - ID: 7, Portugués nativo, aprendiendo Inglés, PRO)
     PublicExchange(
@@ -195,6 +209,8 @@ class FakePublicExchangesRepository implements PublicExchangesRepository {
       topics: ['Expresiones', 'cultura brasileña', 'coloquial'],
       isEligible: false, // Se calculará dinámicamente
       unmetRequirements: null, // Se calculará dinámicamente
+      isPublic: true, // Todos los mock son públicos
+      shareLink: null,
     ),
     // Intercambio 7: Japonés ↔ Español (Usuario: Yuki Tanaka - ID: 5, Japonés nativo, aprendiendo Español, PRO)
     PublicExchange(
@@ -216,6 +232,8 @@ class FakePublicExchangesRepository implements PublicExchangesRepository {
       topics: null, // Sin temas específicos
       isEligible: false, // Se calculará dinámicamente
       unmetRequirements: null, // Se calculará dinámicamente
+      isPublic: true, // Todos los mock son públicos
+      shareLink: null,
     ),
     // Intercambio 8: Chino ↔ Español (Usuario: Chen Wei - ID: 11, Chino nativo, aprendiendo Inglés)
     PublicExchange(
@@ -237,6 +255,8 @@ class FakePublicExchangesRepository implements PublicExchangesRepository {
       topics: ['Actualidad', 'cultura', 'conversación'],
       isEligible: false, // Se calculará dinámicamente
       unmetRequirements: null, // Se calculará dinámicamente
+      isPublic: true, // Todos los mock son públicos
+      shareLink: null,
     ),
     // Intercambio 9: Inglés ↔ Español (Usuario: Emma Wilson - ID: 6, Inglés nativo, aprendiendo Francés)
     PublicExchange(
@@ -258,6 +278,8 @@ class FakePublicExchangesRepository implements PublicExchangesRepository {
       topics: ['Principiante', 'básico', 'conversación'],
       isEligible: false, // Se calculará dinámicamente
       unmetRequirements: null, // Se calculará dinámicamente
+      isPublic: true, // Todos los mock son públicos
+      shareLink: null,
     ),
     // Intercambio 10: Francés ↔ Español (Usuario: Marie Dupont - ID: 3, ya usado, usar otro)
     // Usar: Lisa Anderson - ID: 14, Inglés nativo, aprendiendo Español (pero crea intercambio Francés-Español)
@@ -280,6 +302,8 @@ class FakePublicExchangesRepository implements PublicExchangesRepository {
       topics: ['Conversación', 'cultura francesa', 'cotidiano'],
       isEligible: false, // Se calculará dinámicamente
       unmetRequirements: null, // Se calculará dinámicamente
+      isPublic: true, // Todos los mock son públicos
+      shareLink: null,
     ),
     // Intercambio 11: Inglés ↔ Español Avanzado (Usuario: Sarah Johnson - ID: 1, ya usado)
     PublicExchange(
@@ -301,6 +325,8 @@ class FakePublicExchangesRepository implements PublicExchangesRepository {
       topics: ['Avanzado', 'debate', 'temas complejos'],
       isEligible: false, // Se calculará dinámicamente
       unmetRequirements: null, // Se calculará dinámicamente
+      isPublic: true, // Todos los mock son públicos
+      shareLink: null,
     ),
     // Intercambio 12: Alemán ↔ Español (Usuario: Hans Mueller - ID: 4, ya usado)
     PublicExchange(
@@ -322,6 +348,8 @@ class FakePublicExchangesRepository implements PublicExchangesRepository {
       topics: null, // Sin temas específicos
       isEligible: false, // Se calculará dinámicamente
       unmetRequirements: null, // Se calculará dinámicamente
+      isPublic: true, // Todos los mock son públicos
+      shareLink: null,
     ),
     // Intercambio 13: Ruso ↔ Español (Usuario: Olga Petrova - ID: 12, Ruso nativo, aprendiendo Español, PRO)
     PublicExchange(
@@ -343,6 +371,8 @@ class FakePublicExchangesRepository implements PublicExchangesRepository {
       topics: ['Cultura', 'tradiciones', 'historia'],
       isEligible: false, // Se calculará dinámicamente
       unmetRequirements: null, // Se calculará dinámicamente
+      isPublic: true, // Todos los mock son públicos
+      shareLink: null,
     ),
     // Intercambio 14: Inglés ↔ Español Casual (Usuario: Lisa Anderson - ID: 14, Inglés nativo, aprendiendo Español)
     PublicExchange(
@@ -364,6 +394,8 @@ class FakePublicExchangesRepository implements PublicExchangesRepository {
       topics: ['Casual', 'conversación libre'],
       isEligible: false, // Se calculará dinámicamente
       unmetRequirements: null, // Se calculará dinámicamente
+      isPublic: true, // Todos los mock son públicos
+      shareLink: null,
     ),
     // Intercambio 15: Coreano ↔ Español (Usuario: Kim Min-jun - ID: 15, Coreano nativo, aprendiendo Inglés, PRO)
     PublicExchange(
@@ -385,6 +417,8 @@ class FakePublicExchangesRepository implements PublicExchangesRepository {
       topics: ['Principiante', 'K-pop', 'cultura coreana'],
       isEligible: false, // Se calculará dinámicamente
       unmetRequirements: null, // Se calculará dinámicamente
+      isPublic: true, // Todos los mock son públicos
+      shareLink: null,
     ),
   ];
 
@@ -398,8 +432,11 @@ class FakePublicExchangesRepository implements PublicExchangesRepository {
     // Simular latencia de red
     await Future.delayed(Duration(milliseconds: 300 + _random.nextInt(300)));
 
+    // Combinar intercambios mock base con intercambios creados dinámicamente
+    final allExchanges = [..._mockExchangesBase, ..._createdExchanges];
+    
     // Calcular elegibilidad dinámicamente para cada intercambio
-    var results = _mockExchangesBase.map((exchange) {
+    var results = allExchanges.map((exchange) {
       final eligibility = _calculateEligibility(exchange);
       return PublicExchange(
         id: exchange.id,
@@ -420,6 +457,8 @@ class FakePublicExchangesRepository implements PublicExchangesRepository {
         topics: exchange.topics,
         isEligible: eligibility.isEligible,
         unmetRequirements: eligibility.unmetRequirements,
+        isPublic: exchange.isPublic,
+        shareLink: exchange.shareLink,
       );
     }).toList();
 
@@ -488,5 +527,111 @@ class FakePublicExchangesRepository implements PublicExchangesRepository {
     final end = (start + pageSize).clamp(0, results.length);
 
     return results.sublist(start, end);
+  }
+
+  @override
+  Future<PublicExchange> createExchange({
+    required String title,
+    required String description,
+    required String nativeLanguage,
+    required String targetLanguage,
+    required String requiredLevel,
+    required DateTime date,
+    required int durationMinutes,
+    required int maxParticipants,
+    List<String>? topics,
+    required bool isPublic,
+  }) async {
+    // Simular latencia de red
+    await Future.delayed(Duration(milliseconds: 500 + _random.nextInt(500)));
+
+    // BACKEND: Obtener datos del usuario autenticado desde /me o /api/profile
+    // Por ahora, usar datos mock del usuario actual
+    final userService = CurrentUserService();
+    final creatorId = 'current_user'; // BACKEND: Obtener ID real del usuario autenticado
+    final creatorName = userService.getDisplayName();
+    final creatorIsPro = userService.isPro();
+
+    // Generar ID único
+    final id = DateTime.now().millisecondsSinceEpoch.toString();
+
+    // Convertir nivel de texto a número
+    final minLevel = _levelTextToNumber(requiredLevel);
+
+    // Generar shareLink si es privado
+    String? shareLink;
+    if (!isPublic) {
+      // BACKEND: El backend generará este enlace único
+      shareLink = 'speakbuddy://exchange/$id';
+    }
+
+    // Calcular elegibilidad (el creador siempre es elegible para su propio intercambio)
+    final eligibility = _calculateEligibility(
+      PublicExchange(
+        id: id,
+        title: title,
+        description: description,
+        creatorId: creatorId,
+        creatorName: creatorName,
+        creatorIsPro: creatorIsPro,
+        requiredLevel: requiredLevel,
+        minLevel: minLevel,
+        date: date,
+        durationMinutes: durationMinutes,
+        currentParticipants: 1, // El creador
+        maxParticipants: maxParticipants,
+        nativeLanguage: nativeLanguage,
+        targetLanguage: targetLanguage,
+        topics: topics,
+        isEligible: true, // Temporal, se calculará
+        unmetRequirements: null,
+        isPublic: isPublic,
+        shareLink: shareLink,
+      ),
+    );
+
+    // Crear el intercambio
+    final exchange = PublicExchange(
+      id: id,
+      title: title,
+      description: description,
+      creatorId: creatorId,
+      creatorName: creatorName,
+      creatorAvatarUrl: null, // BACKEND: Obtener desde perfil
+      creatorIsPro: creatorIsPro,
+      requiredLevel: requiredLevel,
+      minLevel: minLevel,
+      date: date,
+      durationMinutes: durationMinutes,
+      currentParticipants: 1, // El creador se cuenta como participante
+      maxParticipants: maxParticipants,
+      nativeLanguage: nativeLanguage,
+      targetLanguage: targetLanguage,
+      topics: topics?.isNotEmpty == true ? topics : null,
+      isEligible: eligibility.isEligible,
+      unmetRequirements: eligibility.unmetRequirements,
+      isPublic: isPublic,
+      shareLink: shareLink,
+    );
+
+    // BACKEND: En una implementación real, el intercambio se guardaría en la base de datos
+    // Por ahora, añadimos el intercambio a la lista mock para que aparezca en la búsqueda
+    _createdExchanges.add(exchange);
+
+    return exchange;
+  }
+
+  /// Convierte nivel de texto a número (1-10)
+  static int _levelTextToNumber(String level) {
+    switch (level.toLowerCase()) {
+      case 'principiante':
+        return 1;
+      case 'intermedio':
+        return 4;
+      case 'avanzado':
+        return 7;
+      default:
+        return 1;
+    }
   }
 }

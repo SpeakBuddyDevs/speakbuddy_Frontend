@@ -211,6 +211,18 @@ class _PublicExchangesScreenState extends State<PublicExchangesScreen> {
     }
   }
 
+  void _onCreateExchange() {
+    Navigator.pushNamed(
+      context,
+      AppRoutes.createExchange,
+    ).then((created) {
+      // Si se creó un intercambio, recargar la lista
+      if (created == true) {
+        _loadExchanges();
+      }
+    });
+  }
+
   void _onDetails(PublicExchange exchange) {
     Navigator.pushNamed(
       context,
@@ -321,9 +333,31 @@ class _PublicExchangesScreenState extends State<PublicExchangesScreen> {
                       hintText: 'Buscar intercambios...',
                     ),
                     const SizedBox(height: AppDimensions.spacingMD),
-                    FiltersButton(
-                      onPressed: _onFiltersPressed,
-                      hasActiveFilters: _filters.hasActiveFilters,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: _onCreateExchange,
+                            icon: const Icon(Icons.add_rounded),
+                            label: const Text('Crear intercambio'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.accent,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                vertical: AppDimensions.spacingMD,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: AppDimensions.spacingMD),
+                        FiltersButton(
+                          onPressed: _onFiltersPressed,
+                          hasActiveFilters: _filters.hasActiveFilters,
+                        ),
+                      ],
                     ),
                   ],
                 ),

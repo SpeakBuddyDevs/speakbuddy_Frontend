@@ -19,4 +19,22 @@ abstract class PublicExchangesRepository {
     int page = 0,
     int pageSize = 10,
   });
+
+  /// Crea un nuevo intercambio (público o privado)
+  /// BACKEND: POST /api/exchanges
+  /// Body: { title, description, nativeLanguage, targetLanguage, requiredLevel,
+  ///   date, durationMinutes, maxParticipants, topics[]?, isPublic }
+  /// Response: PublicExchange con id y shareLink (si es privado)
+  Future<PublicExchange> createExchange({
+    required String title,
+    required String description,
+    required String nativeLanguage,
+    required String targetLanguage,
+    required String requiredLevel,
+    required DateTime date,
+    required int durationMinutes,
+    required int maxParticipants,
+    List<String>? topics,
+    required bool isPublic,
+  });
 }

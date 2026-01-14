@@ -83,6 +83,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     });
   }
 
+  // BACKEND: PUT /api/profile para guardar cambios
+  // Request: { name, nativeLanguage, learningLanguages[], description? }
+  // Para avatar: POST /api/profile/avatar (multipart/form-data)
+  // TODO(FE): Llamar API aquí en lugar de solo devolver resultado local
   void _save() {
     if (!FormValidators.isFormValid(_formKey)) return;
     Navigator.pop(
@@ -286,6 +290,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   style: TextStyle(color: AppTheme.subtle, fontSize: AppDimensions.fontSizeXS),
                 ),
                 const SizedBox(height: AppDimensions.spacingXXXL),
+                // BACKEND: DELETE /api/profile para eliminar cuenta
+                // TODO(BE): Endpoint debe invalidar tokens y eliminar datos del usuario
+                // TODO(FE): Mostrar confirmación, llamar API, y redirigir a login
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
@@ -298,8 +305,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       padding: AppDimensions.paddingButtonLarge,
                     ),
                     onPressed: () {
-                      // TODO: conectar con backend para eliminar la cuenta
-                      // Por ahora solo interfaz
+                      // TODO(FE): Implementar llamada a DELETE /api/profile
                     },
                     icon: const Icon(Icons.delete_forever_rounded),
                     label: const Text('Eliminar perfil'),

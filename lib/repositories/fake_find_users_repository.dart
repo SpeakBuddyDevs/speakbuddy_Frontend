@@ -314,4 +314,14 @@ class FakeFindUsersRepository implements FindUsersRepository {
 
     return results.sublist(start, end);
   }
+
+  /// Obtiene un usuario por su ID (método helper para desarrollo)
+  /// BACKEND: Este método no es necesario cuando se use el backend real
+  static FindUser? getUserById(String userId) {
+    try {
+      return _mockUsers.firstWhere((user) => user.id == userId);
+    } catch (e) {
+      return null;
+    }
+  }
 }

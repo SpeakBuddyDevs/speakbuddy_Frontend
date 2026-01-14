@@ -7,10 +7,12 @@ import '../models/language_item.dart';
 import '../models/user_profile.dart';
 import '../models/edit_profile_result.dart';
 import '../services/auth_service.dart';
+import '../services/current_user_service.dart';
 import '../utils/image_helpers.dart';
 import '../widgets/common/language_selector_bottom_sheet.dart';
 import '../widgets/common/language_action_bottom_sheet.dart';
 import '../widgets/common/level_selector_bottom_sheet.dart';
+import '../widgets/common/app_header.dart';
 import '../constants/dimensions.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -295,53 +297,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final userService = CurrentUserService();
+
     return Scaffold(
       backgroundColor: AppTheme.background,
-      appBar: AppBar(
-        backgroundColor: AppTheme.background,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        titleSpacing: 0,
-        title: Row(
-          children: [
-            _brandBadge(),
-            const SizedBox(width: AppDimensions.spacingSM),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'SpeakBuddy',
-                  style: TextStyle(
-                    color: AppTheme.text,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                Row(
-                  children: [
-                    Text(
-                      'Nivel ${_profile.level}',
-                      style: TextStyle(color: AppTheme.subtle, fontSize: AppDimensions.fontSizeXS),
-                    ),
-                    const SizedBox(width: AppDimensions.spacingSM),
-                    _ProgressMini(
-                      value: _profile.progressPct,
-                      track: AppTheme.card,
-                      fill: AppTheme.accent,
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const Spacer(),
-            if (_profile.isPro) _proChip(),
-            const SizedBox(width: AppDimensions.spacingSM),
-            IconButton(
-              onPressed: () {},
-              icon: Icon(Icons.notifications_none_rounded, color: AppTheme.subtle),
-              tooltip: 'Notificaciones',
-            ),
-          ],
-        ),
+      appBar: AppHeader(
+        userName: userService.getDisplayName(),
+        level: userService.getLevel(),
+        levelProgress: userService.getProgressToNextLevel(),
+        isPro: userService.isPro(),
+        onNotificationsTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Notificaciones próximamente')),
+          );
+        },
+        onProTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Pro próximamente')),
+          );
+        },
       ),
       body: SingleChildScrollView(
         padding: AppDimensions.paddingScreen,
@@ -506,43 +480,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _brandBadge() {
-    return Container(
-      width: AppDimensions.badgeSize,
-      height: AppDimensions.badgeSize,
-      decoration: BoxDecoration(
-        color: AppTheme.card,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusM),
-        border: Border.all(color: AppTheme.border),
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        'SB',
-        style: TextStyle(color: AppTheme.text, fontWeight: FontWeight.bold),
-      ),
-    );
-  }
-
-  Widget _proChip() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppDimensions.spacingM, vertical: AppDimensions.spacingS),
-      decoration: BoxDecoration(
-        color: AppTheme.gold.withValues(alpha: .12),
-        border: Border.all(color: AppTheme.gold.withValues(alpha: .5)),
-        borderRadius: BorderRadius.circular(AppDimensions.radiusCircular),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.workspace_premium_rounded, size: AppDimensions.iconSizeS, color: AppTheme.gold),
-          const SizedBox(width: AppDimensions.spacingS),
-          Text(
-            'Pro',
-            style: TextStyle(color: AppTheme.gold, fontWeight: FontWeight.w600),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 /* ------------------------ UI Pieces ------------------------ */
@@ -930,30 +867,4 @@ class _ActionTile extends StatelessWidget {
   }
 }
 
-class _ProgressMini extends StatelessWidget {
-  const _ProgressMini({
-    required this.value,
-    required this.track,
-    required this.fill,
-  });
-  final double value;
-  final Color track;
-  final Color fill;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: AppDimensions.progressBarWidth,
-      height: AppDimensions.progressBarHeight,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppDimensions.radiusCircular),
-        child: LinearProgressIndicator(
-          value: value,
-          backgroundColor: track,
-          valueColor: AlwaysStoppedAnimation<Color>(fill),
-        ),
-      ),
-    );
-  }
-}
 

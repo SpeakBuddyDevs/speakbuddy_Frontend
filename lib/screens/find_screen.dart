@@ -13,6 +13,8 @@ import '../widgets/find/find_search_bar.dart';
 import '../widgets/find/filters_button.dart';
 import '../widgets/find/find_user_card.dart';
 import '../widgets/find/find_filters_bottom_sheet.dart';
+import '../widgets/common/app_header.dart';
+import '../services/current_user_service.dart';
 
 /// Pantalla para encontrar usuarios/compañeros de idiomas
 class FindScreen extends StatefulWidget {
@@ -154,6 +156,8 @@ class _FindScreenState extends State<FindScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final userService = CurrentUserService();
+
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: _buildAppBar(),
@@ -243,6 +247,26 @@ class _FindScreenState extends State<FindScreen> {
                 ),
               ),
           ],
+      appBar: AppHeader(
+        userName: userService.getDisplayName(),
+        level: userService.getLevel(),
+        levelProgress: userService.getProgressToNextLevel(),
+        isPro: userService.isPro(),
+        onNotificationsTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Notificaciones próximamente')),
+          );
+        },
+        onProTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Pro próximamente')),
+          );
+        },
+      ),
+      body: Center(
+        child: Text(
+          'Pantalla de Encontrar',
+          style: TextStyle(color: AppTheme.text, fontSize: 18),
         ),
       ),
     );

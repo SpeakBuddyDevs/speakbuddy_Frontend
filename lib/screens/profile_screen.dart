@@ -349,10 +349,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ).showSnackBar(const SnackBar(content: Text('Pro próximamente')));
         },
       ),
-      body: SingleChildScrollView(
-        padding: AppDimensions.paddingScreen,
-        child: Column(
-          children: [
+      body: RefreshIndicator(
+        onRefresh: _loadUserProfile,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: AppDimensions.paddingScreen,
+          child: Column(
+            children: [
             _UserCard(profile: _profile!), // Perfil real
             const SizedBox(height: AppDimensions.spacingL),
             _Section(
@@ -507,6 +510,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ],
         ),
+        ),
       ),
     );
   }
@@ -517,6 +521,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 class _UserCard extends StatelessWidget {
   const _UserCard({required this.profile});
   final UserProfile profile;
+
+  static bool _isUrl(String? s) =>
+      s != null &&
+      (s.startsWith('http://') || s.startsWith('https://'));
 
   @override
   Widget build(BuildContext context) {
@@ -534,7 +542,8 @@ class _UserCard extends StatelessWidget {
               CircleAvatar(
                 radius: AppDimensions.avatarSizeS,
                 backgroundImage: getAvatarImageProvider(
-                  filePath: profile.avatarPath,
+                  avatarUrl: _isUrl(profile.avatarPath) ? profile.avatarPath : null,
+                  filePath: _isUrl(profile.avatarPath) ? null : profile.avatarPath,
                   assetPath: 'lib/assets/images/ArjonaSergio.jpg',
                 ),
                 backgroundColor: AppTheme.panel,

@@ -36,17 +36,26 @@ class ApiUsersRepository {
 
   // Mapeador manual (Json -> UserProfile)
   UserProfile _mapJsonToProfile(Map<String, dynamic> json) {
-    // Mapear la lista de idiomas
+    // Normalizar nativeLanguage a mayúsculas (backend envía "es", app usa "ES")
+    final rawNative = json['nativeLanguage'] as String?;
+    final nativeLanguage =
+        rawNative != null && rawNative.isNotEmpty ? rawNative.toUpperCase() : 'ES';
+
+    // Mapear la lista de idiomas (code también a mayúsculas)
     List<LanguageItem> learningLangs = [];
     if (json['learningLanguages'] != null) {
       learningLangs = (json['learningLanguages'] as List).map((l) {
+        final rawCode = l['code'] as String?;
+        final code = rawCode != null && rawCode.isNotEmpty
+            ? rawCode.toString().toUpperCase()
+            : 'EN';
         return LanguageItem(
-          code: l['code'] ?? 'EN',
+          code: code,
           name: l['name'] ?? 'Inglés',
           level:
               l['level']?.toString().split(' - ')[0] ??
-              'A1', // "A1 - Principiante" -> "A1"
-          active: true, // Por defecto activos
+              'A1', // "A1 - Beginner" -> "A1"
+          active: true,
         );
       }).toList();
     }
@@ -65,9 +74,9 @@ class ApiUsersRepository {
       medals: json['medals'] ?? 0,
       learningLanguages: learningLangs,
       isPro: json['isPro'] ?? false,
-      nativeLanguage: json['nativeLanguage'] ?? 'ES',
+      nativeLanguage: nativeLanguage,
       description: json['description'] ?? '',
-      avatarPath: null,
+      avatarPath: json['avatarUrl'] as String?,
     );
   }
 }

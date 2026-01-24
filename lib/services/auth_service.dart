@@ -61,6 +61,16 @@ class AuthService {
     }
   }
 
+  /// Headers JSON + Authorization Bearer para peticiones autenticadas a /api/*
+  Future<Map<String, String>> headersWithAuth() async {
+    final token = await getToken();
+    final headers = Map<String, String>.from(AppConstants.jsonHeaders);
+    if (token != null && token.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+    return headers;
+  }
+
   Future<String?> getToken() async {
     // 1. Mirar variable global
     if (globalAccessToken != null) {
@@ -94,6 +104,36 @@ class AuthService {
     int nativeLangId,
     int learnLangId,
   ) async {
-    return AuthResult.success();
+    final parts = name.trim().split(RegExp(r'\s+'));
+    final firstName = parts.isNotEmpty ? parts.first : '';
+    final surname = parts.length > 1 ? parts.sublist(1).join(' ') : '';
+
+    final url = Uri.parse(ApiEndpoints.register);
+    final body = jsonEncode({
+      'name': firstName,
+      'surname': surname,
+      'email': email.trim(),
+      'password': password,
+      'nativeLanguageId': nativeLangId,
+    });
+
+    try {
+      final response = await http.post(
+        url,
+        headers: AppConstants.jsonHeaders,
+        body: body,
+      );
+
+      if (response.statusCode == 201) {
+        return AuthResult.success();
+      }
+
+      return AuthResult.failure(
+        AuthError.fromResponse(response.statusCode, response.body),
+      );
+    } catch (e) {
+      debugPrint("❌ Register error: $e");
+      return AuthResult.failure(NetworkError());
+    }
   }
 }

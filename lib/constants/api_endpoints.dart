@@ -32,7 +32,7 @@ class ApiEndpoints {
   // --- Endpoints de Perfil ---
 
   /// Obtener usuario actual
-  static const String me = '$apiBase/auth/me';
+  static const String me = '$apiBase/users/me';
 
   /// Endpoint de perfil
   static const String profile = '$apiBase/profile';
@@ -57,4 +57,3 @@ class ApiEndpoints {
   // TODO(BE): POST /api/chats/{chatId}/messages - Enviar mensaje
   // TODO(BE): WebSocket /ws/chats/{chatId} o SSE para mensajes en tiempo real
 }
-

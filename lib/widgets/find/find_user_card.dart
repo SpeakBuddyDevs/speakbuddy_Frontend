@@ -94,7 +94,7 @@ class FindUserCard extends StatelessWidget {
                     ),
                     const SizedBox(height: AppDimensions.spacingXS),
                     Text(
-                      user.country,
+                      user.country.isEmpty ? '—' : user.country,
                       style: TextStyle(
                         color: AppTheme.subtle,
                         fontSize: AppDimensions.fontSizeS,
@@ -122,7 +122,7 @@ class FindUserCard extends StatelessWidget {
                 Icon(Icons.translate_rounded, size: 16, color: AppTheme.subtle),
                 const SizedBox(width: AppDimensions.spacingSM),
                 Text(
-                  '${user.nativeLanguage} → ${user.targetLanguage}',
+                  '${user.nativeLanguage.isEmpty ? '—' : user.nativeLanguage} → ${user.targetLanguage.isEmpty ? '—' : user.targetLanguage}',
                   style: TextStyle(
                     color: AppTheme.text,
                     fontSize: AppDimensions.fontSizeS,

@@ -19,5 +19,15 @@ class AppLanguages {
 
   /// Retorna la lista de códigos de idiomas disponibles.
   static List<String> get availableCodes => codeToName.keys.toList();
+
+  /// Obtiene el código a partir del nombre del idioma (ej. "Español" → "ES").
+  /// Para usar con filtros que envían nombres a la API como isoCode en minúsculas.
+  static String? getCodeFromName(String name) {
+    if (name.isEmpty) return null;
+    for (final e in codeToName.entries) {
+      if (e.value == name) return e.key;
+    }
+    return null;
+  }
 }
 

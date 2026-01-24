@@ -8,6 +8,7 @@ void main() {
 
     setUp(() {
       profile = UserProfile(
+        id: '1',
         name: 'Juan Pérez',
         email: 'juan@example.com',
         level: 5,
@@ -92,6 +93,7 @@ void main() {
 
     test('debe permitir avatarPath null', () {
       final profileWithoutAvatar = UserProfile(
+        id: '',
         name: 'Test',
         email: 'test@example.com',
         level: 1,

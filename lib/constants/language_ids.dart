@@ -31,5 +31,9 @@ class LanguageIds {
     }
     return null;
   }
+
+  /// Códigos que el backend tiene en DataInitializer (solo ES, EN, FR, DE, IT).
+  /// Usar al añadir idiomas de aprendizaje para evitar "Language not found".
+  static const List<String> learningCodesSupportedByBackend = ['ES', 'EN', 'FR', 'DE', 'IT'];
 }
 

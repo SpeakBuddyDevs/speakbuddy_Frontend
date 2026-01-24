@@ -13,6 +13,7 @@ import '../widgets/common/language_action_bottom_sheet.dart';
 import '../widgets/common/level_selector_bottom_sheet.dart';
 import '../widgets/common/app_header.dart';
 import '../constants/dimensions.dart';
+import '../constants/language_ids.dart';
 import '../repositories/api_users_repository.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -39,15 +40,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _loadUserProfile() async {
     setState(() => _isLoading = true);
 
-    // Llamada al endpoint GET /api/users/me
     final profile = await _usersRepo.getMyProfile();
 
-    if (mounted) {
-      setState(() {
-        _profile = profile;
-        _isLoading = false;
-      });
-    }
+    if (!mounted) return;
+    setState(() {
+      if (profile != null) _profile = profile;
+      _isLoading = false;
+    });
   }
 
   Future<void> _editDescription() async {
@@ -97,15 +96,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _addLearningLanguage() async {
     if (_profile == null) return;
+    if (_profile!.id.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se puede añadir; recarga el perfil e inténtalo de nuevo.')),
+      );
+      return;
+    }
 
     // Códigos ya en aprendizaje
     final existing = _profile!.learningLanguages.map((e) => e.code).toSet();
 
-    // Disponibles = catálogo - existentes - idioma nativo
+    // Disponibles = catálogo - existentes - idioma nativo; solo los que soporta el backend
     final available = AppLanguages.availableCodes
         .where(
           (code) =>
-              !existing.contains(code) && code != _profile!.nativeLanguage,
+              !existing.contains(code) &&
+              code != _profile!.nativeLanguage &&
+              LanguageIds.learningCodesSupportedByBackend.contains(code),
         )
         .toList();
 
@@ -129,19 +137,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (!mounted || picked == null) return;
 
+    final display = AppLanguages.getName(picked);
+    final newItem = LanguageItem(
+      code: picked,
+      name: display,
+      level: 'Principiante',
+    );
+
     setState(() {
-      final display = AppLanguages.getName(picked);
-      final newItem = LanguageItem(
-        code: picked,
-        name: display,
-        level: 'Principiante',
-      );
       _profile = _profile!.copyWith(
         learningLanguages: [..._profile!.learningLanguages, newItem],
         languagesCount: _profile!.learningLanguages.length + 1,
       );
     });
-    // TODO: Llamar al backend
+
+    final ok = await ApiUsersRepository().addLearningLanguage(_profile!.id, picked, levelId: 1);
+    if (!mounted) return;
+    if (!ok) {
+      setState(() {
+        final updated = _profile!.learningLanguages.where((l) => l.code != picked).toList();
+        _profile = _profile!.copyWith(
+          learningLanguages: updated,
+          languagesCount: updated.length,
+        );
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al añadir idioma $display')),
+      );
+      return;
+    }
+    _loadUserProfile();
   }
 
   void _onLanguageLongPress(LanguageItem lang) async {
@@ -454,6 +479,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 .map((e) => e.code)
                                 .toList(),
                             initialAvatarPath: _profile!.avatarPath,
+                            userId: _profile!.id.isEmpty ? null : _profile!.id,
                           ),
                         ),
                       );
@@ -488,6 +514,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             );
                           }
                         });
+                        _loadUserProfile();
                       }
                     },
                   ),

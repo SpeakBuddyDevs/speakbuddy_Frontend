@@ -1,8 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import '../constants/language_ids.dart';
 import '../constants/languages.dart';
 import '../models/edit_profile_result.dart';
+import '../repositories/api_users_repository.dart';
 import '../theme/app_theme.dart';
 import '../utils/validators.dart';
 import '../utils/image_helpers.dart';
@@ -16,12 +18,15 @@ class EditProfileScreen extends StatefulWidget {
     required this.initialNative,
     required this.initialLearning,
     this.initialAvatarPath,
+    this.userId,
   });
 
   final String initialName;
   final String initialNative; // código
   final List<String> initialLearning; // códigos
   final String? initialAvatarPath;
+  /// Si se pasa, al guardar se envían los cambios al backend (PUT profile, PUT native, POST learn).
+  final String? userId;
 
   @override
   State<EditProfileScreen> createState() => _EditProfileScreenState();
@@ -61,7 +66,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   void _addLearningLanguage() async {
     final available = AppLanguages.availableCodes
-        .where((code) => !_learning.contains(code) && code != _native)
+        .where((code) =>
+            !_learning.contains(code) &&
+            code != _native &&
+            LanguageIds.learningCodesSupportedByBackend.contains(code))
         .toList();
 
     if (available.isEmpty) {
@@ -83,18 +91,74 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     });
   }
 
-  // BACKEND: PUT /api/profile para guardar cambios
-  // Request: { name, nativeLanguage, learningLanguages[], description? }
-  // Para avatar: POST /api/profile/avatar (multipart/form-data)
-  // TODO(FE): Llamar API aquí en lugar de solo devolver resultado local
-  void _save() {
+  /// Guardar cambios. Si [userId] existe, llama al backend (PUT profile, PUT native, POST learn).
+  /// TODO(FE): Eliminación de idiomas no se envía al backend; al refrescar GET /me podrían reaparecer.
+  Future<void> _save() async {
     if (!FormValidators.isFormValid(_formKey)) return;
+
+    final userId = widget.userId;
+    if (userId == null || userId.isEmpty) {
+      if (!mounted) return;
+      Navigator.pop(
+        context,
+        EditProfileResult(
+          name: _nameCtrl.text.trim(),
+          nativeLanguage: _native,
+          learningLanguages: List.from(_learning),
+          avatarFile: _pickedImage,
+        ),
+      );
+      return;
+    }
+
+    final fullName = _nameCtrl.text.trim();
+    final parts = fullName.split(RegExp(r'\s+'));
+    final name = parts.isNotEmpty ? parts.first : '';
+    final surname = parts.length > 1 ? parts.sublist(1).join(' ') : '';
+
+    final repo = ApiUsersRepository();
+
+    final okProfile = await repo.updateProfile(userId, name: name, surname: surname, profilePictureUrl: null);
+    if (!okProfile) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error al actualizar el perfil')),
+      );
+      return;
+    }
+
+    if (widget.initialNative != _native) {
+      final okNative = await repo.updateNativeLanguage(userId, _native);
+      if (!okNative) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error al actualizar el idioma nativo')),
+        );
+        return;
+      }
+    }
+
+    final initialSet = widget.initialLearning.toSet();
+    for (final code in _learning) {
+      if (initialSet.contains(code)) continue;
+      if (!LanguageIds.learningCodesSupportedByBackend.contains(code)) continue;
+      final ok = await repo.addLearningLanguage(userId, code, levelId: 1);
+      if (!ok) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al añadir idioma ${AppLanguages.getName(code)}')),
+        );
+        return;
+      }
+    }
+
+    if (!mounted) return;
     Navigator.pop(
       context,
       EditProfileResult(
-        name: _nameCtrl.text.trim(),
+        name: fullName,
         nativeLanguage: _native,
-        learningLanguages: _learning,
+        learningLanguages: List.from(_learning),
         avatarFile: _pickedImage,
       ),
     );

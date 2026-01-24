@@ -42,11 +42,20 @@ class ApiEndpoints {
 
   // --- Endpoints de Usuarios (Find) ---
 
-  // TODO(BE): GET /api/users/search?q=&page=&pageSize=&online=&pro=&minRating=&nativeLang=&targetLang=&country=
-  // static const String usersSearch = '$apiBase/users/search';
+  /// Búsqueda de usuarios: GET /api/users/search?nativeLang=&learningLang=&page=&size=
+  static const String usersSearch = '$apiBase/users/search';
 
-  // TODO(BE): GET /api/users/{id} - Perfil público de un usuario
-  // static const String user = '$apiBase/users'; // + /{id}
+  /// Perfil público: GET /api/users/{id}/profile. PUT reutiliza esta ruta.
+  static String userProfile(String id) => '$apiBase/users/$id/profile';
+
+  /// POST /api/users/{id}/languages/learn — añadir idioma de aprendizaje
+  static String userLanguagesLearn(String id) => '$apiBase/users/$id/languages/learn';
+
+  /// PUT /api/users/{id}/languages/native — actualizar idioma nativo
+  static String userLanguagesNative(String id) => '$apiBase/users/$id/languages/native';
+
+  /// GET /api/languages — listado de idiomas (id, name, isoCode) para usar IDs reales al añadir
+  static const String languages = '$apiBase/languages';
 
   // --- Endpoints de Chat ---
 

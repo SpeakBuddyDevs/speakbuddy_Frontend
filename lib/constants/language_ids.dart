@@ -4,15 +4,14 @@
 /// en la aplicación (ES, EN, FR, etc.) y los IDs correspondientes en la base de datos del backend.
 class LanguageIds {
   static const Map<String, int> codeToId = {
-    'ES': 1, // Español
-    'EN': 2, // Inglés
-    'FR': 3, // Francés
-    'DE': 4, // Alemán
-    'IT': 5, // Italiano
-    'PT': 6, // Portugués
-    'ZH': 7, // Chino
-    'JA': 8, // Japonés
-    'RU': 9, // Ruso
+    'es': 1, // Español
+    'en': 2, // Inglés
+    'fr': 3, // Francés
+    'de': 4, // Alemán
+    'it': 5, // Italiano
+    'pt': 6, // Portugués
+    'zh': 7, // Chino
+    'ja': 8, // Japonés
   };
 
   /// Obtiene el ID del backend a partir del código de idioma.
@@ -34,6 +33,11 @@ class LanguageIds {
 
   /// Códigos que el backend tiene en DataInitializer (solo ES, EN, FR, DE, IT).
   /// Usar al añadir idiomas de aprendizaje para evitar "Language not found".
-  static const List<String> learningCodesSupportedByBackend = ['ES', 'EN', 'FR', 'DE', 'IT'];
+  static const List<String> learningCodesSupportedByBackend = [
+    'es',
+    'en',
+    'fr',
+    'de',
+    'it',
+  ];
 }
-

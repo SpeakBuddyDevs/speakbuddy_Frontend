@@ -1,14 +1,13 @@
 class AppLanguages {
   static const Map<String, String> codeToName = {
-    'ES': 'Español',
-    'EN': 'Inglés',
-    'FR': 'Francés',
-    'DE': 'Alemán',
-    'IT': 'Italiano',
-    'PT': 'Portugués',
-    'ZH': 'Chino',
-    'JA': 'Japonés',
-    'RU': 'Ruso',
+    'es': 'Español',
+    'en': 'English',
+    'fr': 'Français',
+    'de': 'Deutsch',
+    'it': 'Italiano',
+    'pt': 'Portugués',
+    'zh': 'Chino',
+    'ja': 'Japonés',
   };
 
   /// Obtiene el nombre del idioma a partir de su código.
@@ -30,4 +29,3 @@ class AppLanguages {
     return null;
   }
 }
-

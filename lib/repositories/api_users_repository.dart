@@ -24,7 +24,8 @@ class ApiUsersRepository implements UsersRepository {
       final response = await http.get(url, headers: headers);
       if (response.statusCode != 200) return {};
 
-      final list = jsonDecode(utf8.decode(response.bodyBytes)) as List<dynamic>?;
+      final list =
+          jsonDecode(utf8.decode(response.bodyBytes)) as List<dynamic>?;
       if (list == null) return {};
       final map = <String, int>{};
       for (final e in list) {
@@ -58,8 +59,8 @@ class ApiUsersRepository implements UsersRepository {
 
       if (response.statusCode != 200) return null;
 
-      final data = jsonDecode(utf8.decode(response.bodyBytes))
-          as Map<String, dynamic>;
+      final data =
+          jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
       return _mapProfileResponseToPublic(data);
     } catch (e, st) {
       print('🔴 [PublicProfile] Error: $e');
@@ -69,9 +70,10 @@ class ApiUsersRepository implements UsersRepository {
   }
 
   PublicUserProfile _mapProfileResponseToPublic(Map<String, dynamic> json) {
-    final nameSurname =
-        '${json['name'] ?? ''} ${json['surname'] ?? ''}'.trim();
-    final name = nameSurname.isNotEmpty ? nameSurname : (json['username'] as String? ?? 'Usuario');
+    final nameSurname = '${json['name'] ?? ''} ${json['surname'] ?? ''}'.trim();
+    final name = nameSurname.isNotEmpty
+        ? nameSurname
+        : (json['username'] as String? ?? 'Usuario');
 
     final native = json['nativeLanguage'] as Map<String, dynamic>?;
     String nativeLanguage = '—';
@@ -80,7 +82,9 @@ class ApiUsersRepository implements UsersRepository {
       if (n != null && n.isNotEmpty) {
         nativeLanguage = n;
       } else {
-        final iso = (native['isoCode'] as String? ?? 'es').toString().toUpperCase();
+        final iso = (native['isoCode'] as String? ?? 'es')
+            .toString()
+            .toUpperCase();
         nativeLanguage = AppLanguages.getName(iso);
       }
     }
@@ -125,7 +129,8 @@ class ApiUsersRepository implements UsersRepository {
       final body = <String, dynamic>{};
       if (name != null) body['name'] = name;
       if (surname != null) body['surname'] = surname;
-      if (profilePictureUrl != null) body['profilePictureUrl'] = profilePictureUrl;
+      if (profilePictureUrl != null)
+        body['profilePictureUrl'] = profilePictureUrl;
 
       final url = Uri.parse(ApiEndpoints.userProfile(userId));
       final response = await http.put(
@@ -134,7 +139,9 @@ class ApiUsersRepository implements UsersRepository {
         body: jsonEncode(body),
       );
       if (response.statusCode != 200) {
-        print('🔴 [Profile] updateProfile ${response.statusCode}: ${response.body}');
+        print(
+          '🔴 [Profile] updateProfile ${response.statusCode}: ${response.body}',
+        );
         return false;
       }
       return true;
@@ -145,7 +152,10 @@ class ApiUsersRepository implements UsersRepository {
     }
   }
 
-  Future<bool> updateNativeLanguage(String userId, String newNativeLanguageCode) async {
+  Future<bool> updateNativeLanguage(
+    String userId,
+    String newNativeLanguageCode,
+  ) async {
     final code = newNativeLanguageCode.toUpperCase();
     final languageId = LanguageIds.getId(code);
     if (languageId == null) return false;
@@ -161,7 +171,9 @@ class ApiUsersRepository implements UsersRepository {
         body: jsonEncode({'newNativeLanguageId': languageId}),
       );
       if (response.statusCode != 200) {
-        print('🔴 [Profile] updateNativeLanguage ${response.statusCode}: ${response.body}');
+        print(
+          '🔴 [Profile] updateNativeLanguage ${response.statusCode}: ${response.body}',
+        );
         return false;
       }
       return true;
@@ -172,7 +184,11 @@ class ApiUsersRepository implements UsersRepository {
     }
   }
 
-  Future<bool> addLearningLanguage(String userId, String languageCode, {int levelId = 1}) async {
+  Future<bool> addLearningLanguage(
+    String userId,
+    String languageCode, {
+    int levelId = 1,
+  }) async {
     final code = languageCode.toUpperCase();
     final ids = await _fetchLanguageIds();
     final languageId = ids[code] ?? LanguageIds.getId(code);
@@ -189,13 +205,64 @@ class ApiUsersRepository implements UsersRepository {
         body: jsonEncode({'languageId': languageId, 'levelId': levelId}),
       );
       if (response.statusCode != 200) {
-        print('🔴 [Profile] addLearningLanguage ${response.statusCode}: ${response.body}');
+        print(
+          '🔴 [Profile] addLearningLanguage ${response.statusCode}: ${response.body}',
+        );
         return false;
       }
       return true;
     } catch (e, st) {
       print('🔴 [Profile] addLearningLanguage error: $e');
       print(st);
+      return false;
+    }
+  }
+
+  Future<bool> setLearningLanguageActive(
+    String userId,
+    String languageCode,
+  ) async {
+    try {
+      final headers = await _authService.headersWithAuth();
+      final token = await _authService.getToken();
+      if (token == null || token.isEmpty) return false;
+
+      // Asegúrate de que la URL coincida con la de tu Controller de Spring Boot
+      // Ejemplo: /api/users/1/languages/EN/active
+      final url = Uri.parse(
+        '${ApiEndpoints.baseUrl}/users/$userId/languages/$languageCode/active',
+      );
+
+      // Usamos PATCH porque así lo definimos en el backend (@PatchMapping)
+      final response = await http.patch(url, headers: headers);
+
+      if (response.statusCode != 200) {
+        print('🔴 [Profile] Error al activar idioma: ${response.statusCode}');
+        return false;
+      }
+      return true;
+    } catch (e) {
+      print('🔴 [Profile] Excepción al activar idioma: $e');
+      return false;
+    }
+  }
+
+  Future<bool> setLearningLanguageInactive(
+    String userId,
+    String languageCode,
+  ) async {
+    try {
+      final headers = await _authService.headersWithAuth();
+      final url = Uri.parse(
+        '${ApiEndpoints.baseUrl}/users/$userId/languages/$languageCode/inactive',
+      ); // Nuevo endpoint
+
+      // Usamos PATCH
+      final response = await http.patch(url, headers: headers);
+
+      return response.statusCode == 200;
+    } catch (e) {
+      print('🔴 [Profile] Error desactivando idioma: $e');
       return false;
     }
   }
@@ -209,10 +276,7 @@ class ApiUsersRepository implements UsersRepository {
 
       final url = Uri.parse(ApiEndpoints.me);
 
-      final response = await http.get(
-        url,
-        headers: headers,
-      );
+      final response = await http.get(url, headers: headers);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(utf8.decode(response.bodyBytes));
@@ -230,8 +294,9 @@ class ApiUsersRepository implements UsersRepository {
   UserProfile _mapJsonToProfile(Map<String, dynamic> json) {
     // Normalizar nativeLanguage a mayúsculas (backend envía "es", app usa "ES")
     final rawNative = json['nativeLanguage'] as String?;
-    final nativeLanguage =
-        rawNative != null && rawNative.isNotEmpty ? rawNative.toUpperCase() : 'ES';
+    final nativeLanguage = rawNative != null && rawNative.isNotEmpty
+        ? rawNative.toUpperCase()
+        : 'ES';
 
     // Mapear la lista de idiomas (code también a mayúsculas)
     List<LanguageItem> learningLangs = [];
@@ -247,7 +312,7 @@ class ApiUsersRepository implements UsersRepository {
           level:
               l['level']?.toString().split(' - ')[0] ??
               'A1', // "A1 - Beginner" -> "A1"
-          active: true,
+          active: false,
         );
       }).toList();
     }

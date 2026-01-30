@@ -84,7 +84,7 @@ class ApiUsersRepository implements UsersRepository {
       } else {
         final iso = (native['isoCode'] as String? ?? 'es')
             .toString()
-            .toUpperCase();
+            .toLowerCase();
         nativeLanguage = AppLanguages.getName(iso);
       }
     }
@@ -156,7 +156,7 @@ class ApiUsersRepository implements UsersRepository {
     String userId,
     String newNativeLanguageCode,
   ) async {
-    final code = newNativeLanguageCode.toUpperCase();
+    final code = newNativeLanguageCode.toLowerCase();
     final languageId = LanguageIds.getId(code);
     if (languageId == null) return false;
     try {
@@ -230,7 +230,7 @@ class ApiUsersRepository implements UsersRepository {
       // Asegúrate de que la URL coincida con la de tu Controller de Spring Boot
       // Ejemplo: /api/users/1/languages/EN/active
       final url = Uri.parse(
-        '${ApiEndpoints.baseUrl}/users/$userId/languages/$languageCode/active',
+        '${ApiEndpoints.baseUrl}/$userId/languages/$languageCode/active',
       );
 
       // Usamos PATCH porque así lo definimos en el backend (@PatchMapping)

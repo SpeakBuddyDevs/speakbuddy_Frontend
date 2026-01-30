@@ -292,20 +292,20 @@ class ApiUsersRepository implements UsersRepository {
 
   // Mapeador manual (Json -> UserProfile)
   UserProfile _mapJsonToProfile(Map<String, dynamic> json) {
-    // Normalizar nativeLanguage a mayúsculas (backend envía "es", app usa "ES")
+    // Normalizar nativeLanguage a minúsculas (consistente con AppLanguages.codeToName)
     final rawNative = json['nativeLanguage'] as String?;
     final nativeLanguage = rawNative != null && rawNative.isNotEmpty
-        ? rawNative.toUpperCase()
-        : 'ES';
+        ? rawNative.toLowerCase()
+        : 'es';
 
-    // Mapear la lista de idiomas (code también a mayúsculas)
+    // Mapear la lista de idiomas (code también a minúsculas)
     List<LanguageItem> learningLangs = [];
     if (json['learningLanguages'] != null) {
       learningLangs = (json['learningLanguages'] as List).map((l) {
         final rawCode = l['code'] as String?;
         final code = rawCode != null && rawCode.isNotEmpty
-            ? rawCode.toString().toUpperCase()
-            : 'EN';
+            ? rawCode.toString().toLowerCase()
+            : 'en';
         return LanguageItem(
           code: code,
           name: l['name'] ?? 'Inglés',

@@ -229,10 +229,9 @@ class ApiUsersRepository implements UsersRepository {
       final token = await _authService.getToken();
       if (token == null || token.isEmpty) return false;
 
-      // Asegúrate de que la URL coincida con la de tu Controller de Spring Boot
-      // Ejemplo: /api/users/1/languages/EN/active
+      // URL: /api/users/{userId}/languages/{code}/active
       final url = Uri.parse(
-        '${ApiEndpoints.baseUrl}/$userId/languages/$languageCode/active',
+        '${ApiEndpoints.apiBase}/users/$userId/languages/$languageCode/active',
       );
 
       // Usamos PATCH porque así lo definimos en el backend (@PatchMapping)
@@ -255,9 +254,10 @@ class ApiUsersRepository implements UsersRepository {
   ) async {
     try {
       final headers = await _authService.headersWithAuth();
+      // URL: /api/users/{userId}/languages/{code}/inactive
       final url = Uri.parse(
-        '${ApiEndpoints.baseUrl}/users/$userId/languages/$languageCode/inactive',
-      ); // Nuevo endpoint
+        '${ApiEndpoints.apiBase}/users/$userId/languages/$languageCode/inactive',
+      );
 
       // Usamos PATCH
       final response = await http.patch(url, headers: headers);
@@ -265,6 +265,71 @@ class ApiUsersRepository implements UsersRepository {
       return response.statusCode == 200;
     } catch (e) {
       print('🔴 [Profile] Error desactivando idioma: $e');
+      return false;
+    }
+  }
+
+  /// Eliminar idioma de aprendizaje por código
+  Future<bool> deleteLearningLanguage(
+    String userId,
+    String languageCode,
+  ) async {
+    try {
+      final headers = await _authService.headersWithAuth();
+      final token = await _authService.getToken();
+      if (token == null || token.isEmpty) return false;
+
+      final url = Uri.parse(
+        ApiEndpoints.userLanguagesLearnByCode(userId, languageCode),
+      );
+
+      final response = await http.delete(url, headers: headers);
+
+      if (response.statusCode != 200) {
+        print(
+          '🔴 [Profile] deleteLearningLanguage ${response.statusCode}: ${response.body}',
+        );
+        return false;
+      }
+      return true;
+    } catch (e, st) {
+      print('🔴 [Profile] deleteLearningLanguage error: $e');
+      print(st);
+      return false;
+    }
+  }
+
+  /// Actualizar nivel de idioma de aprendizaje por código
+  Future<bool> updateLearningLevel(
+    String userId,
+    String languageCode,
+    int newLevelId,
+  ) async {
+    try {
+      final headers = await _authService.headersWithAuth();
+      final token = await _authService.getToken();
+      if (token == null || token.isEmpty) return false;
+
+      final url = Uri.parse(
+        ApiEndpoints.userLanguagesLevelByCode(userId, languageCode),
+      );
+
+      final response = await http.put(
+        url,
+        headers: headers,
+        body: jsonEncode({'newLevelId': newLevelId}),
+      );
+
+      if (response.statusCode != 200) {
+        print(
+          '🔴 [Profile] updateLearningLevel ${response.statusCode}: ${response.body}',
+        );
+        return false;
+      }
+      return true;
+    } catch (e, st) {
+      print('🔴 [Profile] updateLearningLevel error: $e');
+      print(st);
       return false;
     }
   }
@@ -312,9 +377,9 @@ class ApiUsersRepository implements UsersRepository {
           code: code,
           name: l['name'] ?? 'Inglés',
           level:
-              l['level']?.toString().split(' - ')[0] ??
+              l['level']?.toString() ??
               'A1', // "A1 - Beginner" -> "A1"
-          active: false,
+          active: l['active'] ?? false,
         );
       }).toList();
     }

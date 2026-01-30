@@ -14,6 +14,7 @@ import '../widgets/common/level_selector_bottom_sheet.dart';
 import '../widgets/common/app_header.dart';
 import '../constants/dimensions.dart';
 import '../constants/language_ids.dart';
+import '../constants/level_ids.dart';
 import '../repositories/api_users_repository.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -221,6 +222,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     // Opción 1a: Marcar como activo
     if (action == 'active') {
+      // Guardar estado anterior
+      final previousLanguages = List<LanguageItem>.from(_profile!.learningLanguages);
+
+      // Actualización optimista
       setState(() {
         final updated = _profile!.learningLanguages.map((LanguageItem l) {
           final shouldBeActive = (l.code == lang.code);
@@ -236,13 +241,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _profile = _profile!.copyWith(learningLanguages: updated);
       });
 
-      // TODO: Llamada al backend para persistir el idioma activo:
-      // await _usersRepo.setActiveLanguage(_profile!.id, lang.code);
+      // Llamada al backend
+      final ok = await _usersRepo.setLearningLanguageActive(_profile!.id, lang.code);
+      if (!mounted) return;
+      if (!ok) {
+        // Revertir en caso de error
+        setState(() {
+          _profile = _profile!.copyWith(learningLanguages: previousLanguages);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error al activar el idioma'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
       return;
     }
 
     // Caso 1b: El usuario quiere DESACTIVAR este idioma (pasar a inactivo)
     if (action == 'unactive') {
+      // Guardar estado anterior
+      final previousLanguages = List<LanguageItem>.from(_profile!.learningLanguages);
+
+      // Actualización optimista
       setState(() {
         final updated = _profile!.learningLanguages.map((LanguageItem l) {
           if (l.code == lang.code) {
@@ -258,14 +280,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
         _profile = _profile!.copyWith(learningLanguages: updated);
       });
-      // TODO: Llamada al backend para quitar idioma activo
+
+      // Llamada al backend
+      final ok = await _usersRepo.setLearningLanguageInactive(_profile!.id, lang.code);
+      if (!mounted) return;
+      if (!ok) {
+        // Revertir en caso de error
+        setState(() {
+          _profile = _profile!.copyWith(learningLanguages: previousLanguages);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error al desactivar el idioma'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
       return;
     }
 
     // Opción 2: Configurar nivel
     if (action == 'level') {
-      const levels = ['Principiante', 'Intermedio', 'Avanzado'];
+      final levels = LevelIds.availableLevels;
       String selected = lang.level;
+
+      // Si el nivel actual no está en la lista, usar el primero
+      if (!levels.contains(selected)) {
+        selected = levels.first;
+      }
 
       final pickedLevel = await showLevelSelectorBottomSheet(
         context,
@@ -275,6 +317,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       if (!mounted || pickedLevel == null) return;
 
+      // Obtener el ID del nivel para el backend
+      final levelId = LevelIds.getId(pickedLevel);
+      if (levelId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Nivel no válido'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // Guardar estado anterior
+      final previousLanguages = List<LanguageItem>.from(_profile!.learningLanguages);
+
+      // Actualización optimista
       setState(() {
         final updated = _profile!.learningLanguages.map((LanguageItem l) {
           if (l.code == lang.code) {
@@ -290,6 +348,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
         _profile = _profile!.copyWith(learningLanguages: updated);
       });
+
+      // Llamada al backend
+      final ok = await _usersRepo.updateLearningLevel(
+        _profile!.id,
+        lang.code,
+        levelId,
+      );
+      if (!mounted) return;
+      if (!ok) {
+        // Revertir en caso de error
+        setState(() {
+          _profile = _profile!.copyWith(learningLanguages: previousLanguages);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error al actualizar el nivel'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
       return;
     }
 
@@ -304,6 +382,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return;
       }
 
+      // Guardar estado anterior
+      final previousLanguages = List<LanguageItem>.from(_profile!.learningLanguages);
+      final previousCount = _profile!.languagesCount;
+
+      // Actualización optimista
       setState(() {
         final updated = _profile!.learningLanguages
             .where((l) => l.code != lang.code)
@@ -314,6 +397,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
           languagesCount: updated.length,
         );
       });
+
+      // Llamada al backend
+      final ok = await _usersRepo.deleteLearningLanguage(_profile!.id, lang.code);
+      if (!mounted) return;
+      if (!ok) {
+        // Revertir en caso de error
+        setState(() {
+          _profile = _profile!.copyWith(
+            learningLanguages: previousLanguages,
+            languagesCount: previousCount,
+          );
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al eliminar ${lang.name}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -744,7 +846,7 @@ class _UserCard extends StatelessWidget {
                         ),
                         const SizedBox(width: AppDimensions.spacingS),
                         Text(
-                          '${AppLanguages.getName(profile.nativeLanguage)}  →  ${profile.learningLanguages.isNotEmpty ? AppLanguages.getName(profile.learningLanguages.first.code) : '-'}',
+                          '${AppLanguages.getName(profile.nativeLanguage)}  →  ${_getActiveLanguageName()}',
                           style: TextStyle(
                             color: AppTheme.subtle,
                             fontSize: AppDimensions.fontSizeS,
@@ -804,6 +906,14 @@ class _UserCard extends StatelessWidget {
   int _remaining(double pct) {
     final completed = (pct * 5).round();
     return (5 - completed).clamp(0, 5);
+  }
+
+  String _getActiveLanguageName() {
+    // Buscar idioma activo, o el primero si no hay ninguno
+    final activeLang = profile.learningLanguages.where((l) => l.active).firstOrNull;
+    final targetLang = activeLang ??
+        (profile.learningLanguages.isNotEmpty ? profile.learningLanguages.first : null);
+    return targetLang != null ? AppLanguages.getName(targetLang.code) : '-';
   }
 }
 

@@ -54,6 +54,14 @@ class ApiEndpoints {
   /// PUT /api/users/{id}/languages/native — actualizar idioma nativo
   static String userLanguagesNative(String id) => '$apiBase/users/$id/languages/native';
 
+  /// DELETE /api/users/{id}/languages/learn/by-code/{code} — eliminar idioma por código
+  static String userLanguagesLearnByCode(String id, String code) =>
+      '$apiBase/users/$id/languages/learn/by-code/$code';
+
+  /// PUT /api/users/{id}/languages/learn/by-code/{code} — actualizar nivel por código
+  static String userLanguagesLevelByCode(String id, String code) =>
+      '$apiBase/users/$id/languages/learn/by-code/$code';
+
   /// GET /api/languages — listado de idiomas (id, name, isoCode) para usar IDs reales al añadir
   static const String languages = '$apiBase/languages';
 

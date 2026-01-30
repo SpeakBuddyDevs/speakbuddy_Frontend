@@ -62,6 +62,9 @@ class ApiEndpoints {
   static String userLanguagesLevelByCode(String id, String code) =>
       '$apiBase/users/$id/languages/learn/by-code/$code';
 
+  /// POST /api/users/{id}/profile/picture — subir foto de perfil
+  static String userProfilePicture(String id) => '$apiBase/users/$id/profile/picture';
+
   /// GET /api/languages — listado de idiomas (id, name, isoCode) para usar IDs reales al añadir
   static const String languages = '$apiBase/languages';
 

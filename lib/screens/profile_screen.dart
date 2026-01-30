@@ -745,7 +745,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               languagesCount: updatedLearning.length,
                             );
 
-                            if (result.avatarFile != null) {
+                            // Actualizar avatar: priorizar URL del backend sobre archivo local
+                            if (result.avatarUrl != null) {
+                              _profile = _profile!.copyWith(
+                                avatarPath: result.avatarUrl,
+                              );
+                            } else if (result.avatarFile != null) {
                               _profile = _profile!.copyWith(
                                 avatarPath: result.avatarFile!.path,
                               );

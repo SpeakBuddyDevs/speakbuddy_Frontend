@@ -334,6 +334,30 @@ class ApiUsersRepository implements UsersRepository {
     }
   }
 
+  /// Eliminar la cuenta del usuario autenticado
+  Future<bool> deleteAccount() async {
+    try {
+      final headers = await _authService.headersWithAuth();
+      final token = await _authService.getToken();
+      if (token == null || token.isEmpty) return false;
+
+      final url = Uri.parse(ApiEndpoints.me);
+      final response = await http.delete(url, headers: headers);
+
+      if (response.statusCode != 200 && response.statusCode != 204) {
+        print(
+          '🔴 [Profile] deleteAccount ${response.statusCode}: ${response.body}',
+        );
+        return false;
+      }
+      return true;
+    } catch (e, st) {
+      print('🔴 [Profile] deleteAccount error: $e');
+      print(st);
+      return false;
+    }
+  }
+
   /// Obtener mi perfil completo
   Future<UserProfile?> getMyProfile() async {
     try {
@@ -353,6 +377,50 @@ class ApiUsersRepository implements UsersRepository {
     } catch (e, stackTrace) {
       print('🔴 [Profile] Error: $e');
       print(stackTrace);
+      return null;
+    }
+  }
+
+  /// Subir foto de perfil (multipart/form-data)
+  /// Devuelve la URL completa de la imagen subida, o null si falla
+  Future<String?> uploadProfilePicture(String userId, String filePath) async {
+    try {
+      final token = await _authService.getToken();
+      if (token == null || token.isEmpty) return null;
+
+      final url = Uri.parse(ApiEndpoints.userProfilePicture(userId));
+
+      // Crear request multipart
+      final request = http.MultipartRequest('POST', url);
+      request.headers['Authorization'] = 'Bearer $token';
+
+      // Añadir archivo
+      request.files.add(await http.MultipartFile.fromPath('file', filePath));
+
+      // Enviar
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(utf8.decode(response.bodyBytes));
+        String? imageUrl = data['url'] as String?;
+
+        // Convertir URL relativa a absoluta si es necesario
+        if (imageUrl != null && imageUrl.startsWith('/')) {
+          imageUrl = '${ApiEndpoints.baseUrl}$imageUrl';
+        }
+
+        print('✅ [Profile] Imagen subida: $imageUrl');
+        return imageUrl;
+      } else {
+        print(
+          '🔴 [Profile] uploadProfilePicture ${response.statusCode}: ${response.body}',
+        );
+        return null;
+      }
+    } catch (e, st) {
+      print('🔴 [Profile] uploadProfilePicture error: $e');
+      print(st);
       return null;
     }
   }
@@ -384,6 +452,15 @@ class ApiUsersRepository implements UsersRepository {
       }).toList();
     }
 
+    // Convertir URL del avatar de relativa a absoluta si es necesario
+    String? avatarUrl = json['avatarUrl'] as String?;
+    if (avatarUrl == null || avatarUrl.isEmpty) {
+      avatarUrl = json['profilePictureURL'] as String?;
+    }
+    if (avatarUrl != null && avatarUrl.startsWith('/')) {
+      avatarUrl = '${ApiEndpoints.baseUrl}$avatarUrl';
+    }
+
     return UserProfile(
       id: json['id']?.toString() ?? '',
       name: json['name'] ?? 'Usuario',
@@ -401,7 +478,7 @@ class ApiUsersRepository implements UsersRepository {
       isPro: json['isPro'] ?? false,
       nativeLanguage: nativeLanguage,
       description: json['description'] ?? '',
-      avatarPath: json['avatarUrl'] as String?,
+      avatarPath: avatarUrl,
     );
   }
 }

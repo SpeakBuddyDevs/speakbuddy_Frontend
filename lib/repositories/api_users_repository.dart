@@ -120,6 +120,7 @@ class ApiUsersRepository implements UsersRepository {
     String? name,
     String? surname,
     String? profilePictureUrl,
+    String? description,
   }) async {
     try {
       final headers = await _authService.headersWithAuth();
@@ -131,6 +132,7 @@ class ApiUsersRepository implements UsersRepository {
       if (surname != null) body['surname'] = surname;
       if (profilePictureUrl != null)
         body['profilePictureUrl'] = profilePictureUrl;
+      if (description != null) body['description'] = description;
 
       final url = Uri.parse(ApiEndpoints.userProfile(userId));
       final response = await http.put(

@@ -86,12 +86,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
       },
     );
 
-    if (newText == null || newText.isEmpty) return;
+    if (newText == null) return;
 
+    // Guardar el valor anterior por si hay error
+    final previousDescription = _profile!.description;
+
+    // Actualización optimista de la UI
     setState(() {
       _profile = _profile!.copyWith(description: newText);
     });
-    // TODO: Llamar al backend para guardar cambios
+
+    // Llamar al backend para persistir los cambios
+    final ok = await _usersRepo.updateProfile(
+      _profile!.id,
+      description: newText,
+    );
+
+    if (!mounted) return;
+
+    if (!ok) {
+      // Revertir en caso de error
+      setState(() {
+        _profile = _profile!.copyWith(description: previousDescription);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Error al guardar la descripción'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   void _addLearningLanguage() async {

@@ -7,7 +7,7 @@ import '../models/find_filters.dart';
 /// Sustituir FakeFindUsersRepository por ApiFindUsersRepository en find_screen.dart
 /// 
 /// Endpoint: GET /api/users/search
-/// Query params: ?q=&page=&pageSize=&online=&pro=&minRating=&nativeLang=&targetLang=&country=
+/// Query params: ?q=&page=&size=&pro=&minRating=&nativeLang=&learningLang=&country=
 /// Response: { "users": FindUser[], "totalCount": int, "hasMore": bool }
 /// TODO(BE): Usar paginación offset (page, pageSize) o cursor según preferencia
 abstract class FindUsersRepository {

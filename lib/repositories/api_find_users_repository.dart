@@ -26,6 +26,7 @@ class ApiFindUsersRepository implements FindUsersRepository {
 
       String? nativeLang;
       String? learningLang;
+      String? country;
       if (filters != null) {
         if (filters.nativeLanguage != null &&
             filters.nativeLanguage!.isNotEmpty) {
@@ -37,14 +38,24 @@ class ApiFindUsersRepository implements FindUsersRepository {
           final code = AppLanguages.getCodeFromName(filters.targetLanguage!);
           if (code != null) learningLang = code.toLowerCase();
         }
+        if (filters.country != null && filters.country!.isNotEmpty) {
+          country = filters.country!.trim();
+        }
       }
 
       final queryParams = <String, String>{
         'page': page.toString(),
         'size': pageSize.toString(),
+        if (query.trim().isNotEmpty) 'q': query.trim(),
         if (nativeLang != null && nativeLang.isNotEmpty) 'nativeLang': nativeLang,
         if (learningLang != null && learningLang.isNotEmpty)
           'learningLang': learningLang,
+        if (country != null && country.isNotEmpty) 'country': country,
+        if (filters?.proOnly == true) 'proOnly': 'true',
+        if (filters != null &&
+            filters.minRating != null &&
+            filters.minRating! > 0)
+          'minRating': filters.minRating!.toString(),
       };
       final uri = Uri.parse(ApiEndpoints.usersSearch)
           .replace(queryParameters: queryParams);
@@ -71,8 +82,8 @@ class ApiFindUsersRepository implements FindUsersRepository {
   FindUser _mapSummaryToFindUser(Map<String, dynamic> dto) {
     final rawCode = dto['nativeLanguageCode'] as String?;
     final code = rawCode != null && rawCode.isNotEmpty
-        ? rawCode.toString().toUpperCase()
-        : 'ES';
+        ? rawCode.toString().toLowerCase()
+        : 'es';
     final nativeLanguage = dto['nativeLanguage'] as String? ??
         AppLanguages.getName(code);
 
@@ -84,18 +95,26 @@ class ApiFindUsersRepository implements FindUsersRepository {
       if (name != null && name.isNotEmpty) targetLanguage = name;
     }
 
+    // Construir URL absoluta del avatar si es relativa
+    String? avatarUrl = dto['profilePicture'] as String?;
+    if (avatarUrl != null &&
+        avatarUrl.isNotEmpty &&
+        avatarUrl.startsWith('/')) {
+      avatarUrl = '${ApiEndpoints.baseUrl}$avatarUrl';
+    }
+
     return FindUser(
       id: dto['id']?.toString() ?? '',
       name: dto['username'] as String? ?? 'Usuario',
-      country: '',
-      avatarUrl: dto['profilePicture'] as String?,
+      country: dto['country'] as String? ?? '',
+      avatarUrl: avatarUrl,
       isOnline: false,
-      isPro: false,
+      isPro: dto['isPro'] == true,
       nativeLanguage: nativeLanguage,
       targetLanguage: targetLanguage,
-      level: 0,
-      rating: 0.0,
-      exchanges: 0,
+      level: (dto['level'] as num?)?.toInt() ?? 0,
+      rating: (dto['averageRating'] as num?)?.toDouble() ?? 0.0,
+      exchanges: (dto['totalReviews'] as num?)?.toInt() ?? 0,
       bio: null,
     );
   }

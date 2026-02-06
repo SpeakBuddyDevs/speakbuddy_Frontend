@@ -9,6 +9,7 @@ import '../constants/routes.dart';
 import '../constants/dimensions.dart';
 import '../constants/languages.dart';
 import '../constants/language_ids.dart';
+import '../constants/countries.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -27,6 +28,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   String? _nativeLang;
   String? _learningLang;
+  String? _country;
   bool _obscure1 = true;
   bool _obscure2 = true;
   bool _acceptTerms = false;
@@ -50,12 +52,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
         return;
     }
 
+    if (_country == null || _country!.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Selecciona tu país')));
+        return;
+    }
+
     final result = await _authService.register(
       _nameCtrl.text,
       _emailCtrl.text,
       _passCtrl.text,
       nativeId,
-      learnId ?? 0, 
+      learnId ?? 0,
+      _country!,
     );
 
     if (!mounted) return;
@@ -92,6 +100,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (!FormValidators.isFormValid(_formKey)) return false;
     return _nativeLang != null &&
         _learningLang != null &&
+        _country != null &&
+        _country!.isNotEmpty &&
         _acceptTerms;
   }
 
@@ -201,6 +211,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                         ),
                       ]),
+                      const SizedBox(height: AppDimensions.spacingML),
+
+                      _label('País'),
+                      DropdownButtonFormField<String>(
+                        value: _country,
+                        items: AppCountries.available
+                            .map((country) => DropdownMenuItem(
+                                  value: country,
+                                  child: Text(country),
+                                ))
+                            .toList(),
+                        onChanged: (v) => setState(() => _country = v),
+                        decoration: const InputDecoration(
+                          prefixIcon: Icon(Icons.location_on_outlined),
+                          hintText: 'Selecciona tu país',
+                        ),
+                        validator: (v) =>
+                            (v == null || v.isEmpty) ? 'Selecciona tu país' : null,
+                      ),
                       const SizedBox(height: AppDimensions.spacingML),
 
                       _label('Contraseña'),

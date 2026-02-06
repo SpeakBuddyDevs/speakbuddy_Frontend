@@ -103,6 +103,7 @@ class AuthService {
     String password,
     int nativeLangId,
     int learnLangId,
+    String country,
   ) async {
     final parts = name.trim().split(RegExp(r'\s+'));
     final firstName = parts.isNotEmpty ? parts.first : '';
@@ -115,6 +116,8 @@ class AuthService {
       'email': email.trim(),
       'password': password,
       'nativeLanguageId': nativeLangId,
+      if (learnLangId > 0) 'learningLanguageId': learnLangId,
+      'country': country.trim(),
     });
 
     try {

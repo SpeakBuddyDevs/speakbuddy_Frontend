@@ -3,9 +3,14 @@ import 'package:flutter/services.dart';
 import '../theme/app_theme.dart';
 import '../constants/dimensions.dart';
 import '../constants/languages.dart';
-import '../repositories/api_exchange_repository.dart';
+import '../repositories/api_public_exchanges_repository.dart';
 
-/// Pantalla para crear un nuevo intercambio
+/// Pantalla para crear un nuevo intercambio (público o privado).
+///
+/// ESTRATEGIA (Plan 5.1): Se amplía esta pantalla en lugar de crear
+/// CreatePublicExchangeScreen. El formulario ya tiene todos los campos
+/// necesarios (descripción, idiomas, nivel, maxParticipants, topics, isPublic).
+/// Ver create_exchange_strategy.md para detalles.
 class CreateExchangeScreen extends StatefulWidget {
   const CreateExchangeScreen({super.key});
 
@@ -14,7 +19,7 @@ class CreateExchangeScreen extends StatefulWidget {
 }
 
 class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
-  final _repository = ApiExchangeRepository();
+  final _repository = ApiPublicExchangesRepository();
   final _formKey = GlobalKey<FormState>();
   
   // Controllers
@@ -38,8 +43,9 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
     super.initState();
     // Pre-seleccionar idiomas del usuario (mock)
     // BACKEND: Obtener desde perfil del usuario
-    _nativeLanguageCode = 'ES'; // Mock: idioma nativo del usuario
-    _targetLanguageCode = 'EN'; // Mock: primer idioma de aprendizaje activo
+    // Nota: availableCodes usa minúsculas (es, en, fr...), el value del Dropdown debe coincidir
+    _nativeLanguageCode = 'es'; // Mock: idioma nativo del usuario
+    _targetLanguageCode = 'en'; // Mock: primer idioma de aprendizaje activo
     _requiredLevel = 'Principiante';
   }
 
@@ -133,27 +139,53 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
 
     try {
       final duration = int.parse(_durationController.text);
+      final maxParticipants = int.parse(_maxParticipantsController.text);
 
-      final exchange = await _repository.create(
-        scheduledAt: dateTime,
-        durationMinutes: duration,
+      final topicsText = _topicsController.text.trim();
+      final topics = topicsText.isEmpty
+          ? null
+          : topicsText
+              .split(',')
+              .map((s) => s.trim())
+              .where((s) => s.isNotEmpty)
+              .toList();
+
+      final nativeLanguage = _nativeLanguageCode != null
+          ? AppLanguages.getName(_nativeLanguageCode!)
+          : 'Español';
+      final targetLanguage = _targetLanguageCode != null
+          ? AppLanguages.getName(_targetLanguageCode!)
+          : 'Inglés';
+
+      await _repository.createExchange(
         title: _titleController.text.trim().isNotEmpty
             ? _titleController.text.trim()
-            : null,
+            : 'Intercambio',
+        description: _descriptionController.text.trim(),
+        nativeLanguage: nativeLanguage,
+        targetLanguage: targetLanguage,
+        requiredLevel: _requiredLevel ?? 'Principiante',
+        date: dateTime,
+        durationMinutes: duration,
+        maxParticipants: maxParticipants,
+        topics: topics?.isNotEmpty == true ? topics : null,
+        isPublic: _isPublic,
       );
 
       if (!mounted) return;
 
-      if (exchange != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Intercambio creado correctamente')),
-        );
-        Navigator.pop(context, true);
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Intercambio creado correctamente')),
+      );
+      Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
+      final message = e.toString().replaceFirst('Exception: ', '');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al crear intercambio: ${e.toString()}')),
+        SnackBar(
+          content: Text(message.isNotEmpty ? message : 'Error al crear intercambio'),
+          backgroundColor: Colors.red.shade800,
+        ),
       );
     } finally {
       if (mounted) {

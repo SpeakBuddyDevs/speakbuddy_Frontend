@@ -1,11 +1,9 @@
 import '../models/public_exchange.dart';
 import '../models/public_exchange_filters.dart';
 
-/// Abstracción para el repositorio de intercambios públicos
-/// 
-/// BACKEND: Crear ApiPublicExchangesRepository que implemente esta interfaz.
-/// Sustituir FakePublicExchangesRepository por ApiPublicExchangesRepository en public_exchanges_screen.dart
-/// 
+/// Abstracción para el repositorio de intercambios públicos.
+/// Implementación: ApiPublicExchangesRepository
+///
 /// Endpoint: GET /api/exchanges/public
 /// Query params: ?q=&page=&pageSize=&requiredLevel=&minDate=&maxDuration=&nativeLang=&targetLang=
 /// Response: { "exchanges": PublicExchange[], "totalCount": int, "hasMore": bool }
@@ -37,4 +35,12 @@ abstract class PublicExchangesRepository {
     List<String>? topics,
     required bool isPublic,
   });
+
+  /// Une al usuario actual al intercambio.
+  /// BACKEND: POST /api/exchanges/{id}/join
+  Future<void> joinExchange(String id);
+
+  /// Abandona el intercambio (solo participantes, no el creador).
+  /// BACKEND: DELETE /api/exchanges/{id}/leave
+  Future<void> leaveExchange(String id);
 }

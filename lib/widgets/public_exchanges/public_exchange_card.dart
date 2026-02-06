@@ -178,7 +178,7 @@ class PublicExchangeCard extends StatelessWidget {
               ),
               _InfoTag(
                 icon: Icons.group_rounded,
-                label: '${currentParticipants}/${exchange.maxParticipants}',
+                label: '$currentParticipants/${exchange.maxParticipants}',
                 borderColor: isFull ? Colors.orange : AppTheme.border,
               ),
               // Badge "Lleno" cuando está completo

@@ -75,12 +75,17 @@ class ApiEndpoints {
   /// Intercambios del usuario: GET /api/exchanges/joined
   static const String exchangesJoined = '$apiBase/exchanges/joined';
 
+  /// Intercambios públicos: GET /api/exchanges/public
+  static const String exchangesPublic = '$apiBase/exchanges/public';
+
   /// Crear intercambio: POST /api/exchanges
   static const String exchanges = '$apiBase/exchanges';
 
   /// Detalle y confirmar: GET/POST /api/exchanges/{id}
   static String exchangeDetail(String id) => '$apiBase/exchanges/$id';
   static String exchangeConfirm(String id) => '$apiBase/exchanges/$id/confirm';
+  static String exchangeJoin(String id) => '$apiBase/exchanges/$id/join';
+  static String exchangeLeave(String id) => '$apiBase/exchanges/$id/leave';
 
   // TODO(BE): POST /api/chats o GET /api/chats/with/{userId} - Obtener o crear chatId
   // static const String chats = '$apiBase/chats';

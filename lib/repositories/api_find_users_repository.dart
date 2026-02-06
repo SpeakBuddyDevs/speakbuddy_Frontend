@@ -114,7 +114,7 @@ class ApiFindUsersRepository implements FindUsersRepository {
       targetLanguage: targetLanguage,
       level: (dto['level'] as num?)?.toInt() ?? 0,
       rating: (dto['averageRating'] as num?)?.toDouble() ?? 0.0,
-      exchanges: (dto['totalReviews'] as num?)?.toInt() ?? 0,
+      exchanges: (dto['exchanges'] as num?)?.toInt() ?? 0,
       bio: null,
     );
   }

@@ -70,6 +70,18 @@ class ApiEndpoints {
 
   // --- Endpoints de Chat ---
 
+  // --- Endpoints de Intercambios ---
+
+  /// Intercambios del usuario: GET /api/exchanges/joined
+  static const String exchangesJoined = '$apiBase/exchanges/joined';
+
+  /// Crear intercambio: POST /api/exchanges
+  static const String exchanges = '$apiBase/exchanges';
+
+  /// Detalle y confirmar: GET/POST /api/exchanges/{id}
+  static String exchangeDetail(String id) => '$apiBase/exchanges/$id';
+  static String exchangeConfirm(String id) => '$apiBase/exchanges/$id/confirm';
+
   // TODO(BE): POST /api/chats o GET /api/chats/with/{userId} - Obtener o crear chatId
   // static const String chats = '$apiBase/chats';
 

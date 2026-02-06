@@ -3,13 +3,13 @@ import '../theme/app_theme.dart';
 import '../widgets/common/app_header.dart';
 import '../services/current_user_service.dart';
 import '../services/stats_service.dart';
-import '../repositories/fake_user_exchanges_repository.dart';
+import '../repositories/api_user_exchanges_repository.dart';
+import '../repositories/api_exchange_repository.dart';
 import '../repositories/user_exchanges_repository.dart';
-import '../models/public_exchange.dart';
+import '../models/joined_exchange.dart';
 import '../constants/routes.dart';
 import '../constants/dimensions.dart';
 import '../utils/date_formatters.dart';
-import '../navigation/exchange_chat_args.dart';
 
 /// Pantalla principal de la aplicación
 class HomeScreen extends StatefulWidget {
@@ -20,16 +20,17 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // BACKEND: Sustituir FakeUserExchangesRepository por ApiUserExchangesRepository
-  final UserExchangesRepository _repository = FakeUserExchangesRepository();
+  final UserExchangesRepository _repository = ApiUserExchangesRepository();
+  final ApiExchangeRepository _exchangeRepo = ApiExchangeRepository();
   final StatsService _statsService = StatsService();
 
-  List<PublicExchange>? _joinedExchanges;
+  List<JoinedExchange>? _joinedExchanges;
   bool _isLoadingExchanges = true;
   int _exchangesThisMonth = 0;
   int _exchangesLastMonth = 0;
   double _hoursThisWeek = 0.0;
   double _hoursLastWeek = 0.0;
+  final GlobalKey _exchangesSectionKey = GlobalKey();
 
   @override
   void initState() {
@@ -78,6 +79,37 @@ class _HomeScreenState extends State<HomeScreen> {
     Navigator.pushNamed(context, AppRoutes.publicExchanges);
   }
 
+  int get _pendingConfirmCount =>
+      _joinedExchanges?.where((e) => e.canConfirm).length ?? 0;
+
+  void _onScrollToExchanges() {
+    final context = _exchangesSectionKey.currentContext;
+    if (context != null) {
+      Scrollable.ensureVisible(
+        context,
+        duration: const Duration(milliseconds: 400),
+        alignment: 0.2,
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  Future<void> _onConfirmExchange(JoinedExchange exchange) async {
+    try {
+      await _exchangeRepo.confirm(exchange.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Intercambio confirmado')),
+      );
+      _loadExchanges();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.toString()}')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final userService = CurrentUserService();
@@ -109,6 +141,14 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Banner: intercambios pendientes de confirmar
+              if (_pendingConfirmCount > 0) ...[
+                _PendingConfirmBanner(
+                  count: _pendingConfirmCount,
+                  onTap: _onScrollToExchanges,
+                ),
+                const SizedBox(height: AppDimensions.spacingL),
+              ],
               // Tarjetas de estadísticas
               _StatsRow(
                 exchangesThisMonth: _exchangesThisMonth,
@@ -119,10 +159,12 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: AppDimensions.spacingL),
               // Sección de intercambios pendientes
               _PendingExchangesSection(
+                key: _exchangesSectionKey,
                 exchanges: _joinedExchanges,
                 isLoading: _isLoadingExchanges,
                 onGoToPublicExchanges: _onGoToPublicExchanges,
                 onRefresh: _loadExchanges,
+                onConfirm: _onConfirmExchange,
               ),
             ],
           ),
@@ -280,18 +322,88 @@ class _StatsCard extends StatelessWidget {
   }
 }
 
+/// Banner de notificación in-app: intercambios pendientes de confirmar
+class _PendingConfirmBanner extends StatelessWidget {
+  final int count;
+  final VoidCallback onTap;
+
+  const _PendingConfirmBanner({
+    required this.count,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final label = count == 1
+        ? 'Tienes 1 intercambio pendiente de confirmar'
+        : 'Tienes $count intercambios pendientes de confirmar';
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppDimensions.spacingL,
+            vertical: AppDimensions.spacingMD,
+          ),
+          decoration: BoxDecoration(
+            color: AppTheme.accent.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
+            border: Border.all(color: AppTheme.accent.withValues(alpha: 0.4)),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.check_circle_outline_rounded,
+                color: AppTheme.accent,
+                size: AppDimensions.iconSizeL,
+              ),
+              const SizedBox(width: AppDimensions.spacingMD),
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    color: AppTheme.text,
+                    fontSize: AppDimensions.fontSizeS,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: onTap,
+                child: Text(
+                  'Ver',
+                  style: TextStyle(
+                    color: AppTheme.accent,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Sección de intercambios pendientes
 class _PendingExchangesSection extends StatelessWidget {
-  final List<PublicExchange>? exchanges;
+  final List<JoinedExchange>? exchanges;
   final bool isLoading;
   final VoidCallback onGoToPublicExchanges;
   final VoidCallback onRefresh;
+  final Future<void> Function(JoinedExchange) onConfirm;
 
   const _PendingExchangesSection({
+    super.key,
     required this.exchanges,
     required this.isLoading,
     required this.onGoToPublicExchanges,
     required this.onRefresh,
+    required this.onConfirm,
   });
 
   @override
@@ -330,7 +442,10 @@ class _PendingExchangesSection extends StatelessWidget {
         else if (exchanges == null || exchanges!.isEmpty)
           _EmptyExchangesButton(onPressed: onGoToPublicExchanges)
         else
-          _ExchangesCarousel(exchanges: exchanges!),
+          _ExchangesCarousel(
+            exchanges: exchanges!,
+            onConfirm: onConfirm,
+          ),
       ],
     );
   }
@@ -365,9 +480,13 @@ class _EmptyExchangesButton extends StatelessWidget {
 
 /// Carrusel de intercambios pendientes
 class _ExchangesCarousel extends StatefulWidget {
-  final List<PublicExchange> exchanges;
+  final List<JoinedExchange> exchanges;
+  final Future<void> Function(JoinedExchange) onConfirm;
 
-  const _ExchangesCarousel({required this.exchanges});
+  const _ExchangesCarousel({
+    required this.exchanges,
+    required this.onConfirm,
+  });
 
   @override
   State<_ExchangesCarousel> createState() => _ExchangesCarouselState();
@@ -392,13 +511,16 @@ class _ExchangesCarouselState extends State<_ExchangesCarousel> {
   @override
   Widget build(BuildContext context) {
     if (widget.exchanges.length == 1) {
-      return _PendingExchangeCard(exchange: widget.exchanges[0]);
+      return _JoinedExchangeCard(
+        exchange: widget.exchanges[0],
+        onConfirm: widget.onConfirm,
+      );
     }
 
     return Column(
       children: [
         SizedBox(
-          height: 400, // Altura fija para el PageView
+          height: 320,
           child: PageView.builder(
             controller: _pageController,
             itemCount: widget.exchanges.length,
@@ -410,13 +532,15 @@ class _ExchangesCarouselState extends State<_ExchangesCarousel> {
             itemBuilder: (context, index) {
               return Padding(
                 padding: const EdgeInsets.only(right: AppDimensions.spacingMD),
-                child: _PendingExchangeCard(exchange: widget.exchanges[index]),
+                child: _JoinedExchangeCard(
+                  exchange: widget.exchanges[index],
+                  onConfirm: widget.onConfirm,
+                ),
               );
             },
           ),
         ),
         const SizedBox(height: AppDimensions.spacingMD),
-        // Indicadores de página
         _PageIndicators(
           count: widget.exchanges.length,
           currentIndex: _currentPage,
@@ -458,30 +582,39 @@ class _PageIndicators extends StatelessWidget {
   }
 }
 
-/// Tarjeta de intercambio pendiente
-class _PendingExchangeCard extends StatelessWidget {
-  final PublicExchange exchange;
+/// Tarjeta de intercambio (JoinedExchange del backend)
+class _JoinedExchangeCard extends StatelessWidget {
+  final JoinedExchange exchange;
+  final Future<void> Function(JoinedExchange) onConfirm;
 
-  const _PendingExchangeCard({required this.exchange});
+  const _JoinedExchangeCard({
+    required this.exchange,
+    required this.onConfirm,
+  });
 
-  void _onOpenChat(BuildContext context, PublicExchange exchange) {
-    // TODO(FE): ChatScreen debe manejar ExchangeChatArgs para chats grupales de intercambio
-    Navigator.pushNamed(
-      context,
-      AppRoutes.chat,
-      arguments: ExchangeChatArgs(
-        exchangeId: exchange.id,
-        prefetchedExchange: exchange,
-      ),
-    );
+  String _statusLabel(String status) {
+    switch (status) {
+      case 'SCHEDULED':
+        return 'Programado';
+      case 'ENDED_PENDING_CONFIRMATION':
+        return 'Pendiente de confirmar';
+      case 'COMPLETED':
+        return 'Completado';
+      case 'CANCELLED':
+        return 'Cancelado';
+      default:
+        return status;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final creatorCountry = FakeUserExchangesRepository.getCreatorCountry(exchange.creatorId);
-    final creatorRating = FakeUserExchangesRepository.getCreatorRating(exchange.creatorId);
-    final dateStr = DateFormatters.formatExchangeDate(exchange.date);
-    final topic = exchange.topics?.isNotEmpty == true ? exchange.topics!.first : null;
+    final dateStr = DateFormatters.formatExchangeDate(exchange.scheduledAt);
+    final participantsStr = exchange.participants
+        .map((p) => p.username)
+        .where((s) => s.isNotEmpty)
+        .join(', ');
+    final title = exchange.title ?? 'Intercambio';
 
     return Container(
       decoration: BoxDecoration(
@@ -489,175 +622,64 @@ class _PendingExchangeCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppDimensions.radiusL),
         border: Border.all(color: AppTheme.border),
       ),
-      padding: EdgeInsets.fromLTRB(
-        AppDimensions.paddingCard.left,
-        AppDimensions.paddingCard.top,
-        AppDimensions.paddingCard.right,
-        AppDimensions.spacingSM, // Padding inferior reducido para acercar el botón al borde
-      ),
+      padding: const EdgeInsets.all(AppDimensions.spacingL),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Header: Avatar, nombre, badge PRO, país, rating
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 25,
-                backgroundColor: AppTheme.panel,
-                backgroundImage: exchange.creatorAvatarUrl != null
-                    ? NetworkImage(exchange.creatorAvatarUrl!)
-                    : null,
-                child: exchange.creatorAvatarUrl == null
-                    ? Text(
-                        exchange.creatorName.isNotEmpty
-                            ? exchange.creatorName[0].toUpperCase()
-                            : '?',
-                        style: TextStyle(
-                          color: AppTheme.text,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      )
-                    : null,
-              ),
-              const SizedBox(width: AppDimensions.spacingMD),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            exchange.creatorName,
-                            style: TextStyle(
-                              color: AppTheme.text,
-                              fontSize: AppDimensions.fontSizeM,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (exchange.creatorIsPro) ...[
-                          const SizedBox(width: AppDimensions.spacingXS),
-                          _ProBadge(),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: AppDimensions.spacingXS),
-                    Text(
-                      creatorCountry,
-                      style: TextStyle(
-                        color: AppTheme.subtle,
-                        fontSize: AppDimensions.fontSizeS,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Row(
-                children: [
-                  Icon(
-                    Icons.star_rounded,
-                    color: AppTheme.gold,
-                    size: AppDimensions.iconSizeM,
-                  ),
-                  const SizedBox(width: AppDimensions.spacingXS),
-                  Text(
-                    creatorRating.toStringAsFixed(1),
-                    style: TextStyle(
-                      color: AppTheme.text,
-                      fontSize: AppDimensions.fontSizeM,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+          Text(
+            title,
+            style: TextStyle(
+              color: AppTheme.text,
+              fontSize: AppDimensions.fontSizeL,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-          const SizedBox(height: AppDimensions.spacingL),
-          // Fecha y hora
+          const SizedBox(height: AppDimensions.spacingXS),
+          Text(
+            _statusLabel(exchange.status),
+            style: TextStyle(
+              color: AppTheme.subtle,
+              fontSize: AppDimensions.fontSizeS,
+            ),
+          ),
+          const SizedBox(height: AppDimensions.spacingMD),
           _InfoRow(
             icon: Icons.calendar_today_outlined,
             label: 'Fecha y hora',
             value: dateStr,
           ),
           const SizedBox(height: AppDimensions.spacingMD),
-          // Idiomas
-          _InfoRow(
-            icon: Icons.translate_rounded,
-            label: 'Idiomas',
-            value: '${exchange.nativeLanguage} → ${exchange.targetLanguage}',
-          ),
-          const SizedBox(height: AppDimensions.spacingMD),
-          // Duración
           _InfoRow(
             icon: Icons.access_time_rounded,
             label: 'Duración',
             value: '${exchange.durationMinutes} min',
           ),
           const SizedBox(height: AppDimensions.spacingMD),
-          // Participantes
           _InfoRow(
             icon: Icons.people_outline_rounded,
             label: 'Participantes',
-            value: '${exchange.currentParticipants}/${exchange.maxParticipants}',
+            value: participantsStr.isNotEmpty ? participantsStr : '—',
           ),
-          if (topic != null) ...[
-            const SizedBox(height: AppDimensions.spacingMD),
-            // Tema
-            _InfoRow(
-              icon: Icons.topic_outlined,
-              label: 'Tema',
-              value: topic,
-            ),
-          ],
-          const SizedBox(height: AppDimensions.spacingMD),
-          // Botón de chat
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () => _onOpenChat(context, exchange),
-              icon: const Icon(Icons.chat_rounded),
-              label: const Text('Abrir chat'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.accent,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: AppDimensions.spacingMD),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
+          const SizedBox(height: AppDimensions.spacingL),
+          if (exchange.canConfirm)
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => onConfirm(exchange),
+                icon: const Icon(Icons.check_circle_outline_rounded),
+                label: const Text('Confirmar intercambio'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.accent,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: AppDimensions.spacingMD),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
+                  ),
                 ),
               ),
             ),
-          ),
         ],
-      ),
-    );
-  }
-}
-
-/// Badge PRO
-class _ProBadge extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppDimensions.spacingSM,
-        vertical: 2,
-      ),
-      decoration: BoxDecoration(
-        color: AppTheme.gold.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(AppDimensions.radiusXS),
-        border: Border.all(color: AppTheme.gold.withValues(alpha: 0.5)),
-      ),
-      child: Text(
-        'PRO',
-        style: TextStyle(
-          color: AppTheme.gold,
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-        ),
       ),
     );
   }

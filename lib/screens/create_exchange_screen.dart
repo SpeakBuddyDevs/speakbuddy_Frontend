@@ -3,9 +3,9 @@ import 'package:flutter/services.dart';
 import '../theme/app_theme.dart';
 import '../constants/dimensions.dart';
 import '../constants/languages.dart';
-import '../repositories/fake_public_exchanges_repository.dart';
+import '../repositories/api_exchange_repository.dart';
 
-/// Pantalla para crear un nuevo intercambio (público o privado)
+/// Pantalla para crear un nuevo intercambio
 class CreateExchangeScreen extends StatefulWidget {
   const CreateExchangeScreen({super.key});
 
@@ -14,8 +14,7 @@ class CreateExchangeScreen extends StatefulWidget {
 }
 
 class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
-  // BACKEND: Sustituir FakePublicExchangesRepository por ApiPublicExchangesRepository
-  final _repository = FakePublicExchangesRepository();
+  final _repository = ApiExchangeRepository();
   final _formKey = GlobalKey<FormState>();
   
   // Controllers
@@ -133,43 +132,22 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
     setState(() => _isCreating = true);
 
     try {
-      // Parsear temas (separados por comas)
-      List<String>? topics;
-      if (_topicsController.text.trim().isNotEmpty) {
-        topics = _topicsController.text
-            .split(',')
-            .map((t) => t.trim())
-            .where((t) => t.isNotEmpty)
-            .toList();
-      }
+      final duration = int.parse(_durationController.text);
 
-      // Convertir códigos de idioma a nombres
-      final nativeLanguageName = AppLanguages.getName(_nativeLanguageCode!);
-      final targetLanguageName = AppLanguages.getName(_targetLanguageCode!);
-
-      // Crear el intercambio
-      final exchange = await _repository.createExchange(
-        title: _titleController.text.trim(),
-        description: _descriptionController.text.trim(),
-        nativeLanguage: nativeLanguageName,
-        targetLanguage: targetLanguageName,
-        requiredLevel: _requiredLevel!,
-        date: dateTime,
-        durationMinutes: int.parse(_durationController.text),
-        maxParticipants: int.parse(_maxParticipantsController.text),
-        topics: topics?.isNotEmpty == true ? topics : null,
-        isPublic: _isPublic,
+      final exchange = await _repository.create(
+        scheduledAt: dateTime,
+        durationMinutes: duration,
+        title: _titleController.text.trim().isNotEmpty
+            ? _titleController.text.trim()
+            : null,
       );
 
       if (!mounted) return;
 
-      // Si es privado, mostrar diálogo con el enlace
-      if (!_isPublic && exchange.shareLink != null) {
-        await _showShareLinkDialog(exchange.shareLink!);
-      }
-
-      // Retornar true para indicar que se creó
-      if (mounted) {
+      if (exchange != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Intercambio creado correctamente')),
+        );
         Navigator.pop(context, true);
       }
     } catch (e) {
@@ -182,64 +160,6 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
         setState(() => _isCreating = false);
       }
     }
-  }
-
-  Future<void> _showShareLinkDialog(String shareLink) async {
-    return showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.card,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppDimensions.radiusL),
-        ),
-        title: const Text('Intercambio privado creado'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Comparte este enlace para que otros puedan unirse:',
-              style: TextStyle(fontSize: AppDimensions.fontSizeS),
-            ),
-            const SizedBox(height: AppDimensions.spacingMD),
-            Container(
-              padding: const EdgeInsets.all(AppDimensions.spacingMD),
-              decoration: BoxDecoration(
-                color: AppTheme.panel,
-                borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
-                border: Border.all(color: AppTheme.border),
-              ),
-              child: SelectableText(
-                shareLink,
-                style: TextStyle(
-                  color: AppTheme.text,
-                  fontSize: AppDimensions.fontSizeS,
-                ),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: shareLink));
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Enlace copiado al portapapeles')),
-              );
-            },
-            child: const Text('Copiar enlace'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.accent,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Cerrar'),
-          ),
-        ],
-      ),
-    );
   }
 
   @override

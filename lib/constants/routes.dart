@@ -29,5 +29,8 @@ class AppRoutes {
 
   /// Ruta de creación de intercambio
   static const String createExchange = '/create-exchange';
+
+  /// Ruta de historial de intercambios completados
+  static const String exchangeHistory = '/exchange-history';
 }
 

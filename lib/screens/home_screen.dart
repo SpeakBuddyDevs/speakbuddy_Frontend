@@ -9,7 +9,7 @@ import '../repositories/user_exchanges_repository.dart';
 import '../models/joined_exchange.dart';
 import '../constants/routes.dart';
 import '../constants/dimensions.dart';
-import '../utils/date_formatters.dart';
+import '../widgets/exchange/joined_exchange_card.dart';
 
 /// Pantalla principal de la aplicación
 class HomeScreen extends StatefulWidget {
@@ -81,6 +81,27 @@ class _HomeScreenState extends State<HomeScreen> {
 
   int get _pendingConfirmCount =>
       _joinedExchanges?.where((e) => e.canConfirm).length ?? 0;
+
+  List<JoinedExchange> get _pendingExchanges =>
+      _joinedExchanges
+          ?.where((e) =>
+              e.status != 'COMPLETED' && e.status != 'CANCELLED')
+          .toList() ??
+      [];
+
+  List<JoinedExchange> get _completedExchanges =>
+      _joinedExchanges
+          ?.where((e) => e.status == 'COMPLETED')
+          .toList() ??
+      [];
+
+  void _onGoToHistory() {
+    Navigator.pushNamed(
+      context,
+      AppRoutes.exchangeHistory,
+      arguments: _completedExchanges,
+    );
+  }
 
   void _onScrollToExchanges() {
     final context = _exchangesSectionKey.currentContext;
@@ -160,9 +181,10 @@ class _HomeScreenState extends State<HomeScreen> {
               // Sección de intercambios pendientes
               _PendingExchangesSection(
                 key: _exchangesSectionKey,
-                exchanges: _joinedExchanges,
+                pendingExchanges: _pendingExchanges,
                 isLoading: _isLoadingExchanges,
                 onGoToPublicExchanges: _onGoToPublicExchanges,
+                onGoToHistory: _onGoToHistory,
                 onRefresh: _loadExchanges,
                 onConfirm: _onConfirmExchange,
               ),
@@ -391,17 +413,19 @@ class _PendingConfirmBanner extends StatelessWidget {
 
 /// Sección de intercambios pendientes
 class _PendingExchangesSection extends StatelessWidget {
-  final List<JoinedExchange>? exchanges;
+  final List<JoinedExchange> pendingExchanges;
   final bool isLoading;
   final VoidCallback onGoToPublicExchanges;
+  final VoidCallback onGoToHistory;
   final VoidCallback onRefresh;
   final Future<void> Function(JoinedExchange) onConfirm;
 
   const _PendingExchangesSection({
     super.key,
-    required this.exchanges,
+    required this.pendingExchanges,
     required this.isLoading,
     required this.onGoToPublicExchanges,
+    required this.onGoToHistory,
     required this.onRefresh,
     required this.onConfirm,
   });
@@ -411,7 +435,7 @@ class _PendingExchangesSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Título con icono
+        // Título con icono de calendario (navega al historial)
         Row(
           children: [
             Text(
@@ -423,10 +447,17 @@ class _PendingExchangesSection extends StatelessWidget {
               ),
             ),
             const Spacer(),
-            Icon(
-              Icons.calendar_today_outlined,
-              color: AppTheme.subtle,
-              size: AppDimensions.iconSizeM,
+            InkWell(
+              onTap: onGoToHistory,
+              borderRadius: BorderRadius.circular(AppDimensions.radiusS),
+              child: Padding(
+                padding: const EdgeInsets.all(AppDimensions.spacingXS),
+                child: Icon(
+                  Icons.calendar_today_outlined,
+                  color: AppTheme.subtle,
+                  size: AppDimensions.iconSizeM,
+                ),
+              ),
             ),
           ],
         ),
@@ -439,11 +470,11 @@ class _PendingExchangesSection extends StatelessWidget {
               child: CircularProgressIndicator(),
             ),
           )
-        else if (exchanges == null || exchanges!.isEmpty)
+        else if (pendingExchanges.isEmpty)
           _EmptyExchangesButton(onPressed: onGoToPublicExchanges)
         else
           _ExchangesCarousel(
-            exchanges: exchanges!,
+            exchanges: pendingExchanges,
             onConfirm: onConfirm,
           ),
       ],
@@ -511,7 +542,7 @@ class _ExchangesCarouselState extends State<_ExchangesCarousel> {
   @override
   Widget build(BuildContext context) {
     if (widget.exchanges.length == 1) {
-      return _JoinedExchangeCard(
+      return JoinedExchangeCard(
         exchange: widget.exchanges[0],
         onConfirm: widget.onConfirm,
       );
@@ -532,7 +563,7 @@ class _ExchangesCarouselState extends State<_ExchangesCarousel> {
             itemBuilder: (context, index) {
               return Padding(
                 padding: const EdgeInsets.only(right: AppDimensions.spacingMD),
-                child: _JoinedExchangeCard(
+                child: JoinedExchangeCard(
                   exchange: widget.exchanges[index],
                   onConfirm: widget.onConfirm,
                 ),
@@ -578,149 +609,6 @@ class _PageIndicators extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-/// Tarjeta de intercambio (JoinedExchange del backend)
-class _JoinedExchangeCard extends StatelessWidget {
-  final JoinedExchange exchange;
-  final Future<void> Function(JoinedExchange) onConfirm;
-
-  const _JoinedExchangeCard({
-    required this.exchange,
-    required this.onConfirm,
-  });
-
-  String _statusLabel(String status) {
-    switch (status) {
-      case 'SCHEDULED':
-        return 'Programado';
-      case 'ENDED_PENDING_CONFIRMATION':
-        return 'Pendiente de confirmar';
-      case 'COMPLETED':
-        return 'Completado';
-      case 'CANCELLED':
-        return 'Cancelado';
-      default:
-        return status;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final dateStr = DateFormatters.formatExchangeDate(exchange.scheduledAt);
-    final participantsStr = exchange.participants
-        .map((p) => p.username)
-        .where((s) => s.isNotEmpty)
-        .join(', ');
-    final title = exchange.title ?? 'Intercambio';
-
-    return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.card,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusL),
-        border: Border.all(color: AppTheme.border),
-      ),
-      padding: const EdgeInsets.all(AppDimensions.spacingL),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              color: AppTheme.text,
-              fontSize: AppDimensions.fontSizeL,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: AppDimensions.spacingXS),
-          Text(
-            _statusLabel(exchange.status),
-            style: TextStyle(
-              color: AppTheme.subtle,
-              fontSize: AppDimensions.fontSizeS,
-            ),
-          ),
-          const SizedBox(height: AppDimensions.spacingMD),
-          _InfoRow(
-            icon: Icons.calendar_today_outlined,
-            label: 'Fecha y hora',
-            value: dateStr,
-          ),
-          const SizedBox(height: AppDimensions.spacingMD),
-          _InfoRow(
-            icon: Icons.access_time_rounded,
-            label: 'Duración',
-            value: '${exchange.durationMinutes} min',
-          ),
-          const SizedBox(height: AppDimensions.spacingMD),
-          _InfoRow(
-            icon: Icons.people_outline_rounded,
-            label: 'Participantes',
-            value: participantsStr.isNotEmpty ? participantsStr : '—',
-          ),
-          const SizedBox(height: AppDimensions.spacingL),
-          if (exchange.canConfirm)
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () => onConfirm(exchange),
-                icon: const Icon(Icons.check_circle_outline_rounded),
-                label: const Text('Confirmar intercambio'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.accent,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: AppDimensions.spacingMD),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Fila de información con icono, etiqueta y valor
-class _InfoRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-
-  const _InfoRow({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, color: AppTheme.subtle, size: AppDimensions.iconSizeS),
-        const SizedBox(width: AppDimensions.spacingMD),
-        Text(
-          '$label: ',
-          style: TextStyle(
-            color: AppTheme.subtle,
-            fontSize: AppDimensions.fontSizeS,
-          ),
-        ),
-        Expanded(
-          child: Text(
-            value,
-            style: TextStyle(
-              color: AppTheme.text,
-              fontSize: AppDimensions.fontSizeS,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

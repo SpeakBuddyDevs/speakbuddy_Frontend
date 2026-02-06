@@ -8,7 +8,7 @@ import '../models/find_filters.dart';
 import '../models/public_user_profile.dart';
 import '../navigation/public_profile_args.dart';
 import '../navigation/chat_args.dart';
-import '../repositories/fake_find_users_repository.dart';
+import '../repositories/api_find_users_repository.dart';
 import '../widgets/find/find_search_bar.dart';
 import '../widgets/find/filters_button.dart';
 import '../widgets/find/find_user_card.dart';
@@ -25,9 +25,7 @@ class FindScreen extends StatefulWidget {
 }
 
 class _FindScreenState extends State<FindScreen> {
-  // BACKEND: Sustituir FakeFindUsersRepository por ApiFindUsersRepository
-  // TODO(FE): Inyectar repositorio o usar provider/riverpod para cambiar implementación
-  final _repository = FakeFindUsersRepository();
+  final _repository = ApiFindUsersRepository();
   final _searchController = TextEditingController();
   final _scrollController = ScrollController();
 

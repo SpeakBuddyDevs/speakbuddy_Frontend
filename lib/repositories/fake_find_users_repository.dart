@@ -283,9 +283,6 @@ class FakeFindUsersRepository implements FindUsersRepository {
 
     // Aplicar filtros
     if (filters != null) {
-      if (filters.onlineOnly) {
-        results = results.where((u) => u.isOnline).toList();
-      }
       if (filters.proOnly) {
         results = results.where((u) => u.isPro).toList();
       }

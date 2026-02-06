@@ -22,13 +22,16 @@ class FindUserCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppTheme.card,
         borderRadius: BorderRadius.circular(AppDimensions.radiusL),
-        border: Border.all(color: AppTheme.border),
+        border: Border.all(
+          color: user.isPro ? AppTheme.gold : AppTheme.border,
+          width: user.isPro ? 2 : 1,
+        ),
       ),
       padding: AppDimensions.paddingCard,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header: Avatar + Info
+          // Header: Avatar + Info + PRO badge
           Row(
             children: [
               // Avatar con indicador online
@@ -73,28 +76,18 @@ class FindUserCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            user.name,
-                            style: TextStyle(
-                              color: AppTheme.text,
-                              fontSize: AppDimensions.fontSizeM,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (user.isPro) ...[
-                          const SizedBox(width: AppDimensions.spacingSM),
-                          _ProBadge(),
-                        ],
-                      ],
+                    Text(
+                      user.name,
+                      style: TextStyle(
+                        color: AppTheme.text,
+                        fontSize: AppDimensions.fontSizeM,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: AppDimensions.spacingXS),
                     Text(
-                      user.country,
+                      user.country.isEmpty ? '—' : user.country,
                       style: TextStyle(
                         color: AppTheme.subtle,
                         fontSize: AppDimensions.fontSizeS,
@@ -103,6 +96,8 @@ class FindUserCard extends StatelessWidget {
                   ],
                 ),
               ),
+              // Badge PRO (esquina derecha, como en la imagen)
+              if (user.isPro) _ProBadge(),
             ],
           ),
           const SizedBox(height: AppDimensions.spacingMD),
@@ -122,7 +117,7 @@ class FindUserCard extends StatelessWidget {
                 Icon(Icons.translate_rounded, size: 16, color: AppTheme.subtle),
                 const SizedBox(width: AppDimensions.spacingSM),
                 Text(
-                  '${user.nativeLanguage} → ${user.targetLanguage}',
+                  '${user.nativeLanguage.isEmpty ? '—' : user.nativeLanguage} → ${user.targetLanguage.isEmpty ? '—' : user.targetLanguage}',
                   style: TextStyle(
                     color: AppTheme.text,
                     fontSize: AppDimensions.fontSizeS,
@@ -198,19 +193,18 @@ class _ProBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppDimensions.spacingSM,
-        vertical: 2,
+        horizontal: AppDimensions.spacingMD,
+        vertical: AppDimensions.spacingXS,
       ),
       decoration: BoxDecoration(
-        color: AppTheme.gold.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(AppDimensions.radiusXS),
-        border: Border.all(color: AppTheme.gold.withValues(alpha: 0.5)),
+        color: AppTheme.gold,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusS),
       ),
       child: Text(
         'PRO',
         style: TextStyle(
-          color: AppTheme.gold,
-          fontSize: 10,
+          color: Colors.white,
+          fontSize: 12,
           fontWeight: FontWeight.bold,
         ),
       ),

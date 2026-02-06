@@ -9,6 +9,7 @@ import 'language_item.dart';
 
 /// Perfil completo del usuario autenticado
 class UserProfile {
+  final String id;
   final String name;
   final String email;
   final int level;
@@ -27,6 +28,7 @@ class UserProfile {
   final String description;
 
   const UserProfile({
+    required this.id,
     required this.name,
     required this.email,
     required this.level,
@@ -46,6 +48,7 @@ class UserProfile {
   });
 
   UserProfile copyWith({
+    String? id,
     String? name,
     String? email,
     int? level,
@@ -64,6 +67,7 @@ class UserProfile {
     String? description,
   }) {
     return UserProfile(
+      id: id ?? this.id,
       name: name ?? this.name,
       email: email ?? this.email,
       level: level ?? this.level,

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/public_user_profile.dart';
 import '../navigation/public_profile_args.dart';
 import '../navigation/chat_args.dart';
-import '../repositories/fake_users_repository.dart';
+import '../repositories/api_users_repository.dart';
 import '../constants/routes.dart';
 import '../theme/app_theme.dart';
 import '../constants/dimensions.dart';
@@ -16,9 +16,7 @@ class PublicProfileScreen extends StatefulWidget {
 }
 
 class _PublicProfileScreenState extends State<PublicProfileScreen> {
-  // BACKEND: Sustituir FakeUsersRepository por ApiUsersRepository
-  // Endpoint: GET /api/users/{userId} para cargar perfil cuando no hay prefetched
-  final _repository = FakeUsersRepository();
+  final _repository = ApiUsersRepository();
   PublicUserProfile? _profile;
   bool _isLoading = true;
   String? _error;
@@ -220,14 +218,14 @@ class _ProfileHeader extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppDimensions.spacingXS),
-          // País
+          // País (ocultar fila si vacío o mostrar '—')
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(Icons.location_on_outlined, size: 16, color: AppTheme.subtle),
               const SizedBox(width: AppDimensions.spacingXS),
               Text(
-                profile.country,
+                profile.country.isEmpty ? '—' : profile.country,
                 style: TextStyle(color: AppTheme.subtle, fontSize: AppDimensions.fontSizeM),
               ),
             ],
@@ -405,12 +403,12 @@ class _LanguagesCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Nativo: ${profile.nativeLanguage}',
+                      'Nativo: ${profile.nativeLanguage.isEmpty ? '—' : profile.nativeLanguage}',
                       style: TextStyle(color: AppTheme.text),
                     ),
                     const SizedBox(height: AppDimensions.spacingXS),
                     Text(
-                      'Aprendiendo: ${profile.targetLanguage}',
+                      'Aprendiendo: ${profile.targetLanguage.isEmpty ? '—' : profile.targetLanguage}',
                       style: TextStyle(color: AppTheme.subtle),
                     ),
                   ],

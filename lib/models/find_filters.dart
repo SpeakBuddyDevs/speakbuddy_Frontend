@@ -1,10 +1,8 @@
 /// Filtros para la búsqueda de usuarios
-/// 
-/// BACKEND: Estos filtros se envían como query params a GET /api/users/search
-/// Query params esperados: ?q=&page=&pageSize=&online=&pro=&minRating=&nativeLang=&targetLang=&country=
-/// TODO(BE): Soportar todos estos filtros en el endpoint de búsqueda
+///
+/// BACKEND: Query params a GET /api/users/search
+/// ?q=&pro=&minRating=&nativeLang=&learningLang=&country=&page=&size=
 class FindFilters {
-  final bool onlineOnly;
   final bool proOnly;
   final double? minRating;
   final String? nativeLanguage;
@@ -12,7 +10,6 @@ class FindFilters {
   final String? country;
 
   const FindFilters({
-    this.onlineOnly = false,
     this.proOnly = false,
     this.minRating,
     this.nativeLanguage,
@@ -24,7 +21,6 @@ class FindFilters {
   static const FindFilters defaults = FindFilters();
 
   FindFilters copyWith({
-    bool? onlineOnly,
     bool? proOnly,
     double? minRating,
     String? nativeLanguage,
@@ -36,7 +32,6 @@ class FindFilters {
     bool clearCountry = false,
   }) {
     return FindFilters(
-      onlineOnly: onlineOnly ?? this.onlineOnly,
       proOnly: proOnly ?? this.proOnly,
       minRating: clearMinRating ? null : (minRating ?? this.minRating),
       nativeLanguage: clearNativeLanguage ? null : (nativeLanguage ?? this.nativeLanguage),
@@ -47,7 +42,6 @@ class FindFilters {
 
   /// Verifica si hay algún filtro activo
   bool get hasActiveFilters =>
-      onlineOnly ||
       proOnly ||
       minRating != null ||
       nativeLanguage != null ||

@@ -2,37 +2,14 @@ import 'package:flutter/material.dart';
 import '../../models/find_filters.dart';
 import '../../theme/app_theme.dart';
 import '../../constants/dimensions.dart';
+import '../../constants/languages.dart';
+import '../../constants/countries.dart';
 
-/// Lista de idiomas disponibles para filtrar
-const List<String> _availableLanguages = [
-  'Español',
-  'Inglés',
-  'Francés',
-  'Alemán',
-  'Italiano',
-  'Portugués',
-  'Chino',
-  'Japonés',
-  'Ruso',
-  'Árabe',
-  'Coreano',
-];
+/// Idiomas para filtro de búsqueda (solo los que el backend tiene en DataInitializer)
+List<String> get _availableLanguages => AppLanguages.searchFilterLanguageNames;
 
-/// Lista de países disponibles para filtrar
-const List<String> _availableCountries = [
-  'Estados Unidos',
-  'España',
-  'México',
-  'Francia',
-  'Alemania',
-  'Italia',
-  'Brasil',
-  'Argentina',
-  'Reino Unido',
-  'Japón',
-  'China',
-  'Rusia',
-];
+/// Países disponibles para filtrar (alineados con AppCountries.available)
+List<String> get _availableCountries => AppCountries.available;
 
 /// Bottom sheet para filtros de búsqueda de usuarios
 class FindFiltersBottomSheet extends StatefulWidget {
@@ -48,7 +25,6 @@ class FindFiltersBottomSheet extends StatefulWidget {
 }
 
 class _FindFiltersBottomSheetState extends State<FindFiltersBottomSheet> {
-  late bool _onlineOnly;
   late bool _proOnly;
   late double _minRating;
   late String? _nativeLanguage;
@@ -58,7 +34,6 @@ class _FindFiltersBottomSheetState extends State<FindFiltersBottomSheet> {
   @override
   void initState() {
     super.initState();
-    _onlineOnly = widget.initialFilters.onlineOnly;
     _proOnly = widget.initialFilters.proOnly;
     _minRating = widget.initialFilters.minRating ?? 0.0;
     _nativeLanguage = widget.initialFilters.nativeLanguage;
@@ -68,7 +43,6 @@ class _FindFiltersBottomSheetState extends State<FindFiltersBottomSheet> {
 
   void _resetFilters() {
     setState(() {
-      _onlineOnly = false;
       _proOnly = false;
       _minRating = 0.0;
       _nativeLanguage = null;
@@ -79,7 +53,6 @@ class _FindFiltersBottomSheetState extends State<FindFiltersBottomSheet> {
 
   void _applyFilters() {
     final filters = FindFilters(
-      onlineOnly: _onlineOnly,
       proOnly: _proOnly,
       minRating: _minRating > 0 ? _minRating : null,
       nativeLanguage: _nativeLanguage,
@@ -143,14 +116,6 @@ class _FindFiltersBottomSheetState extends State<FindFiltersBottomSheet> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Disponibilidad
-                  _SectionTitle(title: 'Disponibilidad'),
-                  _FilterSwitch(
-                    label: 'Solo online',
-                    value: _onlineOnly,
-                    onChanged: (v) => setState(() => _onlineOnly = v),
-                  ),
-                  const SizedBox(height: AppDimensions.spacingL),
                   // Cuenta
                   _SectionTitle(title: 'Cuenta'),
                   _FilterSwitch(

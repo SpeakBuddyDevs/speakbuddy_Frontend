@@ -560,7 +560,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     _StatLine(
                       icon: Icons.access_time_rounded,
                       label: 'Horas totales',
-                      value: '${_profile!.hoursTotal}h',
+                      value: '${_profile!.hoursTotal.toStringAsFixed(2)} h',
                     ),
                     Divider(color: AppTheme.border, height: 1),
                     _StatLine(

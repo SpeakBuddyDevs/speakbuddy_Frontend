@@ -47,18 +47,16 @@ class MessageBubble extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Mostrar nombre del remitente solo en chats grupales y si no es nuestro mensaje
-            if (senderName != null && !isMine) ...[
-              Text(
-                senderName!,
-                style: TextStyle(
-                  color: AppTheme.subtle,
-                  fontSize: AppDimensions.fontSizeXS,
-                  fontWeight: FontWeight.w600,
-                ),
+            // Nombre del remitente: "Tú" para mis mensajes, nombre para el resto
+            Text(
+              isMine ? 'Tú' : (senderName ?? 'Usuario'),
+              style: TextStyle(
+                color: isMine ? Colors.white70 : AppTheme.subtle,
+                fontSize: AppDimensions.fontSizeXS,
+                fontWeight: FontWeight.w600,
               ),
-              const SizedBox(height: AppDimensions.spacingXS),
-            ],
+            ),
+            const SizedBox(height: AppDimensions.spacingXS),
             Text(
               text,
               style: TextStyle(

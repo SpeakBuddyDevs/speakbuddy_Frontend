@@ -11,6 +11,7 @@ class JoinedExchange {
   final List<JoinedExchangeParticipant> participants;
   final bool canConfirm;
   final bool allConfirmed;
+  final DateTime? lastMessageAt;
 
   const JoinedExchange({
     required this.id,
@@ -23,6 +24,7 @@ class JoinedExchange {
     required this.participants,
     required this.canConfirm,
     required this.allConfirmed,
+    this.lastMessageAt,
   });
 
   factory JoinedExchange.fromJson(Map<String, dynamic> json) {
@@ -32,6 +34,21 @@ class JoinedExchange {
         [];
     final scheduledAt = json['scheduledAt'] as String?;
     final createdAt = json['createdAt'] as String?;
+    final lastMessageAtRaw = json['lastMessageAt'];
+    DateTime? lastMessageAt;
+    if (lastMessageAtRaw != null) {
+      if (lastMessageAtRaw is String) {
+        lastMessageAt = DateTime.tryParse(lastMessageAtRaw);
+      } else if (lastMessageAtRaw is List && lastMessageAtRaw.length >= 6) {
+        final y = (lastMessageAtRaw[0] as num?)?.toInt() ?? 0;
+        final m = (lastMessageAtRaw[1] as num?)?.toInt() ?? 1;
+        final d = (lastMessageAtRaw[2] as num?)?.toInt() ?? 1;
+        final h = (lastMessageAtRaw[3] as num?)?.toInt() ?? 0;
+        final min = (lastMessageAtRaw[4] as num?)?.toInt() ?? 0;
+        final sec = (lastMessageAtRaw[5] as num?)?.toInt() ?? 0;
+        lastMessageAt = DateTime(y, m, d, h, min, sec);
+      }
+    }
 
     return JoinedExchange(
       id: json['id']?.toString() ?? '',
@@ -44,6 +61,7 @@ class JoinedExchange {
       participants: participants,
       canConfirm: json['canConfirm'] == true,
       allConfirmed: json['allConfirmed'] == true,
+      lastMessageAt: lastMessageAt,
     );
   }
 }

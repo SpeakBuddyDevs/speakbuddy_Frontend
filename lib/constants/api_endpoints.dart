@@ -87,6 +87,9 @@ class ApiEndpoints {
   static String exchangeJoin(String id) => '$apiBase/exchanges/$id/join';
   static String exchangeLeave(String id) => '$apiBase/exchanges/$id/leave';
 
+  /// Chat del intercambio: GET /api/exchanges/{id}/messages, POST /api/exchanges/{id}/messages
+  static String exchangeMessages(String exchangeId) => '$apiBase/exchanges/$exchangeId/messages';
+
   // TODO(BE): POST /api/chats o GET /api/chats/with/{userId} - Obtener o crear chatId
   // static const String chats = '$apiBase/chats';
 

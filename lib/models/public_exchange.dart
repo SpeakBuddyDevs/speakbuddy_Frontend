@@ -26,6 +26,7 @@ class PublicExchange {
   final String nativeLanguage; // Idioma nativo que el creador ofrece
   final String targetLanguage; // Idioma que el creador quiere practicar
   final List<String>? topics; // Temas/categorías opcionales
+  final List<String>? platforms; // Plataformas de videollamada (Zoom, Meet, etc.)
   final bool isEligible; // Si el usuario actual cumple requisitos
   final List<String>? unmetRequirements; // Requisitos no cumplidos si !isEligible
   final bool isJoined; // Si el usuario actual ya es participante
@@ -49,6 +50,7 @@ class PublicExchange {
     required this.nativeLanguage,
     required this.targetLanguage,
     this.topics,
+    this.platforms,
     required this.isEligible,
     this.unmetRequirements,
     this.isJoined = false,
@@ -86,6 +88,16 @@ class PublicExchange {
       if (unmetRequirements.isEmpty) unmetRequirements = null;
     }
 
+    final platformsRaw = json['platforms'];
+    List<String>? platforms;
+    if (platformsRaw is List) {
+      final list = platformsRaw
+          .where((e) => e != null)
+          .map((e) => e.toString())
+          .toList();
+      platforms = list.isEmpty ? null : list;
+    }
+
     return PublicExchange(
       id: (json['id'] ?? '').toString(),
       title: (json['title'] ?? 'Intercambio').toString(),
@@ -111,6 +123,7 @@ class PublicExchange {
       nativeLanguage: (json['nativeLanguage'] ?? '').toString(),
       targetLanguage: (json['targetLanguage'] ?? '').toString(),
       topics: topics,
+      platforms: platforms,
       isEligible: json['isEligible'] == true,
       unmetRequirements: unmetRequirements,
       isJoined: json['isJoined'] == true,

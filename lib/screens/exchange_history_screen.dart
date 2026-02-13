@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../models/joined_exchange.dart';
 import '../theme/app_theme.dart';
 import '../constants/dimensions.dart';
+import '../constants/routes.dart';
+import '../navigation/exchange_chat_args.dart';
 import '../widgets/exchange/joined_exchange_card.dart';
 
 /// Pantalla que muestra el historial de intercambios completados.
@@ -69,6 +71,14 @@ class ExchangeHistoryScreen extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: AppDimensions.spacingMD),
                   child: JoinedExchangeCard(
                     exchange: exchange,
+                    onOpenChat: () {
+                      Navigator.pushNamed(
+                        context,
+                        AppRoutes.chat,
+                        arguments: ExchangeChatArgs(exchangeId: exchange.id),
+                      );
+                    },
+                    hasNewMessages: false,
                   ),
                 );
               },

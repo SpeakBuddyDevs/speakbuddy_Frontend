@@ -82,11 +82,13 @@ class ApiPublicExchangesRepository implements PublicExchangesRepository {
     required String description,
     required String nativeLanguage,
     required String targetLanguage,
-    required String requiredLevel,
+    required int requiredLevelMinOrder,
+    required int requiredLevelMaxOrder,
     required DateTime date,
     required int durationMinutes,
     required int maxParticipants,
     List<String>? topics,
+    List<String>? platforms,
     required bool isPublic,
   }) async {
     final headers = await _authService.headersWithAuth();
@@ -115,7 +117,10 @@ class ApiPublicExchangesRepository implements PublicExchangesRepository {
       if (description.isNotEmpty) 'description': description,
       if (isPublic) 'nativeLanguageCode': nativeCode,
       if (isPublic) 'targetLanguageCode': targetCode,
-      if (isPublic) 'requiredLevel': requiredLevel,
+      if (isPublic) 'requiredLevelMinOrder': requiredLevelMinOrder,
+      if (isPublic) 'requiredLevelMaxOrder': requiredLevelMaxOrder,
+      if (topics != null && topics.isNotEmpty) 'topics': topics,
+      if (platforms != null && platforms.isNotEmpty) 'platforms': platforms,
     };
 
     final response = await http.post(
@@ -136,9 +141,9 @@ class ApiPublicExchangesRepository implements PublicExchangesRepository {
       description: description,
       nativeLanguage: nativeLanguage,
       targetLanguage: targetLanguage,
-      requiredLevel: requiredLevel,
       maxParticipants: maxParticipants,
       topics: topics,
+      platforms: platforms,
       isPublic: isPublic,
     );
   }
@@ -148,9 +153,9 @@ class ApiPublicExchangesRepository implements PublicExchangesRepository {
     required String description,
     required String nativeLanguage,
     required String targetLanguage,
-    required String requiredLevel,
     required int maxParticipants,
     List<String>? topics,
+    List<String>? platforms,
     required bool isPublic,
   }) {
     final participants = json['participants'] as List? ?? [];
@@ -168,7 +173,10 @@ class ApiPublicExchangesRepository implements PublicExchangesRepository {
         ? DateTime.parse(scheduledAt)
         : DateTime.now();
 
-    final minLevel = _requiredLevelToMinLevel(requiredLevel);
+    final requiredLevelLabel = (json['requiredLevel'] ?? 'A1 – C2').toString();
+    final minLevel = (json['requiredLevelMinOrder'] is int)
+        ? json['requiredLevelMinOrder'] as int
+        : (json['minLevel'] is int) ? json['minLevel'] as int : 1;
 
     return PublicExchange(
       id: (json['id'] ?? '').toString(),
@@ -178,7 +186,7 @@ class ApiPublicExchangesRepository implements PublicExchangesRepository {
       creatorName: (creator?['username'] ?? '').toString(),
       creatorAvatarUrl: null,
       creatorIsPro: false,
-      requiredLevel: requiredLevel,
+      requiredLevel: requiredLevelLabel,
       minLevel: minLevel,
       date: date,
       durationMinutes: (json['durationMinutes'] is int)
@@ -189,23 +197,13 @@ class ApiPublicExchangesRepository implements PublicExchangesRepository {
       nativeLanguage: nativeLanguage,
       targetLanguage: targetLanguage,
       topics: topics?.isNotEmpty == true ? topics : null,
+      platforms: platforms?.isNotEmpty == true ? platforms : null,
       isEligible: true,
       unmetRequirements: null,
       isJoined: true,
       isPublic: isPublic,
       shareLink: null,
     );
-  }
-
-  int _requiredLevelToMinLevel(String level) {
-    switch (level.toLowerCase()) {
-      case 'intermedio':
-        return 4;
-      case 'avanzado':
-        return 7;
-      default:
-        return 1;
-    }
   }
 
   @override

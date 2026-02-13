@@ -5,10 +5,13 @@ import '../services/current_user_service.dart';
 import '../services/stats_service.dart';
 import '../repositories/api_user_exchanges_repository.dart';
 import '../repositories/api_exchange_repository.dart';
+import '../repositories/api_public_exchanges_repository.dart';
 import '../repositories/user_exchanges_repository.dart';
 import '../models/joined_exchange.dart';
 import '../constants/routes.dart';
 import '../constants/dimensions.dart';
+import '../navigation/exchange_chat_args.dart';
+import '../services/exchange_chat_read_service.dart';
 import '../widgets/exchange/joined_exchange_card.dart';
 
 /// Pantalla principal de la aplicación
@@ -19,12 +22,15 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   final UserExchangesRepository _repository = ApiUserExchangesRepository();
   final ApiExchangeRepository _exchangeRepo = ApiExchangeRepository();
+  final ApiPublicExchangesRepository _leaveRepo = ApiPublicExchangesRepository();
   final StatsService _statsService = StatsService();
+  final ExchangeChatReadService _chatReadService = ExchangeChatReadService();
 
   List<JoinedExchange>? _joinedExchanges;
+  Map<String, bool> _hasNewMessages = {};
   bool _isLoadingExchanges = true;
   int _exchangesThisMonth = 0;
   int _exchangesLastMonth = 0;
@@ -35,7 +41,21 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadData();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadExchanges();
+    }
   }
 
   Future<void> _loadData() async {
@@ -57,6 +77,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _joinedExchanges = exchanges;
         _isLoadingExchanges = false;
       });
+      _refreshHasNewMessages();
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -64,6 +85,17 @@ class _HomeScreenState extends State<HomeScreen> {
         _isLoadingExchanges = false;
       });
     }
+  }
+
+  Future<void> _refreshHasNewMessages() async {
+    final exchanges = _joinedExchanges;
+    if (exchanges == null || exchanges.isEmpty) return;
+    final map = <String, bool>{};
+    for (final e in exchanges) {
+      map[e.id] = await _chatReadService.hasNewMessages(e.id, e.lastMessageAt);
+    }
+    if (!mounted) return;
+    setState(() => _hasNewMessages = map);
   }
 
   Future<void> _loadStats() async {
@@ -131,6 +163,67 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _onLeaveExchange(JoinedExchange exchange) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.card,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppDimensions.radiusL),
+        ),
+        title: const Text('Abandonar intercambio'),
+        content: const Text(
+          '¿Estás seguro de que quieres abandonar este intercambio?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(
+              'Abandonar',
+              style: TextStyle(color: Colors.redAccent),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true || !mounted) return;
+
+    try {
+      await _leaveRepo.leaveExchange(exchange.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Has abandonado "${exchange.title ?? 'Intercambio'}"'),
+        ),
+      );
+      _loadExchanges();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: Colors.red.shade800,
+        ),
+      );
+    }
+  }
+
+  void _onOpenExchangeChat(JoinedExchange exchange) {
+    Navigator.pushNamed(
+      context,
+      AppRoutes.chat,
+      arguments: ExchangeChatArgs(exchangeId: exchange.id),
+    ).then((_) {
+      if (!mounted) return;
+      _loadExchanges();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final userService = CurrentUserService();
@@ -187,6 +280,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 onGoToHistory: _onGoToHistory,
                 onRefresh: _loadExchanges,
                 onConfirm: _onConfirmExchange,
+                onLeave: _onLeaveExchange,
+                onOpenChat: _onOpenExchangeChat,
+                hasNewMessages: _hasNewMessages,
               ),
             ],
           ),
@@ -419,6 +515,9 @@ class _PendingExchangesSection extends StatelessWidget {
   final VoidCallback onGoToHistory;
   final VoidCallback onRefresh;
   final Future<void> Function(JoinedExchange) onConfirm;
+  final Future<void> Function(JoinedExchange) onLeave;
+  final void Function(JoinedExchange) onOpenChat;
+  final Map<String, bool> hasNewMessages;
 
   const _PendingExchangesSection({
     super.key,
@@ -428,6 +527,9 @@ class _PendingExchangesSection extends StatelessWidget {
     required this.onGoToHistory,
     required this.onRefresh,
     required this.onConfirm,
+    required this.onLeave,
+    required this.onOpenChat,
+    required this.hasNewMessages,
   });
 
   @override
@@ -476,6 +578,9 @@ class _PendingExchangesSection extends StatelessWidget {
           _ExchangesCarousel(
             exchanges: pendingExchanges,
             onConfirm: onConfirm,
+            onLeave: onLeave,
+            onOpenChat: onOpenChat,
+            hasNewMessages: hasNewMessages,
           ),
       ],
     );
@@ -513,10 +618,16 @@ class _EmptyExchangesButton extends StatelessWidget {
 class _ExchangesCarousel extends StatefulWidget {
   final List<JoinedExchange> exchanges;
   final Future<void> Function(JoinedExchange) onConfirm;
+  final Future<void> Function(JoinedExchange) onLeave;
+  final void Function(JoinedExchange) onOpenChat;
+  final Map<String, bool> hasNewMessages;
 
   const _ExchangesCarousel({
     required this.exchanges,
     required this.onConfirm,
+    required this.onLeave,
+    required this.onOpenChat,
+    required this.hasNewMessages,
   });
 
   @override
@@ -542,9 +653,13 @@ class _ExchangesCarouselState extends State<_ExchangesCarousel> {
   @override
   Widget build(BuildContext context) {
     if (widget.exchanges.length == 1) {
+      final e = widget.exchanges[0];
       return JoinedExchangeCard(
-        exchange: widget.exchanges[0],
+        exchange: e,
         onConfirm: widget.onConfirm,
+        onLeave: () => widget.onLeave(e),
+        onOpenChat: () => widget.onOpenChat(e),
+        hasNewMessages: widget.hasNewMessages[e.id] ?? false,
       );
     }
 
@@ -561,11 +676,15 @@ class _ExchangesCarouselState extends State<_ExchangesCarousel> {
               });
             },
             itemBuilder: (context, index) {
+              final exchange = widget.exchanges[index];
               return Padding(
                 padding: const EdgeInsets.only(right: AppDimensions.spacingMD),
                 child: JoinedExchangeCard(
-                  exchange: widget.exchanges[index],
+                  exchange: exchange,
                   onConfirm: widget.onConfirm,
+                  onLeave: () => widget.onLeave(exchange),
+                  onOpenChat: () => widget.onOpenChat(exchange),
+                  hasNewMessages: widget.hasNewMessages[exchange.id] ?? false,
                 ),
               );
             },

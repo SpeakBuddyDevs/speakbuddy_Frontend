@@ -17,7 +17,8 @@ class UserProfile {
   final int exchanges;
   final double rating;
   final int languagesCount;
-  final int hoursTotal;
+  /** Horas totales de intercambios completados (puede ser decimal, ej. 1.5). */
+  final double hoursTotal;
   final int currentStreakDays;
   final int bestStreakDays;
   final int medals;
@@ -56,7 +57,7 @@ class UserProfile {
     int? exchanges,
     double? rating,
     int? languagesCount,
-    int? hoursTotal,
+    double? hoursTotal,
     int? currentStreakDays,
     int? bestStreakDays,
     int? medals,

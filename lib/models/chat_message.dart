@@ -11,6 +11,7 @@ class ChatMessage {
   final String senderId;
   final String text;
   final DateTime createdAt;
+  final String? senderName;
 
   const ChatMessage({
     required this.id,
@@ -18,6 +19,7 @@ class ChatMessage {
     required this.senderId,
     required this.text,
     required this.createdAt,
+    this.senderName,
   });
 
   /// Verifica si el mensaje es del usuario actual

@@ -19,6 +19,9 @@ class AuthService {
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
   );
 
+  /// ID del usuario actual (cacheado tras GET /me). Se usa para chat (isMine).
+  String? _cachedUserId;
+
   Future<AuthResult> login(String email, String password) async {
     final url = Uri.parse(ApiEndpoints.login);
 
@@ -94,7 +97,32 @@ class AuthService {
 
   Future<void> logout() async {
     globalAccessToken = null;
+    _cachedUserId = null;
     await _storage.delete(key: AppConstants.jwtTokenKey);
+  }
+
+  /// Obtiene el ID del usuario actual (para chat, etc.). Usa caché tras la primera llamada.
+  /// Devuelve null si no hay sesión o el backend no devuelve id.
+  Future<String?> getCurrentUserId() async {
+    if (_cachedUserId != null) return _cachedUserId;
+    final headers = await headersWithAuth();
+    final token = await getToken();
+    if (token == null || token.isEmpty) return null;
+    try {
+      final response = await http.get(
+        Uri.parse(ApiEndpoints.me),
+        headers: headers,
+      );
+      if (response.statusCode != 200) return null;
+      final data = jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>?;
+      final id = data?['id'];
+      if (id == null) return null;
+      _cachedUserId = id.toString();
+      return _cachedUserId;
+    } catch (e) {
+      debugPrint('AuthService getCurrentUserId error: $e');
+      return null;
+    }
   }
 
   Future<AuthResult> register(

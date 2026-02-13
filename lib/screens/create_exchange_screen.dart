@@ -3,9 +3,16 @@ import 'package:flutter/services.dart';
 import '../theme/app_theme.dart';
 import '../constants/dimensions.dart';
 import '../constants/languages.dart';
-import '../repositories/fake_public_exchanges_repository.dart';
+import '../constants/level_ids.dart';
+import '../constants/video_platforms.dart';
+import '../repositories/api_public_exchanges_repository.dart';
 
-/// Pantalla para crear un nuevo intercambio (público o privado)
+/// Pantalla para crear un nuevo intercambio (público o privado).
+///
+/// ESTRATEGIA (Plan 5.1): Se amplía esta pantalla en lugar de crear
+/// CreatePublicExchangeScreen. El formulario ya tiene todos los campos
+/// necesarios (descripción, idiomas, nivel, maxParticipants, topics, isPublic).
+/// Ver create_exchange_strategy.md para detalles.
 class CreateExchangeScreen extends StatefulWidget {
   const CreateExchangeScreen({super.key});
 
@@ -14,8 +21,7 @@ class CreateExchangeScreen extends StatefulWidget {
 }
 
 class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
-  // BACKEND: Sustituir FakePublicExchangesRepository por ApiPublicExchangesRepository
-  final _repository = FakePublicExchangesRepository();
+  final _repository = ApiPublicExchangesRepository();
   final _formKey = GlobalKey<FormState>();
   
   // Controllers
@@ -24,24 +30,28 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
   final _durationController = TextEditingController();
   final _maxParticipantsController = TextEditingController();
   final _topicsController = TextEditingController();
+  final _otherPlatformController = TextEditingController();
 
   // Estado del formulario
   String? _nativeLanguageCode; // Código del idioma (ej: 'ES')
   String? _targetLanguageCode; // Código del idioma (ej: 'EN')
-  String? _requiredLevel;
+  int _requiredLevelMinOrder = 1; // 1=A1 .. 6=C2
+  int _requiredLevelMaxOrder = 6;
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
   bool _isPublic = true; // Por defecto público
   bool _isCreating = false;
+  final Set<String> _selectedPlatforms = {};
+  bool _otherPlatformSelected = false;
 
   @override
   void initState() {
     super.initState();
     // Pre-seleccionar idiomas del usuario (mock)
     // BACKEND: Obtener desde perfil del usuario
-    _nativeLanguageCode = 'ES'; // Mock: idioma nativo del usuario
-    _targetLanguageCode = 'EN'; // Mock: primer idioma de aprendizaje activo
-    _requiredLevel = 'Principiante';
+    // Nota: availableCodes usa minúsculas (es, en, fr...), el value del Dropdown debe coincidir
+    _nativeLanguageCode = 'es'; // Mock: idioma nativo del usuario
+    _targetLanguageCode = 'en'; // Mock: primer idioma de aprendizaje activo
   }
 
   @override
@@ -51,6 +61,7 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
     _durationController.dispose();
     _maxParticipantsController.dispose();
     _topicsController.dispose();
+    _otherPlatformController.dispose();
     super.dispose();
   }
 
@@ -133,113 +144,84 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
     setState(() => _isCreating = true);
 
     try {
-      // Parsear temas (separados por comas)
-      List<String>? topics;
-      if (_topicsController.text.trim().isNotEmpty) {
-        topics = _topicsController.text
-            .split(',')
-            .map((t) => t.trim())
-            .where((t) => t.isNotEmpty)
-            .toList();
+      final duration = int.parse(_durationController.text);
+      final maxParticipants = int.parse(_maxParticipantsController.text);
+
+      final topicsText = _topicsController.text.trim();
+      final topics = topicsText.isEmpty
+          ? null
+          : topicsText
+              .split(',')
+              .map((s) => s.trim())
+              .where((s) => s.isNotEmpty)
+              .toList();
+
+      final platformsList = <String>[..._selectedPlatforms];
+      if (_otherPlatformSelected) {
+        final otherText = _otherPlatformController.text.trim();
+        if (otherText.isEmpty) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Indica el nombre de la plataforma para "Otra"')),
+          );
+          setState(() => _isCreating = false);
+          return;
+        }
+        platformsList.add(otherText);
+      }
+      if (_isPublic && platformsList.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Selecciona al menos una plataforma de videollamada')),
+        );
+        setState(() => _isCreating = false);
+        return;
       }
 
-      // Convertir códigos de idioma a nombres
-      final nativeLanguageName = AppLanguages.getName(_nativeLanguageCode!);
-      final targetLanguageName = AppLanguages.getName(_targetLanguageCode!);
+      final nativeLanguage = _nativeLanguageCode != null
+          ? AppLanguages.getName(_nativeLanguageCode!)
+          : 'Español';
+      final targetLanguage = _targetLanguageCode != null
+          ? AppLanguages.getName(_targetLanguageCode!)
+          : 'Inglés';
 
-      // Crear el intercambio
-      final exchange = await _repository.createExchange(
-        title: _titleController.text.trim(),
+      await _repository.createExchange(
+        title: _titleController.text.trim().isNotEmpty
+            ? _titleController.text.trim()
+            : 'Intercambio',
         description: _descriptionController.text.trim(),
-        nativeLanguage: nativeLanguageName,
-        targetLanguage: targetLanguageName,
-        requiredLevel: _requiredLevel!,
+        nativeLanguage: nativeLanguage,
+        targetLanguage: targetLanguage,
+        requiredLevelMinOrder: _requiredLevelMinOrder,
+        requiredLevelMaxOrder: _requiredLevelMaxOrder,
         date: dateTime,
-        durationMinutes: int.parse(_durationController.text),
-        maxParticipants: int.parse(_maxParticipantsController.text),
+        durationMinutes: duration,
+        maxParticipants: maxParticipants,
         topics: topics?.isNotEmpty == true ? topics : null,
+        platforms: platformsList.isNotEmpty ? platformsList : null,
         isPublic: _isPublic,
       );
 
       if (!mounted) return;
 
-      // Si es privado, mostrar diálogo con el enlace
-      if (!_isPublic && exchange.shareLink != null) {
-        await _showShareLinkDialog(exchange.shareLink!);
-      }
-
-      // Retornar true para indicar que se creó
-      if (mounted) {
-        Navigator.pop(context, true);
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Intercambio creado correctamente')),
+      );
+      Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
+      final message = e.toString().replaceFirst('Exception: ', '');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al crear intercambio: ${e.toString()}')),
+        SnackBar(
+          content: Text(message.isNotEmpty ? message : 'Error al crear intercambio'),
+          backgroundColor: Colors.red.shade800,
+        ),
       );
     } finally {
       if (mounted) {
         setState(() => _isCreating = false);
       }
     }
-  }
-
-  Future<void> _showShareLinkDialog(String shareLink) async {
-    return showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.card,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppDimensions.radiusL),
-        ),
-        title: const Text('Intercambio privado creado'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Comparte este enlace para que otros puedan unirse:',
-              style: TextStyle(fontSize: AppDimensions.fontSizeS),
-            ),
-            const SizedBox(height: AppDimensions.spacingMD),
-            Container(
-              padding: const EdgeInsets.all(AppDimensions.spacingMD),
-              decoration: BoxDecoration(
-                color: AppTheme.panel,
-                borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
-                border: Border.all(color: AppTheme.border),
-              ),
-              child: SelectableText(
-                shareLink,
-                style: TextStyle(
-                  color: AppTheme.text,
-                  fontSize: AppDimensions.fontSizeS,
-                ),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: shareLink));
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Enlace copiado al portapapeles')),
-              );
-            },
-            child: const Text('Copiar enlace'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.accent,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Cerrar'),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
@@ -388,25 +370,141 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
                     ),
                   ),
 
-                // Nivel requerido
-                DropdownButtonFormField<String>(
-                  value: _requiredLevel,
-                  decoration: const InputDecoration(
-                    labelText: 'Nivel requerido',
-                  ),
-                  items: const ['Principiante', 'Intermedio', 'Avanzado']
-                      .map((level) => DropdownMenuItem<String>(
-                            value: level,
-                            child: Text(level),
-                          ))
-                      .toList(),
-                  onChanged: (value) {
-                    setState(() => _requiredLevel = value);
-                  },
-                  validator: (value) =>
-                      value == null ? 'Selecciona un nivel' : null,
+                // Rango de nivel (CEFR: A1–C2)
+                Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<int>(
+                        value: _requiredLevelMinOrder,
+                        decoration: const InputDecoration(
+                          labelText: 'Nivel mínimo',
+                        ),
+                        items: LevelIds.availableLevels.map((levelName) {
+                          final id = LevelIds.getId(levelName);
+                          if (id == null) return null;
+                          return DropdownMenuItem<int>(
+                            value: id,
+                            child: Text(
+                              levelName,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          );
+                        }).whereType<DropdownMenuItem<int>>().toList(),
+                        onChanged: (value) {
+                          if (value != null) {
+                            setState(() {
+                              _requiredLevelMinOrder = value;
+                              if (_requiredLevelMaxOrder < value) {
+                                _requiredLevelMaxOrder = value;
+                              }
+                            });
+                          }
+                        },
+                        validator: (value) =>
+                            value == null ? 'Selecciona nivel mínimo' : null,
+                      ),
+                    ),
+                    const SizedBox(width: AppDimensions.spacingMD),
+                    Expanded(
+                      child: DropdownButtonFormField<int>(
+                        value: _requiredLevelMaxOrder,
+                        decoration: const InputDecoration(
+                          labelText: 'Nivel máximo',
+                        ),
+                        items: LevelIds.availableLevels.map((levelName) {
+                          final id = LevelIds.getId(levelName);
+                          if (id == null) return null;
+                          return DropdownMenuItem<int>(
+                            value: id,
+                            child: Text(
+                              levelName,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          );
+                        }).whereType<DropdownMenuItem<int>>().toList(),
+                        onChanged: (value) {
+                          if (value != null) {
+                            setState(() {
+                              _requiredLevelMaxOrder = value;
+                              if (_requiredLevelMinOrder > value) {
+                                _requiredLevelMinOrder = value;
+                              }
+                            });
+                          }
+                        },
+                        validator: (value) {
+                          if (value == null) return 'Selecciona nivel máximo';
+                          if (value < _requiredLevelMinOrder) {
+                            return 'Máx. debe ser ≥ mín.';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: AppDimensions.spacingL),
+
+                // Plataformas de videollamada (solo si es público)
+                if (_isPublic) ...[
+                  Text(
+                    'Plataformas de videollamada',
+                    style: TextStyle(
+                      color: AppTheme.text,
+                      fontSize: AppDimensions.fontSizeS,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: AppDimensions.spacingSM),
+                  Wrap(
+                    spacing: AppDimensions.spacingSM,
+                    runSpacing: AppDimensions.spacingSM,
+                    children: [
+                      ...VideoPlatforms.fixed.map((name) {
+                        final selected = _selectedPlatforms.contains(name);
+                        return FilterChip(
+                          label: Text(name),
+                          selected: selected,
+                          onSelected: (v) {
+                            setState(() {
+                              if (v) _selectedPlatforms.add(name);
+                              else _selectedPlatforms.remove(name);
+                            });
+                          },
+                          selectedColor: AppTheme.accent.withValues(alpha: 0.3),
+                          checkmarkColor: AppTheme.accent,
+                        );
+                      }),
+                      FilterChip(
+                        label: const Text(VideoPlatforms.otherLabel),
+                        selected: _otherPlatformSelected,
+                        onSelected: (v) {
+                          setState(() => _otherPlatformSelected = v);
+                        },
+                        selectedColor: AppTheme.accent.withValues(alpha: 0.3),
+                        checkmarkColor: AppTheme.accent,
+                      ),
+                    ],
+                  ),
+                  if (_otherPlatformSelected) ...[
+                    const SizedBox(height: AppDimensions.spacingSM),
+                    TextFormField(
+                      controller: _otherPlatformController,
+                      decoration: const InputDecoration(
+                        labelText: 'Indica el nombre de la plataforma',
+                        hintText: 'Ej: Gather, Meet.jit.si',
+                      ),
+                      onChanged: (_) => setState(() {}),
+                      validator: (_) {
+                        if (_otherPlatformSelected && _otherPlatformController.text.trim().isEmpty) {
+                          return 'Escribe el nombre de la plataforma';
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
+                  const SizedBox(height: AppDimensions.spacingL),
+                ],
 
                 // Fecha y hora
                 Row(

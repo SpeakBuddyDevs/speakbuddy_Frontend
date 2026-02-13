@@ -470,7 +470,7 @@ class ApiUsersRepository implements UsersRepository {
       exchanges: json['exchanges'] ?? 0,
       rating: (json['rating'] ?? 0.0).toDouble(),
       languagesCount: json['languagesCount'] ?? 0,
-      hoursTotal: json['hoursTotal'] ?? 0,
+      hoursTotal: (json['hoursTotal'] as num?)?.toDouble() ?? 0.0,
       currentStreakDays: json['currentStreakDays'] ?? 0,
       bestStreakDays: json['bestStreakDays'] ?? 0,
       medals: json['medals'] ?? 0,

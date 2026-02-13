@@ -3,13 +3,16 @@ import '../theme/app_theme.dart';
 import '../widgets/common/app_header.dart';
 import '../services/current_user_service.dart';
 import '../services/stats_service.dart';
-import '../repositories/fake_user_exchanges_repository.dart';
+import '../repositories/api_user_exchanges_repository.dart';
+import '../repositories/api_exchange_repository.dart';
+import '../repositories/api_public_exchanges_repository.dart';
 import '../repositories/user_exchanges_repository.dart';
-import '../models/public_exchange.dart';
+import '../models/joined_exchange.dart';
 import '../constants/routes.dart';
 import '../constants/dimensions.dart';
-import '../utils/date_formatters.dart';
 import '../navigation/exchange_chat_args.dart';
+import '../services/exchange_chat_read_service.dart';
+import '../widgets/exchange/joined_exchange_card.dart';
 
 /// Pantalla principal de la aplicación
 class HomeScreen extends StatefulWidget {
@@ -19,22 +22,40 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  // BACKEND: Sustituir FakeUserExchangesRepository por ApiUserExchangesRepository
-  final UserExchangesRepository _repository = FakeUserExchangesRepository();
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
+  final UserExchangesRepository _repository = ApiUserExchangesRepository();
+  final ApiExchangeRepository _exchangeRepo = ApiExchangeRepository();
+  final ApiPublicExchangesRepository _leaveRepo = ApiPublicExchangesRepository();
   final StatsService _statsService = StatsService();
+  final ExchangeChatReadService _chatReadService = ExchangeChatReadService();
 
-  List<PublicExchange>? _joinedExchanges;
+  List<JoinedExchange>? _joinedExchanges;
+  Map<String, bool> _hasNewMessages = {};
   bool _isLoadingExchanges = true;
   int _exchangesThisMonth = 0;
   int _exchangesLastMonth = 0;
   double _hoursThisWeek = 0.0;
   double _hoursLastWeek = 0.0;
+  final GlobalKey _exchangesSectionKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadData();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadExchanges();
+    }
   }
 
   Future<void> _loadData() async {
@@ -56,6 +77,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _joinedExchanges = exchanges;
         _isLoadingExchanges = false;
       });
+      _refreshHasNewMessages();
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -63,6 +85,17 @@ class _HomeScreenState extends State<HomeScreen> {
         _isLoadingExchanges = false;
       });
     }
+  }
+
+  Future<void> _refreshHasNewMessages() async {
+    final exchanges = _joinedExchanges;
+    if (exchanges == null || exchanges.isEmpty) return;
+    final map = <String, bool>{};
+    for (final e in exchanges) {
+      map[e.id] = await _chatReadService.hasNewMessages(e.id, e.lastMessageAt);
+    }
+    if (!mounted) return;
+    setState(() => _hasNewMessages = map);
   }
 
   Future<void> _loadStats() async {
@@ -76,6 +109,119 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _onGoToPublicExchanges() {
     Navigator.pushNamed(context, AppRoutes.publicExchanges);
+  }
+
+  int get _pendingConfirmCount =>
+      _joinedExchanges?.where((e) => e.canConfirm).length ?? 0;
+
+  List<JoinedExchange> get _pendingExchanges =>
+      _joinedExchanges
+          ?.where((e) =>
+              e.status != 'COMPLETED' && e.status != 'CANCELLED')
+          .toList() ??
+      [];
+
+  List<JoinedExchange> get _completedExchanges =>
+      _joinedExchanges
+          ?.where((e) => e.status == 'COMPLETED')
+          .toList() ??
+      [];
+
+  void _onGoToHistory() {
+    Navigator.pushNamed(
+      context,
+      AppRoutes.exchangeHistory,
+      arguments: _completedExchanges,
+    );
+  }
+
+  void _onScrollToExchanges() {
+    final context = _exchangesSectionKey.currentContext;
+    if (context != null) {
+      Scrollable.ensureVisible(
+        context,
+        duration: const Duration(milliseconds: 400),
+        alignment: 0.2,
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  Future<void> _onConfirmExchange(JoinedExchange exchange) async {
+    try {
+      await _exchangeRepo.confirm(exchange.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Intercambio confirmado')),
+      );
+      _loadExchanges();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.toString()}')),
+      );
+    }
+  }
+
+  Future<void> _onLeaveExchange(JoinedExchange exchange) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.card,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppDimensions.radiusL),
+        ),
+        title: const Text('Abandonar intercambio'),
+        content: const Text(
+          '¿Estás seguro de que quieres abandonar este intercambio?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(
+              'Abandonar',
+              style: TextStyle(color: Colors.redAccent),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true || !mounted) return;
+
+    try {
+      await _leaveRepo.leaveExchange(exchange.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Has abandonado "${exchange.title ?? 'Intercambio'}"'),
+        ),
+      );
+      _loadExchanges();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: Colors.red.shade800,
+        ),
+      );
+    }
+  }
+
+  void _onOpenExchangeChat(JoinedExchange exchange) {
+    Navigator.pushNamed(
+      context,
+      AppRoutes.chat,
+      arguments: ExchangeChatArgs(exchangeId: exchange.id),
+    ).then((_) {
+      if (!mounted) return;
+      _loadExchanges();
+    });
   }
 
   @override
@@ -109,6 +255,14 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Banner: intercambios pendientes de confirmar
+              if (_pendingConfirmCount > 0) ...[
+                _PendingConfirmBanner(
+                  count: _pendingConfirmCount,
+                  onTap: _onScrollToExchanges,
+                ),
+                const SizedBox(height: AppDimensions.spacingL),
+              ],
               // Tarjetas de estadísticas
               _StatsRow(
                 exchangesThisMonth: _exchangesThisMonth,
@@ -119,10 +273,16 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: AppDimensions.spacingL),
               // Sección de intercambios pendientes
               _PendingExchangesSection(
-                exchanges: _joinedExchanges,
+                key: _exchangesSectionKey,
+                pendingExchanges: _pendingExchanges,
                 isLoading: _isLoadingExchanges,
                 onGoToPublicExchanges: _onGoToPublicExchanges,
+                onGoToHistory: _onGoToHistory,
                 onRefresh: _loadExchanges,
+                onConfirm: _onConfirmExchange,
+                onLeave: _onLeaveExchange,
+                onOpenChat: _onOpenExchangeChat,
+                hasNewMessages: _hasNewMessages,
               ),
             ],
           ),
@@ -280,18 +440,96 @@ class _StatsCard extends StatelessWidget {
   }
 }
 
+/// Banner de notificación in-app: intercambios pendientes de confirmar
+class _PendingConfirmBanner extends StatelessWidget {
+  final int count;
+  final VoidCallback onTap;
+
+  const _PendingConfirmBanner({
+    required this.count,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final label = count == 1
+        ? 'Tienes 1 intercambio pendiente de confirmar'
+        : 'Tienes $count intercambios pendientes de confirmar';
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppDimensions.spacingL,
+            vertical: AppDimensions.spacingMD,
+          ),
+          decoration: BoxDecoration(
+            color: AppTheme.accent.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
+            border: Border.all(color: AppTheme.accent.withValues(alpha: 0.4)),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.check_circle_outline_rounded,
+                color: AppTheme.accent,
+                size: AppDimensions.iconSizeL,
+              ),
+              const SizedBox(width: AppDimensions.spacingMD),
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    color: AppTheme.text,
+                    fontSize: AppDimensions.fontSizeS,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: onTap,
+                child: Text(
+                  'Ver',
+                  style: TextStyle(
+                    color: AppTheme.accent,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Sección de intercambios pendientes
 class _PendingExchangesSection extends StatelessWidget {
-  final List<PublicExchange>? exchanges;
+  final List<JoinedExchange> pendingExchanges;
   final bool isLoading;
   final VoidCallback onGoToPublicExchanges;
+  final VoidCallback onGoToHistory;
   final VoidCallback onRefresh;
+  final Future<void> Function(JoinedExchange) onConfirm;
+  final Future<void> Function(JoinedExchange) onLeave;
+  final void Function(JoinedExchange) onOpenChat;
+  final Map<String, bool> hasNewMessages;
 
   const _PendingExchangesSection({
-    required this.exchanges,
+    super.key,
+    required this.pendingExchanges,
     required this.isLoading,
     required this.onGoToPublicExchanges,
+    required this.onGoToHistory,
     required this.onRefresh,
+    required this.onConfirm,
+    required this.onLeave,
+    required this.onOpenChat,
+    required this.hasNewMessages,
   });
 
   @override
@@ -299,7 +537,7 @@ class _PendingExchangesSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Título con icono
+        // Título con icono de calendario (navega al historial)
         Row(
           children: [
             Text(
@@ -311,10 +549,17 @@ class _PendingExchangesSection extends StatelessWidget {
               ),
             ),
             const Spacer(),
-            Icon(
-              Icons.calendar_today_outlined,
-              color: AppTheme.subtle,
-              size: AppDimensions.iconSizeM,
+            InkWell(
+              onTap: onGoToHistory,
+              borderRadius: BorderRadius.circular(AppDimensions.radiusS),
+              child: Padding(
+                padding: const EdgeInsets.all(AppDimensions.spacingXS),
+                child: Icon(
+                  Icons.calendar_today_outlined,
+                  color: AppTheme.subtle,
+                  size: AppDimensions.iconSizeM,
+                ),
+              ),
             ),
           ],
         ),
@@ -327,10 +572,16 @@ class _PendingExchangesSection extends StatelessWidget {
               child: CircularProgressIndicator(),
             ),
           )
-        else if (exchanges == null || exchanges!.isEmpty)
+        else if (pendingExchanges.isEmpty)
           _EmptyExchangesButton(onPressed: onGoToPublicExchanges)
         else
-          _ExchangesCarousel(exchanges: exchanges!),
+          _ExchangesCarousel(
+            exchanges: pendingExchanges,
+            onConfirm: onConfirm,
+            onLeave: onLeave,
+            onOpenChat: onOpenChat,
+            hasNewMessages: hasNewMessages,
+          ),
       ],
     );
   }
@@ -365,9 +616,19 @@ class _EmptyExchangesButton extends StatelessWidget {
 
 /// Carrusel de intercambios pendientes
 class _ExchangesCarousel extends StatefulWidget {
-  final List<PublicExchange> exchanges;
+  final List<JoinedExchange> exchanges;
+  final Future<void> Function(JoinedExchange) onConfirm;
+  final Future<void> Function(JoinedExchange) onLeave;
+  final void Function(JoinedExchange) onOpenChat;
+  final Map<String, bool> hasNewMessages;
 
-  const _ExchangesCarousel({required this.exchanges});
+  const _ExchangesCarousel({
+    required this.exchanges,
+    required this.onConfirm,
+    required this.onLeave,
+    required this.onOpenChat,
+    required this.hasNewMessages,
+  });
 
   @override
   State<_ExchangesCarousel> createState() => _ExchangesCarouselState();
@@ -392,13 +653,20 @@ class _ExchangesCarouselState extends State<_ExchangesCarousel> {
   @override
   Widget build(BuildContext context) {
     if (widget.exchanges.length == 1) {
-      return _PendingExchangeCard(exchange: widget.exchanges[0]);
+      final e = widget.exchanges[0];
+      return JoinedExchangeCard(
+        exchange: e,
+        onConfirm: widget.onConfirm,
+        onLeave: () => widget.onLeave(e),
+        onOpenChat: () => widget.onOpenChat(e),
+        hasNewMessages: widget.hasNewMessages[e.id] ?? false,
+      );
     }
 
     return Column(
       children: [
         SizedBox(
-          height: 400, // Altura fija para el PageView
+          height: 320,
           child: PageView.builder(
             controller: _pageController,
             itemCount: widget.exchanges.length,
@@ -408,15 +676,21 @@ class _ExchangesCarouselState extends State<_ExchangesCarousel> {
               });
             },
             itemBuilder: (context, index) {
+              final exchange = widget.exchanges[index];
               return Padding(
                 padding: const EdgeInsets.only(right: AppDimensions.spacingMD),
-                child: _PendingExchangeCard(exchange: widget.exchanges[index]),
+                child: JoinedExchangeCard(
+                  exchange: exchange,
+                  onConfirm: widget.onConfirm,
+                  onLeave: () => widget.onLeave(exchange),
+                  onOpenChat: () => widget.onOpenChat(exchange),
+                  hasNewMessages: widget.hasNewMessages[exchange.id] ?? false,
+                ),
               );
             },
           ),
         ),
         const SizedBox(height: AppDimensions.spacingMD),
-        // Indicadores de página
         _PageIndicators(
           count: widget.exchanges.length,
           currentIndex: _currentPage,
@@ -454,251 +728,6 @@ class _PageIndicators extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-/// Tarjeta de intercambio pendiente
-class _PendingExchangeCard extends StatelessWidget {
-  final PublicExchange exchange;
-
-  const _PendingExchangeCard({required this.exchange});
-
-  void _onOpenChat(BuildContext context, PublicExchange exchange) {
-    // TODO(FE): ChatScreen debe manejar ExchangeChatArgs para chats grupales de intercambio
-    Navigator.pushNamed(
-      context,
-      AppRoutes.chat,
-      arguments: ExchangeChatArgs(
-        exchangeId: exchange.id,
-        prefetchedExchange: exchange,
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final creatorCountry = FakeUserExchangesRepository.getCreatorCountry(exchange.creatorId);
-    final creatorRating = FakeUserExchangesRepository.getCreatorRating(exchange.creatorId);
-    final dateStr = DateFormatters.formatExchangeDate(exchange.date);
-    final topic = exchange.topics?.isNotEmpty == true ? exchange.topics!.first : null;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.card,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusL),
-        border: Border.all(color: AppTheme.border),
-      ),
-      padding: EdgeInsets.fromLTRB(
-        AppDimensions.paddingCard.left,
-        AppDimensions.paddingCard.top,
-        AppDimensions.paddingCard.right,
-        AppDimensions.spacingSM, // Padding inferior reducido para acercar el botón al borde
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Header: Avatar, nombre, badge PRO, país, rating
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 25,
-                backgroundColor: AppTheme.panel,
-                backgroundImage: exchange.creatorAvatarUrl != null
-                    ? NetworkImage(exchange.creatorAvatarUrl!)
-                    : null,
-                child: exchange.creatorAvatarUrl == null
-                    ? Text(
-                        exchange.creatorName.isNotEmpty
-                            ? exchange.creatorName[0].toUpperCase()
-                            : '?',
-                        style: TextStyle(
-                          color: AppTheme.text,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      )
-                    : null,
-              ),
-              const SizedBox(width: AppDimensions.spacingMD),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            exchange.creatorName,
-                            style: TextStyle(
-                              color: AppTheme.text,
-                              fontSize: AppDimensions.fontSizeM,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (exchange.creatorIsPro) ...[
-                          const SizedBox(width: AppDimensions.spacingXS),
-                          _ProBadge(),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: AppDimensions.spacingXS),
-                    Text(
-                      creatorCountry,
-                      style: TextStyle(
-                        color: AppTheme.subtle,
-                        fontSize: AppDimensions.fontSizeS,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Row(
-                children: [
-                  Icon(
-                    Icons.star_rounded,
-                    color: AppTheme.gold,
-                    size: AppDimensions.iconSizeM,
-                  ),
-                  const SizedBox(width: AppDimensions.spacingXS),
-                  Text(
-                    creatorRating.toStringAsFixed(1),
-                    style: TextStyle(
-                      color: AppTheme.text,
-                      fontSize: AppDimensions.fontSizeM,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: AppDimensions.spacingL),
-          // Fecha y hora
-          _InfoRow(
-            icon: Icons.calendar_today_outlined,
-            label: 'Fecha y hora',
-            value: dateStr,
-          ),
-          const SizedBox(height: AppDimensions.spacingMD),
-          // Idiomas
-          _InfoRow(
-            icon: Icons.translate_rounded,
-            label: 'Idiomas',
-            value: '${exchange.nativeLanguage} → ${exchange.targetLanguage}',
-          ),
-          const SizedBox(height: AppDimensions.spacingMD),
-          // Duración
-          _InfoRow(
-            icon: Icons.access_time_rounded,
-            label: 'Duración',
-            value: '${exchange.durationMinutes} min',
-          ),
-          const SizedBox(height: AppDimensions.spacingMD),
-          // Participantes
-          _InfoRow(
-            icon: Icons.people_outline_rounded,
-            label: 'Participantes',
-            value: '${exchange.currentParticipants}/${exchange.maxParticipants}',
-          ),
-          if (topic != null) ...[
-            const SizedBox(height: AppDimensions.spacingMD),
-            // Tema
-            _InfoRow(
-              icon: Icons.topic_outlined,
-              label: 'Tema',
-              value: topic,
-            ),
-          ],
-          const SizedBox(height: AppDimensions.spacingMD),
-          // Botón de chat
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () => _onOpenChat(context, exchange),
-              icon: const Icon(Icons.chat_rounded),
-              label: const Text('Abrir chat'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.accent,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: AppDimensions.spacingMD),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Badge PRO
-class _ProBadge extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppDimensions.spacingSM,
-        vertical: 2,
-      ),
-      decoration: BoxDecoration(
-        color: AppTheme.gold.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(AppDimensions.radiusXS),
-        border: Border.all(color: AppTheme.gold.withValues(alpha: 0.5)),
-      ),
-      child: Text(
-        'PRO',
-        style: TextStyle(
-          color: AppTheme.gold,
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-}
-
-/// Fila de información con icono, etiqueta y valor
-class _InfoRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-
-  const _InfoRow({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, color: AppTheme.subtle, size: AppDimensions.iconSizeS),
-        const SizedBox(width: AppDimensions.spacingMD),
-        Text(
-          '$label: ',
-          style: TextStyle(
-            color: AppTheme.subtle,
-            fontSize: AppDimensions.fontSizeS,
-          ),
-        ),
-        Expanded(
-          child: Text(
-            value,
-            style: TextStyle(
-              color: AppTheme.text,
-              fontSize: AppDimensions.fontSizeS,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

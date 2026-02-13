@@ -5,7 +5,7 @@ import '../constants/dimensions.dart';
 import '../constants/routes.dart';
 import '../models/public_exchange.dart';
 import '../models/public_exchange_filters.dart';
-import '../repositories/fake_public_exchanges_repository.dart';
+import '../repositories/api_public_exchanges_repository.dart';
 import '../widgets/find/filters_button.dart';
 import '../widgets/find/find_search_bar.dart';
 import '../widgets/public_exchanges/public_exchange_card.dart';
@@ -24,9 +24,7 @@ class PublicExchangesScreen extends StatefulWidget {
 }
 
 class _PublicExchangesScreenState extends State<PublicExchangesScreen> {
-  // BACKEND: Sustituir FakePublicExchangesRepository por ApiPublicExchangesRepository
-  // TODO(FE): Inyectar repositorio o usar provider/riverpod para cambiar implementación
-  final _repository = FakePublicExchangesRepository();
+  final _repository = ApiPublicExchangesRepository();
   final _scrollController = ScrollController();
   final _searchController = TextEditingController();
 
@@ -38,8 +36,6 @@ class _PublicExchangesScreenState extends State<PublicExchangesScreen> {
   String _query = '';
   PublicExchangeFilters _filters = PublicExchangeFilters.defaults;
   Timer? _debounce;
-  final Set<String> _joinedExchangeIds = {}; // IDs de intercambios a los que el usuario se ha unido
-  final Map<String, int> _additionalParticipants = {}; // Participantes adicionales añadidos localmente por intercambio
 
   @override
   void initState() {
@@ -133,33 +129,38 @@ class _PublicExchangesScreenState extends State<PublicExchangesScreen> {
     }
   }
 
-  void _onJoin(PublicExchange exchange) {
-    if (exchange.isEligible) {
-      // Marcar como unido y actualizar contador de participantes
-      setState(() {
-        _joinedExchangeIds.add(exchange.id);
-        // Incrementar contador de participantes localmente
-        _additionalParticipants[exchange.id] = (_additionalParticipants[exchange.id] ?? 0) + 1;
-      });
-      
-      // TODO(FE): Implementar lógica de unirse al intercambio
+  Future<void> _onJoin(PublicExchange exchange) async {
+    if (!exchange.isEligible) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            exchange.unmetRequirements?.isNotEmpty == true
+                ? exchange.unmetRequirements!.join('. ')
+                : 'No cumples los requisitos para unirte a este intercambio',
+          ),
+        ),
+      );
+      return;
+    }
+
+    try {
+      await _repository.joinExchange(exchange.id);
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Te has unido a "${exchange.title}"')),
       );
-    } else {
-      // TODO(FE): Implementar lógica de solicitar unirse
+      _loadExchanges();
+    } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Solicitando unirse a "${exchange.title}"...')),
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: Colors.red.shade800,
+        ),
       );
     }
   }
   
-  /// Obtiene el número actualizado de participantes para un intercambio
-  int _getCurrentParticipants(PublicExchange exchange) {
-    final additional = _additionalParticipants[exchange.id] ?? 0;
-    return exchange.currentParticipants + additional;
-  }
-
   Future<void> _onLeave(PublicExchange exchange) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -186,28 +187,23 @@ class _PublicExchangesScreenState extends State<PublicExchangesScreen> {
       ),
     );
 
-    if (confirm == true && mounted) {
-      setState(() {
-        // Remover del Set de intercambios unidos
-        _joinedExchangeIds.remove(exchange.id);
-        // Decrementar contador de participantes si existe
-        if (_additionalParticipants.containsKey(exchange.id) && 
-            _additionalParticipants[exchange.id]! > 0) {
-          _additionalParticipants[exchange.id] = 
-              _additionalParticipants[exchange.id]! - 1;
-          // Si llega a 0, remover la entrada
-          if (_additionalParticipants[exchange.id] == 0) {
-            _additionalParticipants.remove(exchange.id);
-          }
-        }
-      });
+    if (confirm != true || !mounted) return;
 
-      // TODO(FE): Implementar lógica de abandonar intercambio en backend
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Has abandonado "${exchange.title}"')),
-        );
-      }
+    try {
+      await _repository.leaveExchange(exchange.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Has abandonado "${exchange.title}"')),
+      );
+      _loadExchanges();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: Colors.red.shade800,
+        ),
+      );
     }
   }
 
@@ -216,8 +212,8 @@ class _PublicExchangesScreenState extends State<PublicExchangesScreen> {
       context,
       AppRoutes.createExchange,
     ).then((created) {
-      // Si se creó un intercambio, recargar la lista
-      if (created == true) {
+      // Si se creó un intercambio, recargar la lista para que aparezca
+      if (created == true && mounted) {
         _loadExchanges();
       }
     });
@@ -414,8 +410,7 @@ class _PublicExchangesScreenState extends State<PublicExchangesScreen> {
                         ),
                         child: PublicExchangeCard(
                           exchange: exchange,
-                          isJoined: _joinedExchangeIds.contains(exchange.id),
-                          currentParticipantsOverride: _getCurrentParticipants(exchange),
+                          isJoined: exchange.isJoined,
                           onJoin: () => _onJoin(exchange),
                           onDetails: () => _onDetails(exchange),
                           onLeave: () => _onLeave(exchange),

@@ -178,7 +178,7 @@ class PublicExchangeCard extends StatelessWidget {
               ),
               _InfoTag(
                 icon: Icons.group_rounded,
-                label: '${currentParticipants}/${exchange.maxParticipants}',
+                label: '$currentParticipants/${exchange.maxParticipants}',
                 borderColor: isFull ? Colors.orange : AppTheme.border,
               ),
               // Badge "Lleno" cuando está completo
@@ -293,6 +293,31 @@ class PublicExchangeCard extends StatelessWidget {
               ],
             ),
           ],
+          // Plataformas de videollamada
+          const SizedBox(height: AppDimensions.spacingSM),
+          Row(
+            children: [
+              Icon(
+                Icons.videocam_rounded,
+                size: AppDimensions.iconSizeS,
+                color: AppTheme.subtle,
+              ),
+              const SizedBox(width: AppDimensions.spacingXS),
+              Expanded(
+                child: Text(
+                  exchange.platforms != null && exchange.platforms!.isNotEmpty
+                      ? exchange.platforms!.join(', ')
+                      : 'Plataforma por acordar',
+                  style: TextStyle(
+                    color: AppTheme.subtle,
+                    fontSize: AppDimensions.fontSizeS,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
           // Caja de requisitos no cumplidos
           if (!exchange.isEligible && exchange.unmetRequirements != null && exchange.unmetRequirements!.isNotEmpty) ...[
             const SizedBox(height: AppDimensions.spacingMD),

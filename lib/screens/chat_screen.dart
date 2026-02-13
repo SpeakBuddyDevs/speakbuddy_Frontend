@@ -6,8 +6,10 @@ import '../navigation/chat_args.dart';
 import '../navigation/exchange_chat_args.dart';
 import '../navigation/public_profile_args.dart';
 import '../models/public_exchange.dart';
-import '../repositories/fake_chat_repository.dart';
+import '../repositories/api_chat_repository.dart';
 import '../repositories/fake_exchange_participants_repository.dart';
+import '../services/auth_service.dart';
+import '../services/exchange_chat_read_service.dart';
 import '../constants/app_constants.dart';
 import '../constants/routes.dart';
 import '../theme/app_theme.dart';
@@ -24,9 +26,7 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  // BACKEND: Sustituir FakeChatRepository por ApiChatRepository
-  // TODO(FE): Implementar WebSocket para watchMessages en tiempo real
-  final _repository = FakeChatRepository();
+  final _repository = ApiChatRepository();
   // BACKEND: Sustituir FakeExchangeParticipantsRepository por ApiExchangeParticipantsRepository
   final _participantsRepository = FakeExchangeParticipantsRepository();
   final _messageController = TextEditingController();
@@ -41,6 +41,7 @@ class _ChatScreenState extends State<ChatScreen> {
   PublicExchange? _exchange;
   Map<String, String> _senderNames = {}; // Mapa senderId -> nombre para chats grupales
   List<PublicUserProfile> _participants = [];
+  String? _currentUserId; // ID real del usuario (para isMine en chat de intercambio)
 
   @override
   void didChangeDependencies() {
@@ -80,8 +81,12 @@ class _ChatScreenState extends State<ChatScreen> {
 
     if (!mounted) return;
 
+    final currentUserId = await AuthService().getCurrentUserId();
+    if (!mounted) return;
+
     setState(() {
       _chatId = chatId;
+      _currentUserId = currentUserId;
     });
 
     _subscription = _repository.watchMessages(chatId: chatId).listen((messages) {
@@ -121,9 +126,15 @@ class _ChatScreenState extends State<ChatScreen> {
 
     if (!mounted) return;
 
+    // Obtener ID del usuario actual para alinear "mis mensajes" a la derecha
+    final currentUserId = await AuthService().getCurrentUserId();
+
+    if (!mounted) return;
+
     setState(() {
       _participants = participants;
       _senderNames = senderNamesMap;
+      _currentUserId = currentUserId;
     });
 
     _subscription = _repository.watchMessages(chatId: chatId).listen((messages) {
@@ -133,6 +144,11 @@ class _ChatScreenState extends State<ChatScreen> {
         _isLoading = false;
       });
       _scrollToBottom();
+      // Marcar como vistos hasta el último mensaje (para ocultar "Nuevos" en Home)
+      if (messages.isNotEmpty) {
+        final last = messages.last;
+        ExchangeChatReadService().setLastSeenAt(exchangeArgs.exchangeId, last.createdAt);
+      }
     });
   }
 
@@ -289,11 +305,11 @@ class _ChatScreenState extends State<ChatScreen> {
       itemCount: _messages.length,
       itemBuilder: (context, index) {
         final message = _messages[index];
-        // Obtener nombre del remitente solo para chats grupales
-        final senderName = _isExchangeChat ? _senderNames[message.senderId] : null;
+        // Nombre: del mensaje (API) o del mapa de participantes (chat de intercambio)
+        final senderName = message.senderName ?? (_isExchangeChat ? _senderNames[message.senderId] : null);
         return MessageBubble(
           text: message.text,
-          isMine: message.isMine(AppConstants.currentUserIdMock),
+          isMine: message.isMine(_currentUserId ?? AppConstants.currentUserIdMock),
           createdAt: message.createdAt,
           senderName: senderName,
         );

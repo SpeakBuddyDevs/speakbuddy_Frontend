@@ -1,40 +1,70 @@
-/// Servicio temporal para obtener datos del usuario actual.
+import '../models/user_profile.dart';
+import '../repositories/api_users_repository.dart';
+
+/// Servicio para obtener y cachear datos del usuario actual.
 ///
-/// BACKEND: Este servicio debe ser sustituido por una implementación
-/// que obtenga los datos del usuario autenticado desde el backend.
+/// BACKEND: Obtiene los datos del usuario autenticado desde /api/users/me
+/// a través de `ApiUsersRepository.getMyProfile()`.
 ///
-/// TODO(BE): Exponer en /me o /api/profile los siguientes campos:
-///   - displayName: String (nombre del usuario)
+/// Campos esperados:
+///   - name: String (nombre del usuario)
 ///   - level: int (nivel actual del usuario)
-///   - progressToNextLevel: double (0.0-1.0, progreso hacia el siguiente nivel)
+///   - progressPct: double (0.0-1.0, progreso hacia el siguiente nivel)
 ///   - isPro: bool (si el usuario tiene suscripción Pro)
-///
-/// TODO(FE): Reemplazar este mock por implementación conectada a:
-///   - UsersRepository o AuthService
-///   - Cachear datos en memoria/almacenamiento local
-///   - Actualizar cuando el usuario cambie de nivel o progreso
 class CurrentUserService {
   // Singleton pattern para acceso global
   static final CurrentUserService _instance = CurrentUserService._internal();
   factory CurrentUserService() => _instance;
   CurrentUserService._internal();
 
+  final ApiUsersRepository _usersRepository = ApiUsersRepository();
+
+  UserProfile? _profile;
+  bool _isLoading = false;
+
+  /// Limpia el caché del perfil. Debe llamarse al cerrar sesión para que
+  /// el siguiente usuario que inicie sesión vea sus datos en el header.
+  void clearCache() {
+    _profile = null;
+    _isLoading = false;
+  }
+
+  /// Carga el perfil del usuario desde el backend si aún no está en memoria.
+  ///
+  /// Se llama de forma perezosa desde los getters y también puede
+  /// invocarse explícitamente (por ejemplo en initState de pantallas).
+  Future<void> preload() async {
+    await _loadFromBackendIfNeeded();
+  }
+
+  Future<void> _loadFromBackendIfNeeded() async {
+    if (_profile != null || _isLoading) return;
+    _isLoading = true;
+    try {
+      final profile = await _usersRepository.getMyProfile();
+      _profile = profile;
+    } catch (_) {
+      // En caso de error, se mantienen los valores por defecto.
+    } finally {
+      _isLoading = false;
+    }
+  }
+
   /// Obtiene el nombre de visualización del usuario actual.
   ///
   /// BACKEND: Debe provenir del endpoint /me o /api/profile del usuario autenticado.
   String getDisplayName() {
-    // TODO(BE): Obtener desde backend
-    // TODO(FE): Sustituir por llamada al repositorio real
-    return 'Sergio Arjona';
+    // Dispara carga en segundo plano si aún no se ha hecho.
+    _loadFromBackendIfNeeded();
+    return _profile?.name ?? 'Usuario';
   }
 
   /// Obtiene el nivel actual del usuario.
   ///
   /// BACKEND: Debe provenir del endpoint /me o /api/profile.
   int getLevel() {
-    // TODO(BE): Obtener desde backend
-    // TODO(FE): Sustituir por llamada al repositorio real
-    return 5;
+    _loadFromBackendIfNeeded();
+    return _profile?.level ?? 1;
   }
 
   /// Obtiene el progreso hacia el siguiente nivel (0.0-1.0).
@@ -44,18 +74,16 @@ class CurrentUserService {
   ///   - progressToNextLevel directamente (0.0-1.0)
   ///   - O xp/currentXp/nextXp para calcularlo en el frontend
   double getProgressToNextLevel() {
-    // TODO(BE): Obtener desde backend o calcular desde xp/currentXp/nextXp
-    // TODO(FE): Sustituir por llamada al repositorio real
-    return 0.40; // 40% de progreso
+    _loadFromBackendIfNeeded();
+    return _profile?.progressPct ?? 0.0;
   }
 
   /// Indica si el usuario tiene suscripción Pro.
   ///
   /// BACKEND: Debe provenir del endpoint /me o /api/profile.
   bool isPro() {
-    // TODO(BE): Obtener desde backend
-    // TODO(FE): Sustituir por llamada al repositorio real
-    return true;
+    _loadFromBackendIfNeeded();
+    return _profile?.isPro ?? false;
   }
 }
 

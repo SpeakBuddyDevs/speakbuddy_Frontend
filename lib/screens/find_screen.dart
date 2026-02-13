@@ -41,6 +41,8 @@ class _FindScreenState extends State<FindScreen> {
   @override
   void initState() {
     super.initState();
+    // Precargar datos del usuario actual para el header.
+    CurrentUserService().preload();
     _loadUsers();
     _scrollController.addListener(_onScroll);
   }

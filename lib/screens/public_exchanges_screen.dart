@@ -40,6 +40,8 @@ class _PublicExchangesScreenState extends State<PublicExchangesScreen> {
   @override
   void initState() {
     super.initState();
+    // Precargar datos del usuario actual para el header.
+    CurrentUserService().preload();
     _loadExchanges();
     _scrollController.addListener(_onScroll);
   }

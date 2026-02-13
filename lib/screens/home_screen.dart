@@ -59,6 +59,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _loadData() async {
+    // Precargar datos del usuario actual para que el header
+    // pueda mostrar nombre y estado PRO reales.
+    await CurrentUserService().preload();
+
     await Future.wait([
       _loadExchanges(),
       _loadStats(),

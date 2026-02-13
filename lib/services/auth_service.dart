@@ -6,6 +6,7 @@ import '../constants/api_endpoints.dart';
 import '../constants/app_constants.dart';
 import '../models/auth_result.dart';
 import '../models/auth_error.dart';
+import 'current_user_service.dart';
 
 // --- VARIABLE GLOBAL (A prueba de fallos de instancia) ---
 String? globalAccessToken;
@@ -99,6 +100,7 @@ class AuthService {
     globalAccessToken = null;
     _cachedUserId = null;
     await _storage.delete(key: AppConstants.jwtTokenKey);
+    CurrentUserService().clearCache();
   }
 
   /// Obtiene el ID del usuario actual (para chat, etc.). Usa caché tras la primera llamada.

@@ -5,6 +5,7 @@ import '../constants/dimensions.dart';
 import '../constants/routes.dart';
 import '../models/public_exchange.dart';
 import '../models/public_exchange_filters.dart';
+import '../models/public_user_profile.dart';
 import '../repositories/api_public_exchanges_repository.dart';
 import '../widgets/find/filters_button.dart';
 import '../widgets/find/find_search_bar.dart';
@@ -227,7 +228,7 @@ class _PublicExchangesScreenState extends State<PublicExchangesScreen> {
       AppRoutes.publicProfile,
       arguments: PublicProfileArgs(
         userId: exchange.creatorId,
-        prefetched: null, // Se cargará desde el repositorio
+        prefetched: PublicUserProfile.fromPublicExchange(exchange),
       ),
     );
   }

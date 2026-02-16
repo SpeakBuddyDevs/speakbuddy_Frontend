@@ -1,4 +1,5 @@
 import 'find_user.dart';
+import 'public_exchange.dart';
 
 // BACKEND: Mapea respuesta de GET /api/users/{id}
 // TODO(FE): Implementar factory PublicUserProfile.fromJson(Map<String, dynamic>)
@@ -52,6 +53,25 @@ class PublicUserProfile {
       rating: user.rating,
       exchanges: user.exchanges,
       bio: user.bio,
+    );
+  }
+
+  /// Perfil parcial desde un PublicExchange (creador). Se usa como prefetched
+  /// hasta cargar el perfil completo desde la API.
+  factory PublicUserProfile.fromPublicExchange(PublicExchange exchange) {
+    return PublicUserProfile(
+      id: exchange.creatorId,
+      name: exchange.creatorName,
+      country: '',
+      avatarUrl: exchange.creatorAvatarUrl,
+      isOnline: false,
+      isPro: exchange.creatorIsPro,
+      nativeLanguage: exchange.nativeLanguage,
+      targetLanguage: exchange.targetLanguage,
+      level: 1,
+      rating: 0.0,
+      exchanges: 0,
+      bio: null,
     );
   }
 }

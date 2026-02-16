@@ -38,31 +38,33 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
       return;
     }
 
-    // Si ya tenemos datos precargados, usarlos
+    // Mostrar prefetched de inmediato si existe (p. ej. desde búsqueda o intercambio)
     if (args.prefetched != null) {
       setState(() {
         _profile = args.prefetched;
         _isLoading = false;
       });
-      return;
     }
 
-    // Cargar desde repositorio
+    // Cargar perfil completo desde la API (completa o reemplaza prefetched con país, descripción, valoración, intercambios)
     try {
       final profile = await _repository.getPublicProfile(args.userId);
       if (!mounted) return;
       setState(() {
-        _profile = profile;
+        _profile = profile ?? _profile;
         _isLoading = false;
-        if (profile == null) {
+        if (profile == null && _profile == null) {
           _error = 'Usuario no encontrado';
         }
       });
     } catch (e) {
       if (!mounted) return;
+      // Si teníamos prefetched, mantenerlo; si no, mostrar error
       setState(() {
-        _error = 'Error al cargar el perfil';
         _isLoading = false;
+        if (_profile == null) {
+          _error = 'Error al cargar el perfil';
+        }
       });
     }
   }
@@ -441,7 +443,7 @@ class _DescriptionCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Descripción',
+            'Descripción del perfil',
             style: TextStyle(
               color: AppTheme.text,
               fontWeight: FontWeight.bold,

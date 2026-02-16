@@ -825,13 +825,25 @@ class _UserCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      profile.name,
-                      style: TextStyle(
-                        color: AppTheme.text,
-                        fontWeight: FontWeight.w700,
-                        fontSize: AppDimensions.fontSizeL,
-                      ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            profile.name,
+                            style: TextStyle(
+                              color: AppTheme.text,
+                              fontWeight: FontWeight.w700,
+                              fontSize: AppDimensions.fontSizeL,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (profile.isPro) ...[
+                          const SizedBox(width: AppDimensions.spacingSM),
+                          _ProBadge(),
+                        ],
+                      ],
                     ),
                     const SizedBox(height: AppDimensions.spacingXS),
                     Text(
@@ -919,6 +931,31 @@ class _UserCard extends StatelessWidget {
     final targetLang = activeLang ??
         (profile.learningLanguages.isNotEmpty ? profile.learningLanguages.first : null);
     return targetLang != null ? AppLanguages.getName(targetLang.code) : '-';
+  }
+}
+
+class _ProBadge extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppDimensions.spacingSM,
+        vertical: 2,
+      ),
+      decoration: BoxDecoration(
+        color: AppTheme.gold.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(AppDimensions.radiusXS),
+        border: Border.all(color: AppTheme.gold.withValues(alpha: 0.5)),
+      ),
+      child: Text(
+        'PRO',
+        style: TextStyle(
+          color: AppTheme.gold,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
   }
 }
 

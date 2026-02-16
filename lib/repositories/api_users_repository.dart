@@ -98,19 +98,27 @@ class ApiUsersRepository implements UsersRepository {
       if (n != null && n.isNotEmpty) targetLanguage = n;
     }
 
+    final rawRating = json['averageRating'];
+    final rating = (rawRating is num) ? rawRating.toDouble() : 0.0;
+    final rawExchanges = json['completedExchanges'];
+    final exchanges = (rawExchanges is int)
+        ? rawExchanges
+        : int.tryParse((rawExchanges ?? '0').toString()) ?? 0;
+    final country = (json['country'] as String?)?.trim() ?? '';
+    final bio = (json['description'] as String?)?.trim();
     return PublicUserProfile(
       id: json['id']?.toString() ?? '',
       name: name,
-      country: '',
+      country: country,
       avatarUrl: json['profilePictureURL'] as String?,
       isOnline: false,
-      isPro: false,
+      isPro: json['isPro'] == true,
       nativeLanguage: nativeLanguage,
       targetLanguage: targetLanguage,
-      level: (json['level'] ?? 1) as int,
-      rating: 0.0,
-      exchanges: 0,
-      bio: null,
+      level: (json['level'] is int) ? json['level'] as int : int.tryParse((json['level'] ?? '1').toString()) ?? 1,
+      rating: rating,
+      exchanges: exchanges,
+      bio: (bio != null && bio.isNotEmpty) ? bio : null,
       interests: null,
     );
   }

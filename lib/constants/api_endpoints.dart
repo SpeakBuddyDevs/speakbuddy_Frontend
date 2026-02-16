@@ -34,6 +34,9 @@ class ApiEndpoints {
   /// Obtener usuario actual
   static const String me = '$apiBase/users/me';
 
+  /// Estadísticas del usuario autenticado (para Home)
+  static const String userStats = '$apiBase/users/me/stats';
+
   /// Endpoint de perfil
   static const String profile = '$apiBase/profile';
 

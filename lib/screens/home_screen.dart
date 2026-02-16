@@ -103,12 +103,20 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _loadStats() async {
-    setState(() {
-      _exchangesThisMonth = _statsService.getExchangesThisMonth();
-      _exchangesLastMonth = _statsService.getExchangesLastMonth();
-      _hoursThisWeek = _statsService.getHoursThisWeek();
-      _hoursLastWeek = _statsService.getHoursLastWeek();
-    });
+    try {
+      final stats = await _statsService.fetchStats();
+      if (!mounted) return;
+      setState(() {
+        _exchangesThisMonth = stats.exchangesThisMonth;
+        _exchangesLastMonth = stats.exchangesLastMonth;
+        _hoursThisWeek = stats.hoursThisWeek;
+        _hoursLastWeek = stats.hoursLastWeek;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      // En caso de error, mantenemos los valores actuales (por defecto 0)
+      // y no rompemos la Home.
+    }
   }
 
   void _onGoToPublicExchanges() {

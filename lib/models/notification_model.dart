@@ -6,6 +6,8 @@ class NotificationModel {
   final String body;
   final String? chatId;
   final int? exchangeId;
+  /// ID del solicitante cuando type=EXCHANGE_JOIN_REQUEST
+  final int? requesterUserId;
   final bool read;
   final DateTime createdAt;
 
@@ -16,12 +18,16 @@ class NotificationModel {
     required this.body,
     this.chatId,
     this.exchangeId,
+    this.requesterUserId,
     required this.read,
     required this.createdAt,
   });
 
   bool get isDirectMessage => type == 'NEW_MESSAGE';
   bool get isExchangeMessage => type == 'NEW_EXCHANGE_MESSAGE';
+  bool get isJoinRequest => type == 'EXCHANGE_JOIN_REQUEST';
+  bool get isJoinRequestAccepted => type == 'JOIN_REQUEST_ACCEPTED';
+  bool get isJoinRequestRejected => type == 'JOIN_REQUEST_REJECTED';
 
   static NotificationModel fromJson(Map<String, dynamic> json) {
     final timestamp = json['createdAt'];
@@ -49,6 +55,7 @@ class NotificationModel {
       body: (json['body'] as String?) ?? '',
       chatId: json['chatId']?.toString(),
       exchangeId: (json['exchangeId'] as num?)?.toInt(),
+      requesterUserId: (json['requesterUserId'] as num?)?.toInt(),
       read: json['read'] == true,
       createdAt: createdAt,
     );

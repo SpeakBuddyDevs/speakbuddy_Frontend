@@ -90,6 +90,17 @@ class ApiEndpoints {
   static String exchangeJoin(String id) => '$apiBase/exchanges/$id/join';
   static String exchangeLeave(String id) => '$apiBase/exchanges/$id/leave';
 
+  /// Solicitud de unión (usuario no elegible): POST /api/exchanges/{id}/join-request
+  static String exchangeJoinRequest(String id) => '$apiBase/exchanges/$id/join-request';
+  /// Listar solicitudes pendientes (solo creador): GET /api/exchanges/{id}/join-requests
+  static String exchangeJoinRequests(String id) => '$apiBase/exchanges/$id/join-requests';
+  /// Aceptar solicitud: POST /api/exchanges/{id}/join-requests/{requestId}/accept
+  static String exchangeJoinRequestAccept(String exchangeId, String requestId) =>
+      '$apiBase/exchanges/$exchangeId/join-requests/$requestId/accept';
+  /// Rechazar solicitud: POST /api/exchanges/{id}/join-requests/{requestId}/reject
+  static String exchangeJoinRequestReject(String exchangeId, String requestId) =>
+      '$apiBase/exchanges/$exchangeId/join-requests/$requestId/reject';
+
   /// Chat del intercambio: GET /api/exchanges/{id}/messages, POST /api/exchanges/{id}/messages
   static String exchangeMessages(String exchangeId) => '$apiBase/exchanges/$exchangeId/messages';
 

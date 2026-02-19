@@ -387,39 +387,55 @@ class PublicExchangeCard extends StatelessWidget {
                         ),
                         child: const Text('Te has unido'),
                       )
-                    : ElevatedButton(
-                        onPressed: isFull ? null : onJoin,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: isFull
-                              ? AppTheme.panel
-                              : (exchange.isEligible
-                                  ? AppTheme.accent
-                                  : AppTheme.card),
-                          foregroundColor: isFull
-                              ? AppTheme.subtle
-                              : (exchange.isEligible
-                                  ? Colors.white
-                                  : AppTheme.text),
-                          padding: const EdgeInsets.symmetric(
-                            vertical: AppDimensions.spacingMD,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
-                            side: BorderSide(
-                              color: isFull
-                                  ? AppTheme.border
+                    : exchange.hasPendingJoinRequest
+                        ? ElevatedButton(
+                            onPressed: null, // Deshabilitado: ya envió solicitud
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.panel,
+                              foregroundColor: AppTheme.subtle,
+                              padding: const EdgeInsets.symmetric(
+                                vertical: AppDimensions.spacingMD,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
+                                side: BorderSide(color: AppTheme.border),
+                              ),
+                            ),
+                            child: const Text('Solicitud enviada'),
+                          )
+                        : ElevatedButton(
+                            onPressed: isFull ? null : onJoin,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: isFull
+                                  ? AppTheme.panel
                                   : (exchange.isEligible
                                       ? AppTheme.accent
-                                      : AppTheme.border),
+                                      : AppTheme.card),
+                              foregroundColor: isFull
+                                  ? AppTheme.subtle
+                                  : (exchange.isEligible
+                                      ? Colors.white
+                                      : AppTheme.text),
+                              padding: const EdgeInsets.symmetric(
+                                vertical: AppDimensions.spacingMD,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
+                                side: BorderSide(
+                                  color: isFull
+                                      ? AppTheme.border
+                                      : (exchange.isEligible
+                                          ? AppTheme.accent
+                                          : AppTheme.border),
+                                ),
+                              ),
+                            ),
+                            child: Text(
+                              isFull
+                                  ? 'Lleno'
+                                  : (exchange.isEligible ? 'Unirse' : 'Solicitar unirse'),
                             ),
                           ),
-                        ),
-                        child: Text(
-                          isFull
-                              ? 'Lleno'
-                              : (exchange.isEligible ? 'Unirse' : 'Solicitar unirse'),
-                        ),
-                      ),
               ),
               const SizedBox(width: AppDimensions.spacingMD),
               Expanded(

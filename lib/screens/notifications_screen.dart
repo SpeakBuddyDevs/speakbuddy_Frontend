@@ -7,7 +7,9 @@ import '../navigation/chat_args.dart';
 import '../navigation/exchange_chat_args.dart';
 import '../repositories/api_notifications_repository.dart';
 import '../services/auth_service.dart';
+import '../services/unread_notifications_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/join_request/join_request_action_bottom_sheet.dart';
 
 /// Pantalla de notificaciones in-app
 class NotificationsScreen extends StatefulWidget {
@@ -50,9 +52,28 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     // Marcar como leída
     try {
       await _repository.markAsRead(notification.id);
+      UnreadNotificationsService().refresh();
     } catch (_) {}
 
     if (!mounted) return;
+
+    // Solicitud de unión: mostrar bottom sheet para aceptar/rechazar
+    if (notification.isJoinRequest &&
+        notification.exchangeId != null &&
+        notification.requesterUserId != null) {
+      final exchangeTitle = _parseExchangeTitleFromBody(notification.body);
+      final result = await showJoinRequestActionBottomSheet(
+        context,
+        exchangeId: notification.exchangeId.toString(),
+        requesterUserId: notification.requesterUserId!,
+        exchangeTitle: exchangeTitle,
+      );
+      if (result == true && mounted) {
+        _loadNotifications();
+        UnreadNotificationsService().refresh();
+      }
+      return;
+    }
 
     // Navegar al chat correspondiente
     if (notification.isDirectMessage && notification.chatId != null) {
@@ -81,7 +102,21 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         AppRoutes.chat,
         arguments: ExchangeChatArgs(exchangeId: notification.exchangeId.toString()),
       ).then((_) => _loadNotifications());
+    } else if (notification.isJoinRequestAccepted && notification.exchangeId != null && mounted) {
+      // El usuario fue aceptado: navegar al chat del intercambio
+      Navigator.pushNamed(
+        context,
+        AppRoutes.chat,
+        arguments: ExchangeChatArgs(exchangeId: notification.exchangeId.toString()),
+      ).then((_) => _loadNotifications());
     }
+    // isJoinRequestRejected: solo se marca como leída, no hay navegación especial
+  }
+
+  /// Extrae el título del intercambio del body "username quiere unirse a \"Título\""
+  String _parseExchangeTitleFromBody(String body) {
+    final match = RegExp(r'quiere unirse a "([^"]*)"').firstMatch(body);
+    return match?.group(1)?.trim() ?? 'Intercambio';
   }
 
   /// Extrae el otherUserId del chatId "chat_min_max" (el que no es el actual)
@@ -175,7 +210,13 @@ class _NotificationTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final icon = notification.isDirectMessage
         ? Icons.chat_bubble_rounded
-        : Icons.group_rounded;
+        : notification.isJoinRequest
+            ? Icons.person_add_rounded
+            : notification.isJoinRequestAccepted
+                ? Icons.check_circle_rounded
+                : notification.isJoinRequestRejected
+                    ? Icons.cancel_rounded
+                    : Icons.group_rounded;
 
     return InkWell(
       onTap: onTap,

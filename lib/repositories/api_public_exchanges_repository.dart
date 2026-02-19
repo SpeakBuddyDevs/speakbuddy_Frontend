@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../constants/api_endpoints.dart';
 import '../constants/languages.dart';
+import '../models/join_request.dart';
 import '../models/public_exchange.dart';
 import '../models/public_exchange_filters.dart';
 import '../services/auth_service.dart';
@@ -235,6 +236,86 @@ class ApiPublicExchangesRepository implements PublicExchangesRepository {
 
     final response = await http.delete(
       Uri.parse(ApiEndpoints.exchangeLeave(id)),
+      headers: headers,
+    );
+
+    if (response.statusCode != 204 && response.statusCode != 200) {
+      final msg = _parseErrorMessage(response);
+      throw Exception(msg);
+    }
+  }
+
+  /// Usuario no elegible solicita unirse. BACKEND: POST /api/exchanges/{id}/join-request
+  Future<void> requestToJoin(String exchangeId) async {
+    final headers = await _authService.headersWithAuth();
+    final token = await _authService.getToken();
+    if (token == null || token.isEmpty) {
+      throw Exception('Debes iniciar sesión para solicitar unirte');
+    }
+
+    final response = await http.post(
+      Uri.parse(ApiEndpoints.exchangeJoinRequest(exchangeId)),
+      headers: headers,
+    );
+
+    if (response.statusCode != 204 && response.statusCode != 200) {
+      final msg = _parseErrorMessage(response);
+      throw Exception(msg);
+    }
+  }
+
+  /// Lista solicitudes pendientes (solo creador). BACKEND: GET /api/exchanges/{id}/join-requests
+  Future<List<JoinRequest>> getJoinRequests(String exchangeId) async {
+    final headers = await _authService.headersWithAuth();
+    final token = await _authService.getToken();
+    if (token == null || token.isEmpty) {
+      throw Exception('Debes iniciar sesión para ver las solicitudes');
+    }
+
+    final response = await http.get(
+      Uri.parse(ApiEndpoints.exchangeJoinRequests(exchangeId)),
+      headers: headers,
+    );
+
+    if (response.statusCode != 200) {
+      final msg = _parseErrorMessage(response);
+      throw Exception(msg);
+    }
+
+    final data = jsonDecode(utf8.decode(response.bodyBytes));
+    if (data is! List) return [];
+    return data.map<JoinRequest>((e) => JoinRequest.fromJson(Map<String, dynamic>.from(e as Map))).toList();
+  }
+
+  /// Aceptar solicitud (solo creador). BACKEND: POST .../join-requests/{requestId}/accept
+  Future<void> acceptJoinRequest(String exchangeId, String requestId) async {
+    final headers = await _authService.headersWithAuth();
+    final token = await _authService.getToken();
+    if (token == null || token.isEmpty) {
+      throw Exception('Debes iniciar sesión');
+    }
+
+    final response = await http.post(
+      Uri.parse(ApiEndpoints.exchangeJoinRequestAccept(exchangeId, requestId)),
+      headers: headers,
+    );
+
+    if (response.statusCode != 204 && response.statusCode != 200) {
+      final msg = _parseErrorMessage(response);
+      throw Exception(msg);
+    }
+  }
+
+  /// Rechazar solicitud (solo creador). BACKEND: POST .../join-requests/{requestId}/reject
+  Future<void> rejectJoinRequest(String exchangeId, String requestId) async {
+    final headers = await _authService.headersWithAuth();
+    final token = await _authService.getToken();
+    if (token == null || token.isEmpty) {
+      throw Exception('Debes iniciar sesión');
+    }
+
+    final response = await http.post(
+      Uri.parse(ApiEndpoints.exchangeJoinRequestReject(exchangeId, requestId)),
       headers: headers,
     );
 

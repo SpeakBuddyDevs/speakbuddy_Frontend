@@ -30,6 +30,7 @@ class PublicExchange {
   final bool isEligible; // Si el usuario actual cumple requisitos
   final List<String>? unmetRequirements; // Requisitos no cumplidos si !isEligible
   final bool isJoined; // Si el usuario actual ya es participante
+  final bool hasPendingJoinRequest; // Si el usuario tiene solicitud PENDING para este intercambio
   final bool isPublic; // true = público, false = privado
   final String? shareLink; // Enlace compartible para intercambios privados
 
@@ -54,6 +55,7 @@ class PublicExchange {
     required this.isEligible,
     this.unmetRequirements,
     this.isJoined = false,
+    this.hasPendingJoinRequest = false,
     this.isPublic = true, // Por defecto público
     this.shareLink,
   });
@@ -127,6 +129,7 @@ class PublicExchange {
       isEligible: json['isEligible'] == true,
       unmetRequirements: unmetRequirements,
       isJoined: json['isJoined'] == true,
+      hasPendingJoinRequest: json['hasPendingJoinRequest'] == true,
       isPublic: json['isPublic'] != false,
       shareLink: json['shareLink']?.toString(),
     );

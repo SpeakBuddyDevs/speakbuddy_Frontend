@@ -137,15 +137,26 @@ class _PublicExchangesScreenState extends State<PublicExchangesScreen> {
 
   Future<void> _onJoin(PublicExchange exchange) async {
     if (!exchange.isEligible) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            exchange.unmetRequirements?.isNotEmpty == true
-                ? exchange.unmetRequirements!.join('. ')
-                : 'No cumples los requisitos para unirte a este intercambio',
+      try {
+        await _repository.requestToJoin(exchange.id);
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Solicitud enviada. El creador te notificará si la acepta.',
+            ),
           ),
-        ),
-      );
+        );
+        _loadExchanges();
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceFirst('Exception: ', '')),
+            backgroundColor: Colors.red.shade800,
+          ),
+        );
+      }
       return;
     }
 

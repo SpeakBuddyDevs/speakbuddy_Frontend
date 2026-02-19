@@ -16,6 +16,7 @@ import '../constants/dimensions.dart';
 import '../constants/language_ids.dart';
 import '../constants/level_ids.dart';
 import '../repositories/api_users_repository.dart';
+import '../services/unread_notifications_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -31,11 +32,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   // Repositorio real conectado al Backend
   final _usersRepo = ApiUsersRepository();
+  final _unreadService = UnreadNotificationsService();
 
   @override
   void initState() {
     super.initState();
     _loadUserProfile();
+    _unreadService.refresh();
   }
 
   Future<void> _loadUserProfile() async {
@@ -503,18 +506,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     // 3. UI Principal con datos reales
-    return Scaffold(
-      backgroundColor: AppTheme.background,
-      appBar: AppHeader(
-        userName: _profile!.name,
-        level: _profile!.level,
-        levelProgress: _profile!.progressPct,
-        isPro: _profile!.isPro,
-        onNotificationsTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Notificaciones próximamente')),
-          );
-        },
+    return ValueListenableBuilder<int>(
+      valueListenable: _unreadService.count,
+      builder: (context, unreadCount, _) {
+        return Scaffold(
+          backgroundColor: AppTheme.background,
+          appBar: AppHeader(
+            userName: _profile!.name,
+            level: _profile!.level,
+            levelProgress: _profile!.progressPct,
+            isPro: _profile!.isPro,
+            unreadNotificationsCount: unreadCount,
+            onNotificationsTap: () {
+              Navigator.pushNamed(context, AppRoutes.notifications)
+                  .then((_) => _unreadService.refresh());
+            },
         onProTap: () {
           ScaffoldMessenger.of(
             context,
@@ -781,6 +787,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
       ),
+        );
+      },
     );
   }
 }

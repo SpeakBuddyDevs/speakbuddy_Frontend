@@ -9,6 +9,7 @@ import '../models/public_user_profile.dart';
 import '../navigation/public_profile_args.dart';
 import '../navigation/chat_args.dart';
 import '../repositories/api_find_users_repository.dart';
+import '../services/unread_notifications_service.dart';
 import '../widgets/find/find_search_bar.dart';
 import '../widgets/find/filters_button.dart';
 import '../widgets/find/find_user_card.dart';
@@ -26,6 +27,7 @@ class FindScreen extends StatefulWidget {
 
 class _FindScreenState extends State<FindScreen> {
   final _repository = ApiFindUsersRepository();
+  final _unreadService = UnreadNotificationsService();
   final _searchController = TextEditingController();
   final _scrollController = ScrollController();
 
@@ -44,6 +46,7 @@ class _FindScreenState extends State<FindScreen> {
     // Precargar datos del usuario actual para el header.
     CurrentUserService().preload();
     _loadUsers();
+    _unreadService.refresh();
     _scrollController.addListener(_onScroll);
   }
 
@@ -158,18 +161,21 @@ class _FindScreenState extends State<FindScreen> {
   Widget build(BuildContext context) {
     final userService = CurrentUserService();
 
-    return Scaffold(
-      backgroundColor: AppTheme.background,
-      appBar: AppHeader(
-        userName: userService.getDisplayName(),
-        level: userService.getLevel(),
-        levelProgress: userService.getProgressToNextLevel(),
-        isPro: userService.isPro(),
-        onNotificationsTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Notificaciones próximamente')),
-          );
-        },
+    return ValueListenableBuilder<int>(
+      valueListenable: _unreadService.count,
+      builder: (context, unreadCount, _) {
+        return Scaffold(
+          backgroundColor: AppTheme.background,
+          appBar: AppHeader(
+            userName: userService.getDisplayName(),
+            level: userService.getLevel(),
+            levelProgress: userService.getProgressToNextLevel(),
+            isPro: userService.isPro(),
+            unreadNotificationsCount: unreadCount,
+            onNotificationsTap: () {
+              Navigator.pushNamed(context, AppRoutes.notifications)
+                  .then((_) => _unreadService.refresh());
+            },
         onProTap: () {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Pro próximamente')),
@@ -295,6 +301,8 @@ class _FindScreenState extends State<FindScreen> {
           ],
         ),
       ),
+        );
+      },
     );
   }
 }

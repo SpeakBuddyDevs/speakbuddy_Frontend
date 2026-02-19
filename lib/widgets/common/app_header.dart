@@ -30,7 +30,11 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
     this.onProTap,
     this.showPro = true,
     this.showNotifications = true,
+    this.unreadNotificationsCount,
   });
+
+  /// Número de notificaciones no leídas. Si > 0, muestra badge en la campana.
+  final int? unreadNotificationsCount;
 
   /// Nombre del usuario a mostrar.
   /// Si es null, se muestra un placeholder.
@@ -135,13 +139,53 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
               const SizedBox(width: AppDimensions.spacingSM),
             ],
             if (showNotifications)
-              IconButton(
-                onPressed: onNotificationsTap ?? _defaultNotificationsTap,
-                icon: Icon(
-                  Icons.notifications_none_rounded,
-                  color: AppTheme.subtle,
-                ),
-                tooltip: 'Notificaciones',
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  IconButton(
+                    onPressed: onNotificationsTap ?? _defaultNotificationsTap,
+                    icon: Icon(
+                      (unreadNotificationsCount ?? 0) > 0
+                          ? Icons.notifications_rounded
+                          : Icons.notifications_none_rounded,
+                      color: (unreadNotificationsCount ?? 0) > 0
+                          ? AppTheme.accent
+                          : AppTheme.subtle,
+                    ),
+                    tooltip: 'Notificaciones',
+                  ),
+                  if ((unreadNotificationsCount ?? 0) > 0)
+                    Positioned(
+                      right: 6,
+                      top: 6,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        constraints: const BoxConstraints(
+                          minWidth: 18,
+                          minHeight: 18,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(9),
+                          border: Border.all(
+                            color: AppTheme.background,
+                            width: 1.5,
+                          ),
+                        ),
+                        child: Text(
+                          (unreadNotificationsCount ?? 0) > 99
+                              ? '99+'
+                              : '$unreadNotificationsCount',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
               ),
           ],
         ),

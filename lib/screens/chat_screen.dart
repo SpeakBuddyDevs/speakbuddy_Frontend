@@ -7,6 +7,7 @@ import '../navigation/exchange_chat_args.dart';
 import '../navigation/public_profile_args.dart';
 import '../models/public_exchange.dart';
 import '../repositories/api_chat_repository.dart';
+import '../repositories/api_users_repository.dart';
 import '../repositories/fake_exchange_participants_repository.dart';
 import '../services/auth_service.dart';
 import '../services/exchange_chat_read_service.dart';
@@ -27,6 +28,7 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   final _repository = ApiChatRepository();
+  final _usersRepository = ApiUsersRepository();
   // BACKEND: Sustituir FakeExchangeParticipantsRepository por ApiExchangeParticipantsRepository
   final _participantsRepository = FakeExchangeParticipantsRepository();
   final _messageController = TextEditingController();
@@ -42,6 +44,8 @@ class _ChatScreenState extends State<ChatScreen> {
   Map<String, String> _senderNames = {}; // Mapa senderId -> nombre para chats grupales
   List<PublicUserProfile> _participants = [];
   String? _currentUserId; // ID real del usuario (para isMine en chat de intercambio)
+  /// Perfil del otro usuario cargado cuando se entra desde notificaciones (sin prefetchedUser)
+  PublicUserProfile? _loadedOtherUser;
 
   @override
   void didChangeDependencies() {
@@ -88,6 +92,17 @@ class _ChatScreenState extends State<ChatScreen> {
       _chatId = chatId;
       _currentUserId = currentUserId;
     });
+
+    // Si no tenemos perfil precargado (p. ej. entrada desde notificaciones), cargarlo
+    if (chatArgs.prefetchedUser == null) {
+      try {
+        final profile = await _usersRepository.getPublicProfile(chatArgs.otherUserId);
+        if (!mounted) return;
+        setState(() => _loadedOtherUser = profile);
+      } catch (_) {
+        // Mantener _loadedOtherUser null; la cabecera mostrará "Usuario"
+      }
+    }
 
     _subscription = _repository.watchMessages(chatId: chatId).listen((messages) {
       if (!mounted) return;
@@ -176,7 +191,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final otherUser = _isExchangeChat ? null : (_args as ChatArgs?)?.prefetchedUser;
+    final prefetched = _isExchangeChat ? null : (_args as ChatArgs?)?.prefetchedUser;
+    final otherUser = prefetched ?? _loadedOtherUser;
 
     return Scaffold(
       backgroundColor: AppTheme.background,

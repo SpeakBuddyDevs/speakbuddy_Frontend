@@ -32,5 +32,8 @@ class AppRoutes {
 
   /// Ruta de historial de intercambios completados
   static const String exchangeHistory = '/exchange-history';
+
+  /// Ruta de notificaciones
+  static const String notifications = '/notifications';
 }
 

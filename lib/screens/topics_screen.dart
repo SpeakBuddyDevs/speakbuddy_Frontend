@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../constants/routes.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common/app_header.dart';
 import '../services/current_user_service.dart';
@@ -19,9 +20,7 @@ class TopicsScreen extends StatelessWidget {
         levelProgress: userService.getProgressToNextLevel(),
         isPro: userService.isPro(),
         onNotificationsTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Notificaciones próximamente')),
-          );
+          Navigator.pushNamed(context, AppRoutes.notifications);
         },
         onProTap: () {
           ScaffoldMessenger.of(context).showSnackBar(

@@ -7,6 +7,7 @@ import '../repositories/api_user_exchanges_repository.dart';
 import '../repositories/api_exchange_repository.dart';
 import '../repositories/api_public_exchanges_repository.dart';
 import '../repositories/user_exchanges_repository.dart';
+import '../services/unread_notifications_service.dart';
 import '../models/joined_exchange.dart';
 import '../constants/routes.dart';
 import '../constants/dimensions.dart';
@@ -28,6 +29,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   final ApiPublicExchangesRepository _leaveRepo = ApiPublicExchangesRepository();
   final StatsService _statsService = StatsService();
   final ExchangeChatReadService _chatReadService = ExchangeChatReadService();
+  final _unreadService = UnreadNotificationsService();
 
   List<JoinedExchange>? _joinedExchanges;
   Map<String, bool> _hasNewMessages = {};
@@ -66,6 +68,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     await Future.wait([
       _loadExchanges(),
       _loadStats(),
+      _unreadService.refresh(),
     ]);
   }
 
@@ -240,18 +243,21 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     final userService = CurrentUserService();
 
-    return Scaffold(
-      backgroundColor: AppTheme.background,
-      appBar: AppHeader(
-        userName: userService.getDisplayName(),
-        level: userService.getLevel(),
-        levelProgress: userService.getProgressToNextLevel(),
-        isPro: userService.isPro(),
-        onNotificationsTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Notificaciones próximamente')),
-          );
-        },
+    return ValueListenableBuilder<int>(
+      valueListenable: _unreadService.count,
+      builder: (context, unreadCount, _) {
+        return Scaffold(
+          backgroundColor: AppTheme.background,
+          appBar: AppHeader(
+            userName: userService.getDisplayName(),
+            level: userService.getLevel(),
+            levelProgress: userService.getProgressToNextLevel(),
+            isPro: userService.isPro(),
+            unreadNotificationsCount: unreadCount,
+            onNotificationsTap: () {
+              Navigator.pushNamed(context, AppRoutes.notifications)
+                  .then((_) => _unreadService.refresh());
+            },
         onProTap: () {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Pro próximamente')),
@@ -300,6 +306,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           ),
         ),
       ),
+        );
+      },
     );
   }
 }

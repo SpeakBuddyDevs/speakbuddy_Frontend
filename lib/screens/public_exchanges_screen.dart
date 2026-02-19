@@ -7,6 +7,7 @@ import '../models/public_exchange.dart';
 import '../models/public_exchange_filters.dart';
 import '../models/public_user_profile.dart';
 import '../repositories/api_public_exchanges_repository.dart';
+import '../services/unread_notifications_service.dart';
 import '../widgets/find/filters_button.dart';
 import '../widgets/find/find_search_bar.dart';
 import '../widgets/public_exchanges/public_exchange_card.dart';
@@ -26,6 +27,7 @@ class PublicExchangesScreen extends StatefulWidget {
 
 class _PublicExchangesScreenState extends State<PublicExchangesScreen> {
   final _repository = ApiPublicExchangesRepository();
+  final _unreadService = UnreadNotificationsService();
   final _scrollController = ScrollController();
   final _searchController = TextEditingController();
 
@@ -44,6 +46,7 @@ class _PublicExchangesScreenState extends State<PublicExchangesScreen> {
     // Precargar datos del usuario actual para el header.
     CurrentUserService().preload();
     _loadExchanges();
+    _unreadService.refresh();
     _scrollController.addListener(_onScroll);
   }
 
@@ -262,18 +265,21 @@ class _PublicExchangesScreenState extends State<PublicExchangesScreen> {
   Widget build(BuildContext context) {
     final userService = CurrentUserService();
 
-    return Scaffold(
-      backgroundColor: AppTheme.background,
-      appBar: AppHeader(
-        userName: userService.getDisplayName(),
-        level: userService.getLevel(),
-        levelProgress: userService.getProgressToNextLevel(),
-        isPro: userService.isPro(),
-        onNotificationsTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Notificaciones próximamente')),
-          );
-        },
+    return ValueListenableBuilder<int>(
+      valueListenable: _unreadService.count,
+      builder: (context, unreadCount, _) {
+        return Scaffold(
+          backgroundColor: AppTheme.background,
+          appBar: AppHeader(
+            userName: userService.getDisplayName(),
+            level: userService.getLevel(),
+            levelProgress: userService.getProgressToNextLevel(),
+            isPro: userService.isPro(),
+            unreadNotificationsCount: unreadCount,
+            onNotificationsTap: () {
+              Navigator.pushNamed(context, AppRoutes.notifications)
+                  .then((_) => _unreadService.refresh());
+            },
         onProTap: () {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Pro próximamente')),
@@ -427,10 +433,12 @@ class _PublicExchangesScreenState extends State<PublicExchangesScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: AppBottomNavBar(
-        currentIndex: 1, // Tab "Encontrar" está activo
-        onTap: _onTabTapped,
-      ),
+        bottomNavigationBar: AppBottomNavBar(
+          currentIndex: 1, // Tab "Encontrar" está activo
+          onTap: _onTabTapped,
+        ),
+        );
+      },
     );
   }
 }

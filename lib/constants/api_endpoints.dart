@@ -93,10 +93,25 @@ class ApiEndpoints {
   /// Chat del intercambio: GET /api/exchanges/{id}/messages, POST /api/exchanges/{id}/messages
   static String exchangeMessages(String exchangeId) => '$apiBase/exchanges/$exchangeId/messages';
 
-  // TODO(BE): POST /api/chats o GET /api/chats/with/{userId} - Obtener o crear chatId
-  // static const String chats = '$apiBase/chats';
+  // --- Chat 1:1 entre usuarios ---
 
-  // TODO(BE): GET /api/chats/{chatId}/messages?page=&pageSize= - Listar mensajes (paginado)
-  // TODO(BE): POST /api/chats/{chatId}/messages - Enviar mensaje
-  // TODO(BE): WebSocket /ws/chats/{chatId} o SSE para mensajes en tiempo real
+  /// Obtener/crear chatId: GET /api/chats/with/{userId}
+  static String chatsWithUser(String userId) => '$apiBase/chats/with/$userId';
+
+  /// Mensajes del chat 1:1: GET/POST /api/chats/{chatId}/messages
+  static String chatMessages(String chatId) => '$apiBase/chats/$chatId/messages';
+
+  // --- Notificaciones ---
+
+  /// Lista notificaciones: GET /api/notifications?unreadOnly=&page=&size=
+  static const String notifications = '$apiBase/notifications';
+
+  /// Contador no leídas: GET /api/notifications/unread-count
+  static const String notificationsUnreadCount = '$apiBase/notifications/unread-count';
+
+  /// Marcar como leída: PUT /api/notifications/{id}/read
+  static String notificationMarkRead(String id) => '$apiBase/notifications/$id/read';
+
+  /// Marcar varias como leídas: POST /api/notifications/read
+  static const String notificationsMarkRead = '$apiBase/notifications/read';
 }

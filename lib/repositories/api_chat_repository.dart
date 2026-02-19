@@ -8,24 +8,39 @@ import '../constants/api_endpoints.dart';
 import '../models/chat_message.dart';
 import '../services/auth_service.dart';
 import 'chat_repository.dart';
-import 'fake_chat_repository.dart';
 
-/// Implementación que usa la API para chat de intercambios y Fake para chat 1:1.
+/// Implementación que usa la API para chat de intercambios y chat 1:1.
 /// Chat de intercambio: chatId con formato "exchange_{exchangeId}".
+/// Chat 1:1: chatId con formato "chat_{minUserId}_{maxUserId}".
 class ApiChatRepository implements ChatRepository {
   static const String _exchangePrefix = 'exchange_';
+  static const String _directChatPrefix = 'chat_';
 
   final _authService = AuthService();
-  final FakeChatRepository _fake = FakeChatRepository();
 
   bool _isExchangeChat(String chatId) => chatId.startsWith(_exchangePrefix);
+
+  bool _isDirectChat(String chatId) => chatId.startsWith(_directChatPrefix);
 
   String _exchangeIdFromChatId(String chatId) =>
       chatId.replaceFirst(_exchangePrefix, '');
 
   @override
   Future<String> getOrCreateChatId({required String otherUserId}) async {
-    return _fake.getOrCreateChatId(otherUserId: otherUserId);
+    final headers = await _authService.headersWithAuth();
+    final uri = Uri.parse(ApiEndpoints.chatsWithUser(otherUserId));
+    final response = await http.get(uri, headers: headers);
+
+    if (response.statusCode != 200) {
+      throw Exception('Error ${response.statusCode}: ${response.body}');
+    }
+
+    final data = jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>?;
+    final chatId = data?['chatId']?.toString();
+    if (chatId == null || chatId.isEmpty) {
+      throw Exception('Respuesta inválida: chatId no encontrado');
+    }
+    return chatId;
   }
 
   @override
@@ -35,17 +50,20 @@ class ApiChatRepository implements ChatRepository {
 
   @override
   Stream<List<ChatMessage>> watchMessages({required String chatId}) {
-    if (!_isExchangeChat(chatId)) {
-      return _fake.watchMessages(chatId: chatId);
-    }
-
-    final exchangeId = _exchangeIdFromChatId(chatId);
     final controller = StreamController<List<ChatMessage>>.broadcast();
     Timer? pollTimer;
 
     Future<void> fetchAndEmit() async {
       try {
-        final list = await _fetchExchangeMessages(exchangeId);
+        List<ChatMessage> list;
+        if (_isExchangeChat(chatId)) {
+          final exchangeId = _exchangeIdFromChatId(chatId);
+          list = await _fetchExchangeMessages(exchangeId);
+        } else if (_isDirectChat(chatId)) {
+          list = await _fetchDirectChatMessages(chatId);
+        } else {
+          list = [];
+        }
         if (!controller.isClosed) {
           controller.add(list);
         }
@@ -66,6 +84,43 @@ class ApiChatRepository implements ChatRepository {
     };
 
     return controller.stream;
+  }
+
+  Future<List<ChatMessage>> _fetchDirectChatMessages(String chatId) async {
+    final headers = await _authService.headersWithAuth();
+    final uri = Uri.parse(ApiEndpoints.chatMessages(chatId));
+    final response = await http.get(uri, headers: headers);
+
+    if (response.statusCode != 200) {
+      throw Exception('Error ${response.statusCode}: ${response.body}');
+    }
+
+    final list = jsonDecode(utf8.decode(response.bodyBytes)) as List<dynamic>?;
+    if (list == null) return [];
+
+    return list
+        .map((e) => _directMessageFromJson(e as Map<String, dynamic>, chatId))
+        .toList();
+  }
+
+  ChatMessage _directMessageFromJson(Map<String, dynamic> json, String chatId) {
+    final id = (json['id'] ?? '').toString();
+    final content = (json['content'] ?? '').toString();
+    final senderId = (json['senderId'] is int)
+        ? (json['senderId'] as int).toString()
+        : (json['senderId'] ?? '').toString();
+    final senderName = json['senderName']?.toString();
+    final timestamp = json['timestamp'];
+    final createdAt = _parseDateTime(timestamp) ?? DateTime.now();
+
+    return ChatMessage(
+      id: id,
+      chatId: chatId,
+      senderId: senderId,
+      text: content,
+      createdAt: createdAt,
+      senderName: senderName,
+    );
   }
 
   Future<List<ChatMessage>> _fetchExchangeMessages(String exchangeId) async {
@@ -138,17 +193,21 @@ class ApiChatRepository implements ChatRepository {
 
   @override
   Future<void> sendMessage({required String chatId, required String text}) async {
-    if (!_isExchangeChat(chatId)) {
-      return _fake.sendMessage(chatId: chatId, text: text);
+    String uri;
+    if (_isExchangeChat(chatId)) {
+      final exchangeId = _exchangeIdFromChatId(chatId);
+      uri = ApiEndpoints.exchangeMessages(exchangeId);
+    } else if (_isDirectChat(chatId)) {
+      uri = ApiEndpoints.chatMessages(chatId);
+    } else {
+      throw Exception('chatId inválido: $chatId');
     }
 
-    final exchangeId = _exchangeIdFromChatId(chatId);
     final headers = await _authService.headersWithAuth();
     headers['Content-Type'] = 'application/json';
 
-    final uri = Uri.parse(ApiEndpoints.exchangeMessages(exchangeId));
     final response = await http.post(
-      uri,
+      Uri.parse(uri),
       headers: headers,
       body: jsonEncode({'content': text}),
     );

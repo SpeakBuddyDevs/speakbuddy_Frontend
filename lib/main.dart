@@ -10,6 +10,7 @@ import 'screens/create_exchange_screen.dart';
 import 'screens/exchange_history_screen.dart';
 import 'screens/notifications_screen.dart';
 import 'screens/rate_participants_screen.dart';
+import 'screens/favorite_topics_screen.dart';
 import 'navigation/rate_participants_args.dart';
 import 'theme/app_theme.dart';
 import 'constants/routes.dart';
@@ -45,6 +46,7 @@ class MyApp extends StatelessWidget {
           final args = ModalRoute.of(context)?.settings.arguments as RateParticipantsArgs;
           return RateParticipantsScreen(args: args);
         },
+        AppRoutes.favoriteTopics: (_) => const FavoriteTopicsScreen(),
       },
     );
   }

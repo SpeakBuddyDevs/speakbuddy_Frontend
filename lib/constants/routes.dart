@@ -38,5 +38,8 @@ class AppRoutes {
 
   /// Ruta de valoración de participantes post-intercambio
   static const String rateParticipants = '/rate-participants';
+
+  /// Ruta de temas favoritos generados por IA
+  static const String favoriteTopics = '/favorite-topics';
 }
 

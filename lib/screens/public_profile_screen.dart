@@ -397,6 +397,7 @@ class _LanguagesCard extends StatelessWidget {
           ),
           const SizedBox(height: AppDimensions.spacingMD),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(Icons.translate_rounded, size: 20, color: AppTheme.subtle),
               const SizedBox(width: AppDimensions.spacingMD),
@@ -408,11 +409,56 @@ class _LanguagesCard extends StatelessWidget {
                       'Nativo: ${profile.nativeLanguage.isEmpty ? '—' : profile.nativeLanguage}',
                       style: TextStyle(color: AppTheme.text),
                     ),
-                    const SizedBox(height: AppDimensions.spacingXS),
+                    const SizedBox(height: AppDimensions.spacingS),
                     Text(
-                      'Aprendiendo: ${profile.targetLanguage.isEmpty ? '—' : profile.targetLanguage}',
-                      style: TextStyle(color: AppTheme.subtle),
+                      'Aprendiendo:',
+                      style: TextStyle(color: AppTheme.text),
                     ),
+                    if (profile.learningLanguages.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: AppDimensions.spacingXS),
+                        child: Text('—', style: TextStyle(color: AppTheme.subtle)),
+                      )
+                    else
+                      ...profile.learningLanguages.map((lang) => Padding(
+                        padding: const EdgeInsets.only(top: AppDimensions.spacingXS),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                lang.level.isNotEmpty
+                                    ? '${lang.name} (${lang.level})'
+                                    : lang.name,
+                                style: TextStyle(color: AppTheme.subtle),
+                              ),
+                            ),
+                            if (lang.active)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: AppDimensions.spacingS,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.accent.withValues(alpha: .15),
+                                  border: Border.all(
+                                    color: AppTheme.accent.withValues(alpha: .6),
+                                  ),
+                                  borderRadius: BorderRadius.circular(
+                                    AppDimensions.radiusCircular,
+                                  ),
+                                ),
+                                child: Text(
+                                  'Activo',
+                                  style: TextStyle(
+                                    color: AppTheme.accent,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: AppDimensions.fontSizeXS,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      )),
                   ],
                 ),
               ),

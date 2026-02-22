@@ -37,16 +37,31 @@ class JoinedExchangeCard extends StatelessWidget {
     }
   }
 
+  JoinedExchangeParticipant? _getCreator() {
+    return exchange.participants
+        .where((p) => p.role == 'creator')
+        .firstOrNull;
+  }
+
+  List<JoinedExchangeParticipant> _getJoinedParticipants() {
+    return exchange.participants
+        .where((p) => p.role != 'creator')
+        .toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     final dateStr = DateFormatters.formatExchangeDate(exchange.scheduledAt);
-    final participantsStr = exchange.participants
-        .map((p) => p.username)
-        .where((s) => s.isNotEmpty)
-        .join(', ');
-    final title = exchange.title ?? 'Intercambio';
     final showLeave = exchange.status == 'SCHEDULED' && onLeave != null;
     final showOpenChat = exchange.status != 'CANCELLED' && onOpenChat != null;
+    final creator = _getCreator();
+    final joinedParticipants = _getJoinedParticipants();
+
+    final languagesStr = _buildLanguagesString();
+    final platformsStr = exchange.platforms.isNotEmpty
+        ? exchange.platforms.join(', ')
+        : 'No especificada';
+    final participantsCountStr = _buildParticipantsCountString();
 
     return Stack(
       children: [
@@ -61,23 +76,11 @@ class JoinedExchangeCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                title,
-                style: TextStyle(
-                  color: AppTheme.text,
-                  fontSize: AppDimensions.fontSizeL,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: AppDimensions.spacingXS),
-              Text(
-                statusLabel(exchange.status),
-                style: TextStyle(
-                  color: AppTheme.subtle,
-                  fontSize: AppDimensions.fontSizeS,
-                ),
-              ),
-              const SizedBox(height: AppDimensions.spacingMD),
+              // Header con avatar del creador, nombre, PRO badge, rating y país
+              _ParticipantHeader(participant: creator),
+              const SizedBox(height: AppDimensions.spacingL),
+
+              // Filas de información
               _InfoRow(
                 icon: Icons.calendar_today_outlined,
                 label: 'Fecha y hora',
@@ -85,16 +88,36 @@ class JoinedExchangeCard extends StatelessWidget {
               ),
               const SizedBox(height: AppDimensions.spacingMD),
               _InfoRow(
-                icon: Icons.access_time_rounded,
-                label: 'Duración',
-                value: '${exchange.durationMinutes} min',
+                icon: Icons.videocam_outlined,
+                label: 'Plataforma',
+                value: platformsStr,
               ),
               const SizedBox(height: AppDimensions.spacingMD),
               _InfoRow(
-                icon: Icons.people_outline_rounded,
-                label: 'Participantes',
-                value: participantsStr.isNotEmpty ? participantsStr : '—',
+                icon: Icons.translate_outlined,
+                label: 'Idioma y duración',
+                value: '$languagesStr • ${exchange.durationMinutes} min',
               ),
+              // Tema (solo si hay topics configurados)
+              if (exchange.topics.isNotEmpty) ...[
+                const SizedBox(height: AppDimensions.spacingMD),
+                _InfoRow(
+                  icon: Icons.description_outlined,
+                  label: 'Tema',
+                  value: exchange.topics.join(', '),
+                ),
+              ],
+
+              // Participantes unidos
+              if (joinedParticipants.isNotEmpty || participantsCountStr.isNotEmpty) ...[
+                const SizedBox(height: AppDimensions.spacingMD),
+                _ParticipantsRow(
+                  participants: joinedParticipants,
+                  countLabel: participantsCountStr,
+                ),
+              ],
+
+              // Botón Abrir chat
               if (showOpenChat) ...[
                 const SizedBox(height: AppDimensions.spacingL),
                 Row(
@@ -140,6 +163,8 @@ class JoinedExchangeCard extends StatelessWidget {
                   ],
                 ),
               ],
+
+              // Botón Confirmar intercambio
               if (exchange.canConfirm && onConfirm != null) ...[
                 const SizedBox(height: AppDimensions.spacingL),
                 SizedBox(
@@ -162,6 +187,7 @@ class JoinedExchangeCard extends StatelessWidget {
             ],
           ),
         ),
+        // Botón abandonar
         if (showLeave)
           Positioned(
             top: AppDimensions.spacingSM,
@@ -181,8 +207,276 @@ class JoinedExchangeCard extends StatelessWidget {
       ],
     );
   }
+
+  String _buildLanguagesString() {
+    final native = exchange.nativeLanguage;
+    final target = exchange.targetLanguage;
+    if (native != null && target != null) {
+      return '$native - $target';
+    } else if (native != null) {
+      return native;
+    } else if (target != null) {
+      return target;
+    }
+    return 'No especificado';
+  }
+
+  String _buildParticipantsCountString() {
+    final current = exchange.participants.length;
+    final max = exchange.maxParticipants;
+    if (max != null) {
+      if (current >= max) {
+        return '$current/$max (lleno)';
+      }
+      return '$current/$max';
+    }
+    return '$current participantes';
+  }
 }
 
+/// Header con avatar, nombre, badge PRO, rating y país del creador
+class _ParticipantHeader extends StatelessWidget {
+  final JoinedExchangeParticipant? participant;
+
+  const _ParticipantHeader({required this.participant});
+
+  @override
+  Widget build(BuildContext context) {
+    if (participant == null) {
+      return const SizedBox.shrink();
+    }
+
+    final p = participant!;
+    final initials = p.username.isNotEmpty
+        ? p.username.substring(0, 1).toUpperCase()
+        : '?';
+    final hasAvatar = p.avatarUrl != null && p.avatarUrl!.isNotEmpty;
+
+    return Row(
+      children: [
+        // Avatar
+        Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppTheme.accent.withValues(alpha: 0.2),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: hasAvatar
+              ? Image.network(
+                  p.avatarUrl!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => _buildInitials(initials),
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return _buildInitials(initials);
+                  },
+                )
+              : _buildInitials(initials),
+        ),
+        const SizedBox(width: AppDimensions.spacingMD),
+        // Nombre, país, rating y badges
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      p.username,
+                      style: TextStyle(
+                        color: AppTheme.text,
+                        fontSize: AppDimensions.fontSizeM,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (p.isPro) ...[
+                    const SizedBox(width: AppDimensions.spacingSM),
+                    const _ProBadge(),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 2),
+              _buildCountryAndRating(p),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInitials(String initials) {
+    return Center(
+      child: Text(
+        initials,
+        style: TextStyle(
+          color: AppTheme.accent,
+          fontSize: AppDimensions.fontSizeL,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCountryAndRating(JoinedExchangeParticipant p) {
+    final hasCountry = p.country != null && p.country!.isNotEmpty;
+    final hasRating = p.rating != null && p.rating! > 0;
+
+    if (!hasCountry && !hasRating) {
+      return const SizedBox.shrink();
+    }
+
+    return Row(
+      children: [
+        if (hasCountry)
+          Text(
+            p.country!,
+            style: TextStyle(
+              color: AppTheme.subtle,
+              fontSize: AppDimensions.fontSizeS,
+            ),
+          ),
+        if (hasCountry && hasRating)
+          Text(
+            ' - ',
+            style: TextStyle(
+              color: AppTheme.subtle,
+              fontSize: AppDimensions.fontSizeS,
+            ),
+          ),
+        if (hasRating) ...[
+          Icon(
+            Icons.star_rounded,
+            color: Colors.amber,
+            size: 14,
+          ),
+          const SizedBox(width: 2),
+          Text(
+            p.rating!.toStringAsFixed(1),
+            style: TextStyle(
+              color: AppTheme.subtle,
+              fontSize: AppDimensions.fontSizeS,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// Fila de participantes unidos con contador
+class _ParticipantsRow extends StatelessWidget {
+  final List<JoinedExchangeParticipant> participants;
+  final String countLabel;
+
+  const _ParticipantsRow({
+    required this.participants,
+    required this.countLabel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final names = participants.map((p) => p.username).join(', ');
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Icono con fondo circular
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: AppTheme.accent.withValues(alpha: 0.15),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(Icons.people_outline_rounded, color: AppTheme.accent, size: 20),
+        ),
+        const SizedBox(width: AppDimensions.spacingMD),
+        // Textos verticales
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    'Participantes',
+                    style: TextStyle(
+                      color: AppTheme.subtle,
+                      fontSize: AppDimensions.fontSizeXS,
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: countLabel.contains('lleno')
+                          ? Colors.orange.withValues(alpha: 0.2)
+                          : AppTheme.accent.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(AppDimensions.radiusS),
+                    ),
+                    child: Text(
+                      countLabel,
+                      style: TextStyle(
+                        color: countLabel.contains('lleno')
+                            ? Colors.orange
+                            : AppTheme.accent,
+                        fontSize: AppDimensions.fontSizeXS,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 2),
+              Text(
+                names.isNotEmpty ? names : 'Solo tú',
+                style: TextStyle(
+                  color: AppTheme.text,
+                  fontSize: AppDimensions.fontSizeS,
+                  fontWeight: FontWeight.w600,
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 2,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Badge PRO
+class _ProBadge extends StatelessWidget {
+  const _ProBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: AppTheme.accent,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: const Text(
+        'PRO',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+}
+
+/// Fila de información con icono circular
 class _InfoRow extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -197,24 +491,41 @@ class _InfoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: AppTheme.subtle, size: AppDimensions.iconSizeS),
-        const SizedBox(width: AppDimensions.spacingMD),
-        Text(
-          '$label: ',
-          style: TextStyle(
-            color: AppTheme.subtle,
-            fontSize: AppDimensions.fontSizeS,
+        // Icono con fondo circular
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: AppTheme.accent.withValues(alpha: 0.15),
+            shape: BoxShape.circle,
           ),
+          child: Icon(icon, color: AppTheme.accent, size: 20),
         ),
+        const SizedBox(width: AppDimensions.spacingMD),
+        // Textos verticales
         Expanded(
-          child: Text(
-            value,
-            style: TextStyle(
-              color: AppTheme.text,
-              fontSize: AppDimensions.fontSizeS,
-              fontWeight: FontWeight.w500,
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  color: AppTheme.subtle,
+                  fontSize: AppDimensions.fontSizeXS,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: TextStyle(
+                  color: AppTheme.text,
+                  fontSize: AppDimensions.fontSizeS,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
           ),
         ),
       ],

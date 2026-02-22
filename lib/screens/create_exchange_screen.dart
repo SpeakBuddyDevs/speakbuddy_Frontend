@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../theme/app_theme.dart';
 import '../constants/dimensions.dart';
 import '../constants/languages.dart';
+import '../widgets/password_dialog.dart';
 import '../constants/level_ids.dart';
 import '../constants/video_platforms.dart';
 import '../repositories/api_public_exchanges_repository.dart';
@@ -185,7 +186,7 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
           ? AppLanguages.getName(_targetLanguageCode!)
           : 'Inglés';
 
-      await _repository.createExchange(
+      final created = await _repository.createExchange(
         title: _titleController.text.trim().isNotEmpty
             ? _titleController.text.trim()
             : 'Intercambio',
@@ -204,9 +205,14 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Intercambio creado correctamente')),
-      );
+      if (!_isPublic && created.password != null && created.password!.isNotEmpty) {
+        await showPasswordDialog(context, password: created.password!);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Intercambio creado correctamente')),
+        );
+      }
+      if (!mounted) return;
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;

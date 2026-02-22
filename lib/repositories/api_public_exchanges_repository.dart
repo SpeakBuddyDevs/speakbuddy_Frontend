@@ -8,7 +8,7 @@ import '../models/public_exchange_filters.dart';
 import '../services/auth_service.dart';
 import 'public_exchanges_repository.dart';
 
-/// Implementación API: GET /api/exchanges/public con filtros y paginación.
+/// Implementacion API: GET /api/exchanges/public con filtros y paginacion.
 class ApiPublicExchangesRepository implements PublicExchangesRepository {
   final _authService = AuthService();
 
@@ -97,7 +97,7 @@ class ApiPublicExchangesRepository implements PublicExchangesRepository {
 
     final token = await _authService.getToken();
     if (token == null || token.isEmpty) {
-      throw Exception('Debes iniciar sesión para crear un intercambio');
+      throw Exception('Debes iniciar sesion para crear un intercambio');
     }
 
     final nativeCode = AppLanguages.getCodeFromName(nativeLanguage) ??
@@ -114,7 +114,7 @@ class ApiPublicExchangesRepository implements PublicExchangesRepository {
       'durationMinutes': durationMinutes,
       'title': title.isNotEmpty ? title : 'Intercambio',
       'isPublic': isPublic,
-      if (isPublic) 'maxParticipants': maxParticipants,
+      'maxParticipants': maxParticipants,
       if (description.isNotEmpty) 'description': description,
       if (isPublic) 'nativeLanguageCode': nativeCode,
       if (isPublic) 'targetLanguageCode': targetCode,
@@ -174,7 +174,7 @@ class ApiPublicExchangesRepository implements PublicExchangesRepository {
         ? DateTime.parse(scheduledAt)
         : DateTime.now();
 
-    final requiredLevelLabel = (json['requiredLevel'] ?? 'A1 – C2').toString();
+    final requiredLevelLabel = (json['requiredLevel'] ?? 'A1 - C2').toString();
     final minLevel = (json['requiredLevelMinOrder'] is int)
         ? json['requiredLevelMinOrder'] as int
         : (json['minLevel'] is int) ? json['minLevel'] as int : 1;
@@ -203,7 +203,7 @@ class ApiPublicExchangesRepository implements PublicExchangesRepository {
       unmetRequirements: null,
       isJoined: true,
       isPublic: isPublic,
-      shareLink: null,
+      password: json['password']?.toString(),
     );
   }
 
@@ -212,7 +212,7 @@ class ApiPublicExchangesRepository implements PublicExchangesRepository {
     final headers = await _authService.headersWithAuth();
     final token = await _authService.getToken();
     if (token == null || token.isEmpty) {
-      throw Exception('Debes iniciar sesión para unirte a un intercambio');
+      throw Exception('Debes iniciar sesion para unirte a un intercambio');
     }
 
     final response = await http.post(
@@ -231,7 +231,7 @@ class ApiPublicExchangesRepository implements PublicExchangesRepository {
     final headers = await _authService.headersWithAuth();
     final token = await _authService.getToken();
     if (token == null || token.isEmpty) {
-      throw Exception('Debes iniciar sesión para abandonar un intercambio');
+      throw Exception('Debes iniciar sesion para abandonar un intercambio');
     }
 
     final response = await http.delete(
@@ -250,7 +250,7 @@ class ApiPublicExchangesRepository implements PublicExchangesRepository {
     final headers = await _authService.headersWithAuth();
     final token = await _authService.getToken();
     if (token == null || token.isEmpty) {
-      throw Exception('Debes iniciar sesión para solicitar unirte');
+      throw Exception('Debes iniciar sesion para solicitar unirte');
     }
 
     final response = await http.post(
@@ -269,7 +269,7 @@ class ApiPublicExchangesRepository implements PublicExchangesRepository {
     final headers = await _authService.headersWithAuth();
     final token = await _authService.getToken();
     if (token == null || token.isEmpty) {
-      throw Exception('Debes iniciar sesión para ver las solicitudes');
+      throw Exception('Debes iniciar sesion para ver las solicitudes');
     }
 
     final response = await http.get(
@@ -292,7 +292,7 @@ class ApiPublicExchangesRepository implements PublicExchangesRepository {
     final headers = await _authService.headersWithAuth();
     final token = await _authService.getToken();
     if (token == null || token.isEmpty) {
-      throw Exception('Debes iniciar sesión');
+      throw Exception('Debes iniciar sesion');
     }
 
     final response = await http.post(
@@ -311,7 +311,7 @@ class ApiPublicExchangesRepository implements PublicExchangesRepository {
     final headers = await _authService.headersWithAuth();
     final token = await _authService.getToken();
     if (token == null || token.isEmpty) {
-      throw Exception('Debes iniciar sesión');
+      throw Exception('Debes iniciar sesion');
     }
 
     final response = await http.post(
@@ -320,6 +320,28 @@ class ApiPublicExchangesRepository implements PublicExchangesRepository {
     );
 
     if (response.statusCode != 204 && response.statusCode != 200) {
+      final msg = _parseErrorMessage(response);
+      throw Exception(msg);
+    }
+  }
+
+  /// Unirse a un intercambio privado usando contrasenya.
+  /// BACKEND: POST /api/exchanges/{id}/join-with-password con body { "password": "..." }
+  Future<void> joinWithPassword(String exchangeId, String password) async {
+    final headers = await _authService.headersWithAuth();
+    headers['Content-Type'] = 'application/json';
+    final token = await _authService.getToken();
+    if (token == null || token.isEmpty) {
+      throw Exception('Debes iniciar sesion para unirte');
+    }
+
+    final response = await http.post(
+      Uri.parse(ApiEndpoints.exchangeJoinWithPassword(exchangeId)),
+      headers: headers,
+      body: jsonEncode({'password': password}),
+    );
+
+    if (response.statusCode != 200) {
       final msg = _parseErrorMessage(response);
       throw Exception(msg);
     }

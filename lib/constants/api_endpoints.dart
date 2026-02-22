@@ -131,4 +131,9 @@ class ApiEndpoints {
 
   /// Marcar varias como leídas: POST /api/notifications/read
   static const String notificationsMarkRead = '$apiBase/notifications/read';
+
+  // --- Logros ---
+
+  /// Logros del usuario: GET /api/achievements
+  static const String achievements = '$apiBase/achievements';
 }

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import '../constants/api_endpoints.dart';
 import '../constants/language_ids.dart';
 import '../constants/languages.dart';
@@ -116,11 +117,18 @@ class ApiUsersRepository implements UsersRepository {
         : int.tryParse((rawExchanges ?? '0').toString()) ?? 0;
     final country = (json['country'] as String?)?.trim() ?? '';
     final bio = (json['description'] as String?)?.trim();
+
+    // Convertir URL relativa a absoluta si es necesario
+    String? avatarUrl = json['profilePictureURL'] as String?;
+    if (avatarUrl != null && avatarUrl.startsWith('/')) {
+      avatarUrl = '${ApiEndpoints.baseUrl}$avatarUrl';
+    }
+
     return PublicUserProfile(
       id: json['id']?.toString() ?? '',
       name: name,
       country: country,
-      avatarUrl: json['profilePictureURL'] as String?,
+      avatarUrl: avatarUrl,
       isOnline: false,
       isPro: json['isPro'] == true,
       nativeLanguage: nativeLanguage,
@@ -412,8 +420,22 @@ class ApiUsersRepository implements UsersRepository {
       final request = http.MultipartRequest('POST', url);
       request.headers['Authorization'] = 'Bearer $token';
 
-      // Añadir archivo
-      request.files.add(await http.MultipartFile.fromPath('file', filePath));
+      // Inferir el MIME type de la extensión del archivo
+      final extension = filePath.toLowerCase().split('.').last;
+      final mimeType = switch (extension) {
+        'jpg' || 'jpeg' => 'image/jpeg',
+        'png' => 'image/png',
+        'gif' => 'image/gif',
+        'webp' => 'image/webp',
+        _ => 'image/jpeg',
+      };
+
+      // Añadir archivo con contentType explícito
+      request.files.add(await http.MultipartFile.fromPath(
+        'file',
+        filePath,
+        contentType: MediaType.parse(mimeType),
+      ));
 
       // Enviar
       final streamedResponse = await request.send();

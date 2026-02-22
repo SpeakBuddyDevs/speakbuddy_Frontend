@@ -31,7 +31,12 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
     this.showPro = true,
     this.showNotifications = true,
     this.unreadNotificationsCount,
+    this.avatarUrl,
   });
+
+  /// URL de la foto de perfil del usuario.
+  /// Si es null o vacía, se muestran las iniciales del nombre.
+  final String? avatarUrl;
 
   /// Número de notificaciones no leídas. Si > 0, muestra badge en la campana.
   final int? unreadNotificationsCount;
@@ -194,6 +199,8 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
   }
 
   Widget _buildBadge(ThemeData theme) {
+    final initials = _getInitials(userName ?? 'U');
+
     return Container(
       width: AppDimensions.badgeSize,
       height: AppDimensions.badgeSize,
@@ -202,9 +209,23 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
         borderRadius: BorderRadius.circular(AppDimensions.radiusM),
         border: Border.all(color: AppTheme.border),
       ),
-      alignment: Alignment.center,
+      clipBehavior: Clip.antiAlias,
+      child: avatarUrl != null && avatarUrl!.isNotEmpty
+          ? Image.network(
+              avatarUrl!,
+              fit: BoxFit.cover,
+              width: AppDimensions.badgeSize,
+              height: AppDimensions.badgeSize,
+              errorBuilder: (_, __, ___) => _buildInitials(initials),
+            )
+          : _buildInitials(initials),
+    );
+  }
+
+  Widget _buildInitials(String initials) {
+    return Center(
       child: Text(
-        'SB',
+        initials,
         style: TextStyle(
           color: AppTheme.text,
           fontWeight: FontWeight.bold,
@@ -212,6 +233,14 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
         ),
       ),
     );
+  }
+
+  String _getInitials(String name) {
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.length >= 2) {
+      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    }
+    return name.isNotEmpty ? name[0].toUpperCase() : 'U';
   }
 
   void _defaultNotificationsTap() {

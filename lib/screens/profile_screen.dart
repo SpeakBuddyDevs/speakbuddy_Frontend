@@ -604,6 +604,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             level: _profile!.level,
             levelProgress: _profile!.progressPct,
             isPro: _profile!.isPro,
+            avatarUrl: _profile!.avatarPath,
             unreadNotificationsCount: unreadCount,
             onNotificationsTap: () {
               Navigator.pushNamed(context, AppRoutes.notifications)

@@ -55,15 +55,6 @@ class FakeAchievementsRepository implements AchievementsRepository {
       targetProgress: 30,
     ),
     Achievement(
-      id: 'social',
-      type: AchievementType.social,
-      title: 'Social',
-      description: '10 eventos asistidos',
-      isUnlocked: false,
-      currentProgress: 2,
-      targetProgress: 10,
-    ),
-    Achievement(
       id: 'explorer',
       type: AchievementType.explorer,
       title: 'Explorador',

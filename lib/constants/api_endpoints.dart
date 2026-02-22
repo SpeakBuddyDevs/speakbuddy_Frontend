@@ -81,6 +81,9 @@ class ApiEndpoints {
   /// Intercambios públicos: GET /api/exchanges/public
   static const String exchangesPublic = '$apiBase/exchanges/public';
 
+  /// Unirse a intercambio privado con contraseña: POST /api/exchanges/{id}/join-with-password
+  static String exchangeJoinWithPassword(String id) => '$apiBase/exchanges/$id/join-with-password';
+
   /// Crear intercambio: POST /api/exchanges
   static const String exchanges = '$apiBase/exchanges';
 

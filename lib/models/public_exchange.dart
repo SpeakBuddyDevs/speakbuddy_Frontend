@@ -2,7 +2,7 @@
 // Response: { id, title, description, creatorId, creatorName, creatorAvatarUrl?,
 //   creatorIsPro, requiredLevel, minLevel, scheduledAt, durationMinutes, currentParticipants,
 //   maxParticipants, nativeLanguage, targetLanguage, topics[]?, isEligible,
-//   unmetRequirements[]?, isPublic, shareLink? }
+//   unmetRequirements[]?, isPublic, password? }
 //
 // Concepto: Intercambio mutuo de idiomas. El creador ofrece su idioma nativo (nativeLanguage)
 // a cambio de practicar otro idioma (targetLanguage). La conversación se divide a partes
@@ -32,7 +32,7 @@ class PublicExchange {
   final bool isJoined; // Si el usuario actual ya es participante
   final bool hasPendingJoinRequest; // Si el usuario tiene solicitud PENDING para este intercambio
   final bool isPublic; // true = público, false = privado
-  final String? shareLink; // Enlace compartible para intercambios privados
+  final String? password; // Contraseña para intercambios privados (solo visible al creador)
 
   const PublicExchange({
     required this.id,
@@ -57,7 +57,7 @@ class PublicExchange {
     this.isJoined = false,
     this.hasPendingJoinRequest = false,
     this.isPublic = true, // Por defecto público
-    this.shareLink,
+    this.password,
   });
 
   /// Parsea la respuesta del backend (elemento de content en GET /api/exchanges/public)
@@ -131,7 +131,7 @@ class PublicExchange {
       isJoined: json['isJoined'] == true,
       hasPendingJoinRequest: json['hasPendingJoinRequest'] == true,
       isPublic: json['isPublic'] != false,
-      shareLink: json['shareLink']?.toString(),
+      password: json['password']?.toString(),
     );
   }
 }

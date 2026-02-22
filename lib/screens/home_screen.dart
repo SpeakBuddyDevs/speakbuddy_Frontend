@@ -302,6 +302,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 onOpenChat: _onOpenExchangeChat,
                 hasNewMessages: _hasNewMessages,
               ),
+              const SizedBox(height: AppDimensions.spacingL),
             ],
           ),
         ),

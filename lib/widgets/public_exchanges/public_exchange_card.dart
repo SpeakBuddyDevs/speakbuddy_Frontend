@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/public_exchange.dart';
 import '../../theme/app_theme.dart';
 import '../../constants/dimensions.dart';
+import '../password_input_dialog.dart';
 
 /// Card de intercambio público para la pantalla de Intercambios Públicos
 class PublicExchangeCard extends StatelessWidget {
@@ -11,6 +12,7 @@ class PublicExchangeCard extends StatelessWidget {
   final VoidCallback? onJoin;
   final VoidCallback? onDetails;
   final VoidCallback? onLeave; // Callback para abandonar el intercambio
+  final void Function(String password)? onJoinWithPassword; // Callback para unirse con contraseña (intercambios privados)
 
   const PublicExchangeCard({
     super.key,
@@ -20,6 +22,7 @@ class PublicExchangeCard extends StatelessWidget {
     this.onJoin,
     this.onDetails,
     this.onLeave,
+    this.onJoinWithPassword,
   });
 
   @override
@@ -75,15 +78,29 @@ class PublicExchangeCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      exchange.title,
-                      style: TextStyle(
-                        color: AppTheme.text,
-                        fontSize: AppDimensions.fontSizeM,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                    Row(
+                      children: [
+                        if (!exchange.isPublic) ...[
+                          Icon(
+                            Icons.lock_rounded,
+                            size: 16,
+                            color: AppTheme.subtle,
+                          ),
+                          const SizedBox(width: AppDimensions.spacingXS),
+                        ],
+                        Expanded(
+                          child: Text(
+                            exchange.title,
+                            style: TextStyle(
+                              color: AppTheme.text,
+                              fontSize: AppDimensions.fontSizeM,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: AppDimensions.spacingXS),
                     Text(
@@ -404,16 +421,16 @@ class PublicExchangeCard extends StatelessWidget {
                             child: const Text('Solicitud enviada'),
                           )
                         : ElevatedButton(
-                            onPressed: isFull ? null : onJoin,
+                            onPressed: isFull ? null : () => _handleJoin(context),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: isFull
                                   ? AppTheme.panel
-                                  : (exchange.isEligible
+                                  : (exchange.isEligible || !exchange.isPublic
                                       ? AppTheme.accent
                                       : AppTheme.card),
                               foregroundColor: isFull
                                   ? AppTheme.subtle
-                                  : (exchange.isEligible
+                                  : (exchange.isEligible || !exchange.isPublic
                                       ? Colors.white
                                       : AppTheme.text),
                               padding: const EdgeInsets.symmetric(
@@ -424,16 +441,27 @@ class PublicExchangeCard extends StatelessWidget {
                                 side: BorderSide(
                                   color: isFull
                                       ? AppTheme.border
-                                      : (exchange.isEligible
+                                      : (exchange.isEligible || !exchange.isPublic
                                           ? AppTheme.accent
                                           : AppTheme.border),
                                 ),
                               ),
                             ),
-                            child: Text(
-                              isFull
-                                  ? 'Lleno'
-                                  : (exchange.isEligible ? 'Unirse' : 'Solicitar unirse'),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                if (!exchange.isPublic) ...[
+                                  Icon(Icons.lock_rounded, size: 16),
+                                  const SizedBox(width: AppDimensions.spacingXS),
+                                ],
+                                Text(
+                                  isFull
+                                      ? 'Lleno'
+                                      : (!exchange.isPublic
+                                          ? 'Unirse'
+                                          : (exchange.isEligible ? 'Unirse' : 'Solicitar unirse')),
+                                ),
+                              ],
                             ),
                           ),
               ),
@@ -478,6 +506,17 @@ class PublicExchangeCard extends StatelessWidget {
           ),
       ],
     );
+  }
+
+  Future<void> _handleJoin(BuildContext context) async {
+    if (!exchange.isPublic) {
+      final password = await showPasswordInputDialog(context);
+      if (password != null && password.isNotEmpty) {
+        onJoinWithPassword?.call(password);
+      }
+    } else {
+      onJoin?.call();
+    }
   }
 
   bool _isFull(int current, int max) {

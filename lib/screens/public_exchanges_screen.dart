@@ -177,6 +177,25 @@ class _PublicExchangesScreenState extends State<PublicExchangesScreen> {
       );
     }
   }
+
+  Future<void> _onJoinWithPassword(PublicExchange exchange, String password) async {
+    try {
+      await _repository.joinWithPassword(exchange.id, password);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Te has unido a "${exchange.title}"')),
+      );
+      _loadExchanges();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: Colors.red.shade800,
+        ),
+      );
+    }
+  }
   
   Future<void> _onLeave(PublicExchange exchange) async {
     final confirm = await showDialog<bool>(
@@ -432,6 +451,7 @@ class _PublicExchangesScreenState extends State<PublicExchangesScreen> {
                           exchange: exchange,
                           isJoined: exchange.isJoined,
                           onJoin: () => _onJoin(exchange),
+                          onJoinWithPassword: (password) => _onJoinWithPassword(exchange, password),
                           onDetails: () => _onDetails(exchange),
                           onLeave: () => _onLeave(exchange),
                         ),

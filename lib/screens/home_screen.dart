@@ -12,6 +12,7 @@ import '../models/joined_exchange.dart';
 import '../constants/routes.dart';
 import '../constants/dimensions.dart';
 import '../navigation/exchange_chat_args.dart';
+import '../navigation/rate_participants_args.dart';
 import '../services/exchange_chat_read_service.dart';
 import '../widgets/exchange/joined_exchange_card.dart';
 
@@ -166,10 +167,31 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     try {
       await _exchangeRepo.confirm(exchange.id);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Intercambio confirmado')),
-      );
-      _loadExchanges();
+
+      final userService = CurrentUserService();
+      await userService.preload();
+      final currentUserId = userService.getUserId();
+
+      final otherParticipants = exchange.participants
+          .where((p) => p.userId.toString() != currentUserId)
+          .map((p) => RateParticipantInfo.fromParticipant(p))
+          .toList();
+
+      if (otherParticipants.isNotEmpty) {
+        Navigator.of(context).pushNamed(
+          AppRoutes.rateParticipants,
+          arguments: RateParticipantsArgs(
+            exchangeId: exchange.id,
+            exchangeTitle: exchange.title,
+            participants: otherParticipants,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Intercambio confirmado')),
+        );
+        _loadExchanges();
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

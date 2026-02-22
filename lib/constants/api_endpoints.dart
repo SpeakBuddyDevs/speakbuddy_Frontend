@@ -68,6 +68,9 @@ class ApiEndpoints {
   /// POST /api/users/{id}/profile/picture — subir foto de perfil
   static String userProfilePicture(String id) => '$apiBase/users/$id/profile/picture';
 
+  /// POST /api/users/{id}/reviews — enviar valoración a un usuario
+  static String userReviews(String id) => '$apiBase/users/$id/reviews';
+
   /// GET /api/languages — listado de idiomas (id, name, isoCode) para usar IDs reales al añadir
   static const String languages = '$apiBase/languages';
 

@@ -136,4 +136,18 @@ class ApiEndpoints {
 
   /// Logros del usuario: GET /api/achievements
   static const String achievements = '$apiBase/achievements';
+
+  // --- Topics IA ---
+
+  /// Base de topics
+  static const String topics = '$apiBase/topics';
+
+  /// Generar nuevo tema: POST /api/topics/generate
+  static const String topicsGenerate = '$topics/generate';
+
+  /// Listar favoritos: GET /api/topics/favorites
+  static const String topicsFavorites = '$topics/favorites';
+
+  /// Guardar/eliminar favorito: POST/DELETE /api/topics/favorites/{id}
+  static String topicFavorite(String id) => '$topics/favorites/$id';
 }

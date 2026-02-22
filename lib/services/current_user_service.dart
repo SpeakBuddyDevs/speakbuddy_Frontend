@@ -97,5 +97,11 @@ class CurrentUserService {
     _loadFromBackendIfNeeded();
     return _profile?.avatarPath;
   }
+
+  /// Obtiene el código ISO del idioma nativo del usuario.
+  String getNativeLanguageCode() {
+    _loadFromBackendIfNeeded();
+    return _profile?.nativeLanguage ?? 'es';
+  }
 }
 

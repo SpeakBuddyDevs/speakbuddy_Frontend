@@ -85,5 +85,11 @@ class CurrentUserService {
     _loadFromBackendIfNeeded();
     return _profile?.isPro ?? false;
   }
+
+  /// Obtiene el ID del usuario actual.
+  String? getUserId() {
+    _loadFromBackendIfNeeded();
+    return _profile?.id;
+  }
 }
 

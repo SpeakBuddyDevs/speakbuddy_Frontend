@@ -35,5 +35,8 @@ class AppRoutes {
 
   /// Ruta de notificaciones
   static const String notifications = '/notifications';
+
+  /// Ruta de valoración de participantes post-intercambio
+  static const String rateParticipants = '/rate-participants';
 }
 

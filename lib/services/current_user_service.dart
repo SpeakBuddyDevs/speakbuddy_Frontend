@@ -91,5 +91,11 @@ class CurrentUserService {
     _loadFromBackendIfNeeded();
     return _profile?.id;
   }
+
+  /// Obtiene la URL del avatar del usuario actual.
+  String? getAvatarUrl() {
+    _loadFromBackendIfNeeded();
+    return _profile?.avatarPath;
+  }
 }
 

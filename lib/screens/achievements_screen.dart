@@ -19,6 +19,7 @@ class AchievementsScreen extends StatelessWidget {
         level: userService.getLevel(),
         levelProgress: userService.getProgressToNextLevel(),
         isPro: userService.isPro(),
+        avatarUrl: userService.getAvatarUrl(),
         onNotificationsTap: () {
           Navigator.pushNamed(context, AppRoutes.notifications);
         },

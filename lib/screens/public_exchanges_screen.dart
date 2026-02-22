@@ -305,6 +305,7 @@ class _PublicExchangesScreenState extends State<PublicExchangesScreen> {
             level: userService.getLevel(),
             levelProgress: userService.getProgressToNextLevel(),
             isPro: userService.isPro(),
+            avatarUrl: userService.getAvatarUrl(),
             unreadNotificationsCount: unreadCount,
             onNotificationsTap: () {
               Navigator.pushNamed(context, AppRoutes.notifications)

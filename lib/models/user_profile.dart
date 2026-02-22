@@ -13,18 +13,21 @@ class UserProfile {
   final String name;
   final String email;
   final int level;
+  final int experiencePoints;
+  final int xpToNextLevel;
   final double progressPct;
+  final double streakMultiplier;
+  final bool canClaimDailyBonus;
   final int exchanges;
   final double rating;
   final int languagesCount;
-  /** Horas totales de intercambios completados (puede ser decimal, ej. 1.5). */
   final double hoursTotal;
   final int currentStreakDays;
   final int bestStreakDays;
   final int medals;
   final List<LanguageItem> learningLanguages;
   final bool isPro;
-  final String? avatarPath; // TODO(FE): Renombrar a avatarUrl cuando BE devuelva URL
+  final String? avatarPath;
   final String nativeLanguage;
   final String description;
 
@@ -33,7 +36,11 @@ class UserProfile {
     required this.name,
     required this.email,
     required this.level,
+    required this.experiencePoints,
+    required this.xpToNextLevel,
     required this.progressPct,
+    required this.streakMultiplier,
+    required this.canClaimDailyBonus,
     required this.exchanges,
     required this.rating,
     required this.languagesCount,
@@ -53,7 +60,11 @@ class UserProfile {
     String? name,
     String? email,
     int? level,
+    int? experiencePoints,
+    int? xpToNextLevel,
     double? progressPct,
+    double? streakMultiplier,
+    bool? canClaimDailyBonus,
     int? exchanges,
     double? rating,
     int? languagesCount,
@@ -72,7 +83,11 @@ class UserProfile {
       name: name ?? this.name,
       email: email ?? this.email,
       level: level ?? this.level,
+      experiencePoints: experiencePoints ?? this.experiencePoints,
+      xpToNextLevel: xpToNextLevel ?? this.xpToNextLevel,
       progressPct: progressPct ?? this.progressPct,
+      streakMultiplier: streakMultiplier ?? this.streakMultiplier,
+      canClaimDailyBonus: canClaimDailyBonus ?? this.canClaimDailyBonus,
       exchanges: exchanges ?? this.exchanges,
       rating: rating ?? this.rating,
       languagesCount: languagesCount ?? this.languagesCount,

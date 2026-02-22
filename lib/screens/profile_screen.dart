@@ -53,6 +53,94 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
+  bool _isClaimingBonus = false;
+
+  Future<void> _claimDailyBonus() async {
+    if (_isClaimingBonus || _profile == null) return;
+
+    setState(() => _isClaimingBonus = true);
+
+    final result = await _usersRepo.claimDailyBonus();
+
+    if (!mounted) return;
+
+    if (result != null && result['success'] == true) {
+      final newLevel = result['newLevel'] as int?;
+      final oldLevel = _profile!.level;
+
+      await _loadUserProfile();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Bonus diario reclamado'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        if (newLevel != null && newLevel > oldLevel) {
+          _showLevelUpDialog(newLevel);
+        }
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result?['message'] ?? 'Ya has reclamado el bonus hoy'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    }
+
+    if (mounted) setState(() => _isClaimingBonus = false);
+  }
+
+  void _showLevelUpDialog(int newLevel) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.card,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppDimensions.radiusL),
+        ),
+        title: Column(
+          children: [
+            Icon(
+              Icons.celebration_rounded,
+              size: 64,
+              color: AppTheme.accent,
+            ),
+            const SizedBox(height: AppDimensions.spacingMD),
+            Text(
+              'Subiste de nivel',
+              style: TextStyle(
+                color: AppTheme.text,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          'Ahora eres nivel $newLevel',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: AppTheme.subtle,
+            fontSize: AppDimensions.fontSizeL,
+          ),
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.accent,
+              minimumSize: const Size(double.infinity, 48),
+            ),
+            child: const Text('Continuar'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _editDescription() async {
     if (_profile == null) return;
 
@@ -534,7 +622,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
           padding: AppDimensions.paddingScreen,
           child: Column(
             children: [
-              _UserCard(profile: _profile!), // Perfil real
+              _UserCard(profile: _profile!),
+              if (_profile!.canClaimDailyBonus) ...[
+                const SizedBox(height: AppDimensions.spacingMD),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _isClaimingBonus ? null : _claimDailyBonus,
+                    icon: _isClaimingBonus
+                        ? SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Icon(Icons.card_giftcard_rounded),
+                    label: Text(
+                      _isClaimingBonus
+                          ? 'Reclamando...'
+                          : 'Reclamar bonus diario (+5 XP)',
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: AppDimensions.spacingL),
               _Section(
                 title: 'Descripción del perfil',
@@ -895,12 +1015,47 @@ class _UserCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Nivel ${profile.level}',
-                  style: TextStyle(
-                    color: AppTheme.text,
-                    fontWeight: FontWeight.w600,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Nivel ${profile.level}',
+                      style: TextStyle(
+                        color: AppTheme.text,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (profile.streakMultiplier > 1.0)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppDimensions.spacingSM,
+                          vertical: AppDimensions.spacingXS,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.accent.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(AppDimensions.radiusS),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.local_fire_department_rounded,
+                              size: 14,
+                              color: Colors.orange,
+                            ),
+                            const SizedBox(width: AppDimensions.spacingXS),
+                            Text(
+                              'x${profile.streakMultiplier.toStringAsFixed(1)}',
+                              style: TextStyle(
+                                color: Colors.orange,
+                                fontWeight: FontWeight.w600,
+                                fontSize: AppDimensions.fontSizeXS,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
                 ),
                 const SizedBox(height: AppDimensions.spacingSM),
                 ClipRRect(
@@ -914,7 +1069,7 @@ class _UserCard extends StatelessWidget {
                 ),
                 const SizedBox(height: AppDimensions.spacingSM),
                 Text(
-                  '${_remaining(profile.progressPct)} intercambios hasta nivel ${profile.level + 1}',
+                  '${profile.experiencePoints} / ${profile.xpToNextLevel} XP para nivel ${profile.level + 1}',
                   style: TextStyle(
                     color: AppTheme.subtle,
                     fontSize: AppDimensions.fontSizeXS,
@@ -926,11 +1081,6 @@ class _UserCard extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  int _remaining(double pct) {
-    final completed = (pct * 5).round();
-    return (5 - completed).clamp(0, 5);
   }
 
   String _getActiveLanguageName() {

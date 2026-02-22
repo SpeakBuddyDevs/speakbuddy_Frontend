@@ -474,7 +474,11 @@ class ApiUsersRepository implements UsersRepository {
       name: json['name'] ?? 'Usuario',
       email: json['email'] ?? '',
       level: json['level'] ?? 1,
+      experiencePoints: (json['experiencePoints'] as num?)?.toInt() ?? 0,
+      xpToNextLevel: (json['xpToNextLevel'] as num?)?.toInt() ?? 100,
       progressPct: (json['progressPct'] ?? 0.0).toDouble(),
+      streakMultiplier: (json['streakMultiplier'] ?? 1.0).toDouble(),
+      canClaimDailyBonus: json['canClaimDailyBonus'] ?? true,
       exchanges: json['exchanges'] ?? 0,
       rating: (json['rating'] ?? 0.0).toDouble(),
       languagesCount: json['languagesCount'] ?? 0,
@@ -488,5 +492,31 @@ class ApiUsersRepository implements UsersRepository {
       description: json['description'] ?? '',
       avatarPath: avatarUrl,
     );
+  }
+
+  /// Reclamar el bonus diario de XP.
+  /// Devuelve un mapa con información del resultado, o null si hay error.
+  Future<Map<String, dynamic>?> claimDailyBonus() async {
+    try {
+      final headers = await _authService.headersWithAuth();
+      final token = await _authService.getToken();
+      if (token == null || token.isEmpty) return null;
+
+      final url = Uri.parse('${ApiEndpoints.me}/daily-bonus');
+      final response = await http.post(url, headers: headers);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(utf8.decode(response.bodyBytes));
+        return data as Map<String, dynamic>;
+      } else if (response.statusCode == 400) {
+        final data = jsonDecode(utf8.decode(response.bodyBytes));
+        return data as Map<String, dynamic>;
+      }
+      return null;
+    } catch (e, st) {
+      print('🔴 [Profile] claimDailyBonus error: $e');
+      print(st);
+      return null;
+    }
   }
 }

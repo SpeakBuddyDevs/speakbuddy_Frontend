@@ -1,3 +1,4 @@
+import '../models/language_item.dart';
 import '../models/public_user_profile.dart';
 import 'exchange_participants_repository.dart';
 import 'fake_find_users_repository.dart';
@@ -32,14 +33,16 @@ class FakeExchangeParticipantsRepository implements ExchangeParticipantsReposito
       // Si es el usuario actual, usar datos del CurrentUserService
       if (userId == 'current_user_001') {
         // Crear perfil mock del usuario actual
-        participants.add(const PublicUserProfile(
+        participants.add(PublicUserProfile(
           id: 'current_user_001',
           name: 'Sergio Arjona',
           country: 'España',
           isOnline: true,
           isPro: true,
           nativeLanguage: 'Español',
-          targetLanguage: 'Inglés',
+          learningLanguages: [
+            const LanguageItem(code: 'en', name: 'Inglés', level: 'B1', active: true),
+          ],
           level: 5,
           rating: 4.8,
           exchanges: 12,

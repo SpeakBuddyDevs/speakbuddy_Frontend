@@ -90,12 +90,22 @@ class ApiUsersRepository implements UsersRepository {
     }
 
     final learning = json['languagesToLearn'] as List?;
-    String targetLanguage = '—';
+    List<LanguageItem> learningLanguages = [];
     if (learning != null && learning.isNotEmpty) {
-      final first = learning.first as Map<String, dynamic>?;
-      final lang = first?['language'] as Map<String, dynamic>?;
-      final n = lang?['name'] as String?;
-      if (n != null && n.isNotEmpty) targetLanguage = n;
+      learningLanguages = learning.map((item) {
+        final langMap = item as Map<String, dynamic>?;
+        final lang = langMap?['language'] as Map<String, dynamic>?;
+        final name = lang?['name'] as String? ?? '';
+        final isoCode = (lang?['isoCode'] as String? ?? '').toLowerCase();
+        final levelName = langMap?['levelName'] as String? ?? '';
+        final active = langMap?['active'] == true;
+        return LanguageItem(
+          code: isoCode,
+          name: name,
+          level: levelName,
+          active: active,
+        );
+      }).where((l) => l.name.isNotEmpty).toList();
     }
 
     final rawRating = json['averageRating'];
@@ -114,7 +124,7 @@ class ApiUsersRepository implements UsersRepository {
       isOnline: false,
       isPro: json['isPro'] == true,
       nativeLanguage: nativeLanguage,
-      targetLanguage: targetLanguage,
+      learningLanguages: learningLanguages,
       level: (json['level'] is int) ? json['level'] as int : int.tryParse((json['level'] ?? '1').toString()) ?? 1,
       rating: rating,
       exchanges: exchanges,

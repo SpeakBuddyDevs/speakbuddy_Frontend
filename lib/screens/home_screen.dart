@@ -710,7 +710,7 @@ class _ExchangesCarouselState extends State<_ExchangesCarousel> {
     return Column(
       children: [
         SizedBox(
-          height: 320,
+          height: 450,
           child: PageView.builder(
             controller: _pageController,
             itemCount: widget.exchanges.length,

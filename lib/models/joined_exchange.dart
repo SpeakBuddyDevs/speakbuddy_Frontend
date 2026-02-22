@@ -12,6 +12,11 @@ class JoinedExchange {
   final bool canConfirm;
   final bool allConfirmed;
   final DateTime? lastMessageAt;
+  final String? nativeLanguage;
+  final String? targetLanguage;
+  final List<String> platforms;
+  final int? maxParticipants;
+  final List<String> topics;
 
   const JoinedExchange({
     required this.id,
@@ -25,6 +30,11 @@ class JoinedExchange {
     required this.canConfirm,
     required this.allConfirmed,
     this.lastMessageAt,
+    this.nativeLanguage,
+    this.targetLanguage,
+    this.platforms = const [],
+    this.maxParticipants,
+    this.topics = const [],
   });
 
   factory JoinedExchange.fromJson(Map<String, dynamic> json) {
@@ -62,6 +72,15 @@ class JoinedExchange {
       canConfirm: json['canConfirm'] == true,
       allConfirmed: json['allConfirmed'] == true,
       lastMessageAt: lastMessageAt,
+      nativeLanguage: json['nativeLanguage'] as String?,
+      targetLanguage: json['targetLanguage'] as String?,
+      platforms: (json['platforms'] as List<dynamic>?)
+          ?.map((e) => e.toString())
+          .toList() ?? [],
+      maxParticipants: (json['maxParticipants'] as num?)?.toInt(),
+      topics: (json['topics'] as List<dynamic>?)
+          ?.map((e) => e.toString())
+          .toList() ?? [],
     );
   }
 }
@@ -71,12 +90,20 @@ class JoinedExchangeParticipant {
   final String username;
   final bool confirmed;
   final String role;
+  final String? avatarUrl;
+  final double? rating;
+  final String? country;
+  final bool isPro;
 
   const JoinedExchangeParticipant({
     required this.userId,
     required this.username,
     required this.confirmed,
     required this.role,
+    this.avatarUrl,
+    this.rating,
+    this.country,
+    this.isPro = false,
   });
 
   factory JoinedExchangeParticipant.fromJson(Map<String, dynamic> json) {
@@ -85,6 +112,10 @@ class JoinedExchangeParticipant {
       username: json['username'] as String? ?? '',
       confirmed: json['confirmed'] == true,
       role: json['role'] as String? ?? 'participant',
+      avatarUrl: json['avatarUrl'] as String?,
+      rating: (json['rating'] as num?)?.toDouble(),
+      country: json['country'] as String?,
+      isPro: json['isPro'] == true,
     );
   }
 }

@@ -65,21 +65,21 @@ class _FindFiltersBottomSheetState extends State<FindFiltersBottomSheet> {
   @override
   Widget build(BuildContext context) {
     return AppBottomSheetScaffold(
-      title: 'Filtros',
+      title: 'Filters',
       onReset: _resetFilters,
-      actionLabel: 'Aplicar filtros',
+      actionLabel: 'Apply filters',
       onAction: _applyFilters,
       content: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const FilterSectionTitle(title: 'Cuenta'),
+          const FilterSectionTitle(title: 'Account'),
           FilterSwitch(
-            label: 'Solo PRO',
+            label: 'Only PRO',
             value: _proOnly,
             onChanged: (v) => setState(() => _proOnly = v),
           ),
           const SizedBox(height: AppDimensions.spacingL),
-          const FilterSectionTitle(title: 'Rating mínimo'),
+          const FilterSectionTitle(title: 'Minimum rating'),
           Row(
             children: [
               Expanded(
@@ -102,10 +102,10 @@ class _FindFiltersBottomSheetState extends State<FindFiltersBottomSheet> {
               Container(
                 width: 50,
                 alignment: Alignment.center,
-                child: Text(
-                  _minRating > 0
-                      ? _minRating.toStringAsFixed(1)
-                      : 'Todos',
+                  child: Text(
+                    _minRating > 0
+                        ? _minRating.toStringAsFixed(1)
+                        : 'All',
                   style: TextStyle(
                     color: AppTheme.text,
                     fontWeight: FontWeight.w600,
@@ -115,25 +115,25 @@ class _FindFiltersBottomSheetState extends State<FindFiltersBottomSheet> {
             ],
           ),
           const SizedBox(height: AppDimensions.spacingL),
-          const FilterSectionTitle(title: 'Idioma nativo'),
+          const FilterSectionTitle(title: 'Native language'),
           FilterDropdown(
-            label: 'Seleccionar idioma nativo',
+            label: 'Select native language',
             value: _nativeLanguage,
             items: _availableLanguages,
             onChanged: (v) => setState(() => _nativeLanguage = v),
           ),
           const SizedBox(height: AppDimensions.spacingL),
-          const FilterSectionTitle(title: 'Idioma aprendiendo'),
+          const FilterSectionTitle(title: 'Learning language'),
           FilterDropdown(
-            label: 'Seleccionar idioma aprendiendo',
+            label: 'Select learning language',
             value: _targetLanguage,
             items: _availableLanguages,
             onChanged: (v) => setState(() => _targetLanguage = v),
           ),
           const SizedBox(height: AppDimensions.spacingL),
-          const FilterSectionTitle(title: 'País'),
+          const FilterSectionTitle(title: 'Country'),
           FilterDropdown(
-            label: 'Seleccionar país',
+            label: 'Select country',
             value: _country,
             items: _availableCountries,
             onChanged: (v) => setState(() => _country = v),

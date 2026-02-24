@@ -4,6 +4,7 @@ import '../../constants/dimensions.dart';
 import '../../models/join_request.dart';
 import '../../repositories/api_public_exchanges_repository.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/requirement_display.dart';
 
 /// Bottom sheet para que el creador acepte o rechace una solicitud de unión.
 /// Se muestra al pulsar una notificación EXCHANGE_JOIN_REQUEST.
@@ -11,7 +12,7 @@ Future<bool?> showJoinRequestActionBottomSheet(
   BuildContext context, {
   required String exchangeId,
   required int requesterUserId,
-  String exchangeTitle = 'Intercambio',
+  String exchangeTitle = 'Exchange',
 }) {
   return showModalBottomSheet<bool>(
     context: context,
@@ -75,9 +76,9 @@ class _JoinRequestActionBottomSheetState
         _request = match;
         _isLoading = false;
         if (match == null && requests.isNotEmpty) {
-          _error = 'La solicitud no se encontró o ya fue respondida';
+          _error = 'Request not found or already responded to';
         } else if (match == null) {
-          _error = 'No hay solicitudes pendientes';
+          _error = 'No pending requests';
         }
       });
     } catch (e) {
@@ -101,7 +102,7 @@ class _JoinRequestActionBottomSheetState
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Solicitud aceptada')),
+        const SnackBar(content: Text('Request accepted')),
       );
       Navigator.pop(context, true);
     } catch (e) {
@@ -128,7 +129,7 @@ class _JoinRequestActionBottomSheetState
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Solicitud rechazada')),
+        const SnackBar(content: Text('Request rejected')),
       );
       Navigator.pop(context, true);
     } catch (e) {
@@ -174,7 +175,7 @@ class _JoinRequestActionBottomSheetState
             ),
           ),
           Text(
-            'Solicitud de unión',
+            'Join request',
             style: TextStyle(
               color: AppTheme.text,
               fontSize: AppDimensions.fontSizeL,
@@ -199,7 +200,7 @@ class _JoinRequestActionBottomSheetState
                   const SizedBox(height: AppDimensions.spacingL),
                   TextButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('Cerrar'),
+                    child: const Text('Close'),
                   ),
                 ],
               ),
@@ -252,7 +253,7 @@ class _JoinRequestActionBottomSheetState
             request.unmetRequirements!.isNotEmpty) ...[
           const SizedBox(height: AppDimensions.spacingMD),
           Text(
-            'Requisitos no cumplidos:',
+            'Requirements not met:',
             style: TextStyle(
               color: AppTheme.subtle,
               fontSize: AppDimensions.fontSizeXS,
@@ -263,7 +264,7 @@ class _JoinRequestActionBottomSheetState
             (r) => Padding(
               padding: const EdgeInsets.only(left: AppDimensions.spacingMD),
               child: Text(
-                '• $r',
+                '• ${translateRequirement(r)}',
                 style: TextStyle(
                   color: AppTheme.subtle,
                   fontSize: AppDimensions.fontSizeXS,
@@ -282,7 +283,7 @@ class _JoinRequestActionBottomSheetState
                   foregroundColor: Colors.redAccent,
                   side: const BorderSide(color: Colors.redAccent),
                 ),
-                child: const Text('Rechazar'),
+                child: const Text('Reject'),
               ),
             ),
             const SizedBox(width: AppDimensions.spacingMD),
@@ -293,7 +294,7 @@ class _JoinRequestActionBottomSheetState
                   backgroundColor: AppTheme.accent,
                   foregroundColor: Colors.white,
                 ),
-                child: const Text('Aceptar'),
+                child: const Text('Accept'),
               ),
             ),
           ],

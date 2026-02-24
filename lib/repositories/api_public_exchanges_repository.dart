@@ -97,7 +97,7 @@ class ApiPublicExchangesRepository extends BaseApiRepository
       'Content-Type': 'application/json',
     });
     if (!auth.hasValidToken) {
-      throw Exception('Debes iniciar sesion para crear un intercambio');
+      throw Exception('You must be signed in to create an exchange');
     }
 
     final nativeCode = AppLanguages.getCodeFromName(nativeLanguage) ??
@@ -112,7 +112,7 @@ class ApiPublicExchangesRepository extends BaseApiRepository
     final body = {
       'scheduledAt': date.toIso8601String(),
       'durationMinutes': durationMinutes,
-      'title': title.isNotEmpty ? title : 'Intercambio',
+      'title': title.isNotEmpty ? title : 'Exchange',
       'isPublic': isPublic,
       'maxParticipants': maxParticipants,
       if (description.isNotEmpty) 'description': description,
@@ -181,7 +181,7 @@ class ApiPublicExchangesRepository extends BaseApiRepository
 
     return PublicExchange(
       id: (json['id'] ?? '').toString(),
-      title: (json['title'] ?? 'Intercambio').toString(),
+      title: (json['title'] ?? 'Exchange').toString(),
       description: description,
       creatorId: (creator?['userId'] ?? '').toString(),
       creatorName: (creator?['username'] ?? '').toString(),
@@ -211,7 +211,7 @@ class ApiPublicExchangesRepository extends BaseApiRepository
   Future<void> joinExchange(String id) async {
     final auth = await buildAuthContext();
     if (!auth.hasValidToken) {
-      throw Exception('Debes iniciar sesion para unirte a un intercambio');
+      throw Exception('You must be signed in to join an exchange');
     }
 
     final response = await http.post(
@@ -229,7 +229,7 @@ class ApiPublicExchangesRepository extends BaseApiRepository
   Future<void> leaveExchange(String id) async {
     final auth = await buildAuthContext();
     if (!auth.hasValidToken) {
-      throw Exception('Debes iniciar sesion para abandonar un intercambio');
+      throw Exception('You must be signed in to leave an exchange');
     }
 
     final response = await http.delete(
@@ -247,7 +247,7 @@ class ApiPublicExchangesRepository extends BaseApiRepository
   Future<void> requestToJoin(String exchangeId) async {
     final auth = await buildAuthContext();
     if (!auth.hasValidToken) {
-      throw Exception('Debes iniciar sesion para solicitar unirte');
+      throw Exception('You must be signed in to request to join');
     }
 
     final response = await http.post(
@@ -265,7 +265,7 @@ class ApiPublicExchangesRepository extends BaseApiRepository
   Future<List<JoinRequest>> getJoinRequests(String exchangeId) async {
     final auth = await buildAuthContext();
     if (!auth.hasValidToken) {
-      throw Exception('Debes iniciar sesion para ver las solicitudes');
+      throw Exception('You must be signed in to view requests');
     }
 
     final response = await http.get(
@@ -287,7 +287,7 @@ class ApiPublicExchangesRepository extends BaseApiRepository
   Future<void> acceptJoinRequest(String exchangeId, String requestId) async {
     final auth = await buildAuthContext();
     if (!auth.hasValidToken) {
-      throw Exception('Debes iniciar sesion');
+      throw Exception('You must be signed in');
     }
 
     final response = await http.post(
@@ -305,7 +305,7 @@ class ApiPublicExchangesRepository extends BaseApiRepository
   Future<void> rejectJoinRequest(String exchangeId, String requestId) async {
     final auth = await buildAuthContext();
     if (!auth.hasValidToken) {
-      throw Exception('Debes iniciar sesion');
+      throw Exception('You must be signed in');
     }
 
     final response = await http.post(
@@ -326,7 +326,7 @@ class ApiPublicExchangesRepository extends BaseApiRepository
       'Content-Type': 'application/json',
     });
     if (!auth.hasValidToken) {
-      throw Exception('Debes iniciar sesion para unirte');
+      throw Exception('You must be signed in to join');
     }
 
     final response = await http.post(

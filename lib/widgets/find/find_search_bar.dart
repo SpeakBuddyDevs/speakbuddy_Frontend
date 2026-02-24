@@ -12,7 +12,7 @@ class FindSearchBar extends StatelessWidget {
     super.key,
     required this.controller,
     this.onChanged,
-    this.hintText = 'Buscar compañeros...',
+    this.hintText = 'Search for partners...',
   });
 
   @override

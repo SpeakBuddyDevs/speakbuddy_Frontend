@@ -88,7 +88,7 @@ class _FindScreenState extends State<FindScreen> {
       if (!mounted) return;
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error al cargar usuarios')),
+        const SnackBar(content: Text('Failed to load users')),
       );
     }
   }
@@ -179,7 +179,7 @@ class _FindScreenState extends State<FindScreen> {
             },
         onProTap: () {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Pro próximamente')),
+            const SnackBar(content: Text('Pro coming soon')),
           );
         },
       ),
@@ -213,7 +213,7 @@ class _FindScreenState extends State<FindScreen> {
                               color: AppTheme.accent,
                             ),
                             label: Text(
-                              'Intercambios Públicos',
+                              'Public Exchanges',
                               style: TextStyle(color: AppTheme.accent),
                             ),
                             style: OutlinedButton.styleFrom(

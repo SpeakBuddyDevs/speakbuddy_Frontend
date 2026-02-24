@@ -19,9 +19,9 @@ class DateFormatters {
     final timeStr = '$hour:$minute';
     
     if (dateOnly == today) {
-      return 'Hoy • $timeStr';
+      return 'Today • $timeStr';
     } else if (dateOnly == tomorrow) {
-      return 'Mañana • $timeStr';
+      return 'Tomorrow • $timeStr';
     } else {
       // Calcular diferencia en días
       final diffDays = dateOnly.difference(today).inDays;

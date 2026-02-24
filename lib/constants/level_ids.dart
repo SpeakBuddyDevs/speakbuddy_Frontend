@@ -12,21 +12,21 @@ class LevelIds {
 
   /// Mapeo de nombres de nivel (frontend) a IDs del backend
   static const Map<String, int> nameToId = {
-    'A1 - Principiante': 1,    // A1
-    'A2 - Elemental': 2,       // A2
-    'B1 - Intermedio': 3,      // B1
-    'B2 - Intermedio Alto': 4, // B2
-    'C1 - Avanzado': 5,        // C1
+    'A1 - Beginner': 1,    // A1
+    'A2 - Elementary': 2,   // A2
+    'B1 - Intermediate': 3,      // B1
+    'B2 - Upper Intermediate': 4, // B2
+    'C1 - Advanced': 5,        // C1
     'C2 - Proficiency': 6,      // C2
   };
 
   /// Mapeo inverso: ID a nombre de nivel
   static const Map<int, String> idToName = {
-    1: 'A1 - Principiante',
-    2: 'A2 - Elemental',
-    3: 'B1 - Intermedio',
-    4: 'B2 - Intermedio Alto',
-    5: 'C1 - Avanzado',
+    1: 'A1 - Beginner',
+    2: 'A2 - Elementary',
+    3: 'B1 - Intermediate',
+    4: 'B2 - Upper Intermediate',
+    5: 'C1 - Advanced',
     6: 'C2 - Proficiency',
   };
 

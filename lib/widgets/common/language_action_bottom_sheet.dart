@@ -29,7 +29,7 @@ Future<String?> showLanguageActionBottomSheet(
                 color: isActive ? AppTheme.subtle : AppTheme.accent,
               ),
               title: Text(
-                isActive ? 'Desmarcar como activo' : 'Marcar como activo',
+                isActive ? 'Unset as active' : 'Set as active',
                 style: TextStyle(color: AppTheme.text),
               ),
               onTap: () =>
@@ -41,7 +41,7 @@ Future<String?> showLanguageActionBottomSheet(
                 color: AppTheme.subtle,
               ),
               title: Text(
-                'Configurar nivel',
+                'Set level',
                 style: TextStyle(color: AppTheme.text),
               ),
               onTap: () => Navigator.pop(ctx, 'level'),
@@ -52,7 +52,7 @@ Future<String?> showLanguageActionBottomSheet(
                 color: Colors.redAccent,
               ),
               title: Text(
-                'Eliminar idioma',
+                'Remove language',
                 style: TextStyle(color: AppTheme.text),
               ),
               onTap: () => Navigator.pop(ctx, 'delete'),

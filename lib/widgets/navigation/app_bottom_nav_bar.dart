@@ -22,11 +22,11 @@ class AppBottomNavBar extends StatelessWidget {
   });
 
   static const List<NavItem> _items = [
-    NavItem(icon: Icons.home_rounded, label: 'Inicio'),
-    NavItem(icon: Icons.search_rounded, label: 'Encontrar'),
-    NavItem(icon: Icons.chat_bubble_outline_rounded, label: 'Temas'),
-    NavItem(icon: Icons.emoji_events_outlined, label: 'Logros'),
-    NavItem(icon: Icons.person_outline_rounded, label: 'Perfil'),
+    NavItem(icon: Icons.home_rounded, label: 'Home'),
+    NavItem(icon: Icons.search_rounded, label: 'Find'),
+    NavItem(icon: Icons.chat_bubble_outline_rounded, label: 'Topics'),
+    NavItem(icon: Icons.emoji_events_outlined, label: 'Achievements'),
+    NavItem(icon: Icons.person_outline_rounded, label: 'Profile'),
   ];
 
   @override

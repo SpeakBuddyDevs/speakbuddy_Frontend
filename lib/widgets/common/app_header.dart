@@ -88,7 +88,7 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final displayName = userName ?? 'Usuario';
+    final displayName = userName ?? 'User';
     final userLevel = level ?? 1;
     final progress = (levelProgress ?? 0.0).clamp(0.0, 1.0);
 
@@ -122,7 +122,7 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
                   Row(
                     children: [
                       Text(
-                        'Nivel $userLevel',
+                        'Level $userLevel',
                         style: TextStyle(
                           color: AppTheme.subtle,
                           fontSize: AppDimensions.fontSizeXS,
@@ -157,7 +157,7 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
                           ? AppTheme.accent
                           : AppTheme.subtle,
                     ),
-                    tooltip: 'Notificaciones',
+                    tooltip: 'Notifications',
                   ),
                   if ((unreadNotificationsCount ?? 0) > 0)
                     Positioned(

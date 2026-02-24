@@ -61,17 +61,17 @@ class _FavoriteTopicsScreenState extends State<FavoriteTopicsScreen> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusL),
         ),
-        title: const Text('Eliminar favorito'),
-        content: const Text('¿Quieres eliminar este tema de tus favoritos?'),
+        title: const Text('Remove favorite'),
+        content: const Text('Do you want to remove this topic from your favorites?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
+            child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             child: Text(
-              'Eliminar',
+              'Remove',
               style: TextStyle(color: Colors.redAccent),
             ),
           ),
@@ -88,7 +88,7 @@ class _FavoriteTopicsScreenState extends State<FavoriteTopicsScreen> {
         _favorites?.removeWhere((t) => t.id == topic.id);
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Eliminado de favoritos')),
+        const SnackBar(content: Text('Removed from favorites')),
       );
     } catch (e) {
       if (!mounted) return;
@@ -120,7 +120,7 @@ class _FavoriteTopicsScreenState extends State<FavoriteTopicsScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Tema copiado al portapapeles'),
+        content: Text('Topic copied to clipboard'),
         duration: Duration(seconds: 2),
       ),
     );
@@ -132,7 +132,7 @@ class _FavoriteTopicsScreenState extends State<FavoriteTopicsScreen> {
       backgroundColor: AppTheme.background,
       appBar: AppBar(
         backgroundColor: AppTheme.background,
-        title: const Text('Temas Favoritos'),
+        title: const Text('Favorite Topics'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
@@ -195,7 +195,7 @@ class _FilterBar extends StatelessWidget {
         child: Row(
           children: [
             _FilterChip(
-              label: 'Todos',
+              label: 'All',
               isSelected: selectedCategory == null,
               onTap: () => onCategoryChanged(null),
             ),
@@ -278,8 +278,8 @@ class _EmptyState extends StatelessWidget {
           const SizedBox(height: AppDimensions.spacingL),
           Text(
             hasFilter
-                ? 'No hay favoritos en esta categoría'
-                : 'No tienes temas favoritos',
+                ? 'No favorites in this category'
+                : 'You have no favorite topics',
             style: TextStyle(
               color: AppTheme.subtle,
               fontSize: AppDimensions.fontSizeM,
@@ -288,8 +288,8 @@ class _EmptyState extends StatelessWidget {
           const SizedBox(height: AppDimensions.spacingSM),
           Text(
             hasFilter
-                ? 'Prueba con otra categoría'
-                : 'Guarda temas desde el generador',
+                ? 'Try another category'
+                : 'Save topics from the generator',
             style: TextStyle(
               color: AppTheme.subtle.withValues(alpha: 0.7),
               fontSize: AppDimensions.fontSizeS,
@@ -417,7 +417,7 @@ class _FavoriteTopicCard extends StatelessWidget {
                 Expanded(
                   child: _ActionButton(
                     icon: Icons.copy,
-                    label: 'Copiar',
+                    label: 'Copy',
                     onTap: onCopy,
                   ),
                 ),
@@ -429,7 +429,7 @@ class _FavoriteTopicCard extends StatelessWidget {
                 Expanded(
                   child: _ActionButton(
                     icon: Icons.delete_outline,
-                    label: 'Eliminar',
+                    label: 'Remove',
                     onTap: onRemove,
                     isDestructive: true,
                   ),
@@ -447,11 +447,11 @@ class _FavoriteTopicCard extends StatelessWidget {
     final diff = now.difference(date);
 
     if (diff.inDays == 0) {
-      return 'Hoy';
+      return 'Today';
     } else if (diff.inDays == 1) {
-      return 'Ayer';
+      return 'Yesterday';
     } else if (diff.inDays < 7) {
-      return 'Hace ${diff.inDays} días';
+      return '${diff.inDays} days ago';
     } else {
       return '${date.day}/${date.month}/${date.year}';
     }

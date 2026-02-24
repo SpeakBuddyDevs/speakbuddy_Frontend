@@ -66,7 +66,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
         },
         onProTap: () {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Pro próximamente')),
+            const SnackBar(content: Text('Pro coming soon')),
           );
         },
       ),
@@ -87,7 +87,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
                     _buildSectionHeader(
                       icon: Icons.emoji_events_rounded,
                       iconColor: AppTheme.gold,
-                      title: 'Medallas Desbloqueadas',
+                      title: 'Unlocked Badges',
                       count: _unlockedAchievements.length,
                     ),
                     const SizedBox(height: AppDimensions.spacingMD),
@@ -97,7 +97,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
                     _buildSectionHeader(
                       icon: Icons.lock_rounded,
                       iconColor: AppTheme.subtle,
-                      title: 'Por Desbloquear',
+                      title: 'To Unlock',
                       count: _lockedAchievements.length,
                     ),
                     const SizedBox(height: AppDimensions.spacingMD),
@@ -134,7 +134,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
 
   Widget _buildUnlockedGrid() {
     if (_unlockedAchievements.isEmpty) {
-      return _buildEmptyState('Aún no has desbloqueado ninguna medalla');
+      return _buildEmptyState('You have not unlocked any badges yet');
     }
 
     return GridView.builder(
@@ -158,11 +158,11 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
   Widget _buildLockedList() {
     // Si ambas listas están vacías, probablemente hay un error de carga
     if (_lockedAchievements.isEmpty && _unlockedAchievements.isEmpty) {
-      return _buildEmptyState('No se encontraron logros');
+      return _buildEmptyState('No achievements found');
     }
 
     if (_lockedAchievements.isEmpty) {
-      return _buildEmptyState('¡Has desbloqueado todos los logros!');
+      return _buildEmptyState('You have unlocked all achievements!');
     }
 
     return ListView.separated(

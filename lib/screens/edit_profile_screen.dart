@@ -76,7 +76,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     if (available.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No hay más idiomas para añadir')),
+        const SnackBar(content: Text('No more languages to add')),
       );
       return;
     }
@@ -126,7 +126,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (uploadedAvatarUrl == null) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error al subir la foto de perfil')),
+          const SnackBar(content: Text('Failed to upload profile picture')),
         );
         return;
       }
@@ -137,7 +137,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (!okProfile) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error al actualizar el perfil')),
+        const SnackBar(content: Text('Failed to update profile')),
       );
       return;
     }
@@ -148,7 +148,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (!okNative) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error al actualizar el idioma nativo')),
+          const SnackBar(content: Text('Failed to update native language')),
         );
         return;
       }
@@ -164,7 +164,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (!ok) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al eliminar idioma ${AppLanguages.getName(code)}')),
+          SnackBar(content: Text('Failed to remove language ${AppLanguages.getName(code)}')),
         );
         return;
       }
@@ -178,7 +178,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (!ok) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al añadir idioma ${AppLanguages.getName(code)}')),
+          SnackBar(content: Text('Failed to add language ${AppLanguages.getName(code)}')),
         );
         return;
       }
@@ -207,20 +207,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusL),
         ),
-        title: const Text('Eliminar cuenta'),
+        title: const Text('Delete account'),
         content: const Text(
-          '¿Estás seguro de que quieres eliminar tu cuenta?\n\n'
-          'Esta acción es irreversible y perderás todos tus datos.',
+          'Are you sure you want to delete your account?\n\n'
+          'This action cannot be undone and you will lose all your data.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
+            child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             child: const Text(
-              'Eliminar',
+              'Delete',
               style: TextStyle(color: Colors.redAccent),
             ),
           ),
@@ -257,7 +257,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       // Mostrar mensaje de éxito
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Tu cuenta ha sido eliminada'),
+          content: Text('Your account has been deleted'),
           backgroundColor: Colors.green,
         ),
       );
@@ -272,7 +272,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       // Mostrar error
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Error al eliminar la cuenta. Inténtalo de nuevo.'),
+          content: Text('Failed to delete account. Please try again.'),
           backgroundColor: Colors.red,
         ),
       );
@@ -291,7 +291,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       appBar: AppBar(
         backgroundColor: AppTheme.background,
         surfaceTintColor: Colors.transparent,
-        title: const Text('Editar perfil'),
+        title: const Text('Edit profile'),
       ),
       body: SingleChildScrollView(
         padding: AppDimensions.paddingScreen,
@@ -347,7 +347,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         child: ElevatedButton.icon(
                           onPressed: _pickImage,
                           icon: const Icon(Icons.photo_library_rounded),
-                          label: const Text('Cambiar foto'),
+                          label: const Text('Change photo'),
                         ),
                       ),
                     ],
@@ -368,7 +368,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     children: [
                       // Etiqueta arriba del campo de texto
                       Text(
-                        'Nombre',
+                        'Name',
                         style: TextStyle(
                           color: AppTheme.text,
                           fontSize: AppDimensions.fontSizeS,
@@ -388,7 +388,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
                       // Etiqueta arriba del combo
                       Text(
-                        'Idioma nativo',
+                        'Native language',
                         style: TextStyle(
                           color: AppTheme.text,
                           fontSize: AppDimensions.fontSizeS,
@@ -418,7 +418,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          'Idiomas que estás aprendiendo',
+                          'Languages you are learning',
                           style: TextStyle(
                             color: AppTheme.text,
                             fontWeight: FontWeight.w600,
@@ -444,7 +444,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               },
                             ),
                           ActionChip(
-                            label: const Text('Añadir'),
+                            label: const Text('Add'),
                             avatar: const Icon(Icons.add_rounded),
                             onPressed: _addLearningLanguage,
                           ),
@@ -460,12 +460,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   child: ElevatedButton.icon(
                     onPressed: _save,
                     icon: const Icon(Icons.save_rounded),
-                    label: const Text('Guardar cambios'),
+                    label: const Text('Save changes'),
                   ),
                 ),
                 const SizedBox(height: AppDimensions.spacingSM),
                 Text(
-                  'Los cambios se aplicarán al volver al perfil.',
+                  'Changes will apply when you return to the profile.',
                   style: TextStyle(color: AppTheme.subtle, fontSize: AppDimensions.fontSizeXS),
                 ),
                 const SizedBox(height: AppDimensions.spacingXXXL),
@@ -483,7 +483,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ),
                     onPressed: _deleteAccount,
                     icon: const Icon(Icons.delete_forever_rounded),
-                    label: const Text('Eliminar perfil'),
+                    label: const Text('Delete profile'),
                   ),
                 ),
               ],

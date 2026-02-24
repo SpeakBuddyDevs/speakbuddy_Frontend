@@ -44,7 +44,7 @@ class _RateParticipantsScreenState extends State<RateParticipantsScreen> {
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
-        title: const Text('Valorar participantes'),
+        title: const Text('Rate participants'),
         backgroundColor: AppTheme.background,
         automaticallyImplyLeading: false,
       ),
@@ -70,7 +70,7 @@ class _RateParticipantsScreenState extends State<RateParticipantsScreen> {
             Padding(
               padding: const EdgeInsets.all(AppDimensions.spacingL),
               child: Text(
-                '¡Intercambio confirmado! Valora a los demás participantes.',
+                'Exchange confirmed! Rate the other participants.',
                 style: TextStyle(
                   color: AppTheme.text.withOpacity(0.9),
                   fontSize: AppDimensions.fontSizeM,
@@ -114,7 +114,7 @@ class _RateParticipantsScreenState extends State<RateParticipantsScreen> {
                   style: FilledButton.styleFrom(
                     padding: AppDimensions.paddingButtonLarge,
                   ),
-                  child: const Text('Finalizar'),
+                  child: const Text('Finish'),
                 ),
               ),
             ),
@@ -215,7 +215,7 @@ class _ParticipantCard extends StatelessWidget {
                   vertical: AppDimensions.spacingSM,
                 ),
               ),
-              child: const Text('Valorar'),
+              child: const Text('Rate'),
             ),
         ],
       ),

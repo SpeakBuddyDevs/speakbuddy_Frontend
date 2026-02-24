@@ -23,7 +23,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Proyecto Idiomas',
+      title: 'SpeakBuddy',
       theme: AppTheme.darkTheme(),
       routes: {
         AppRoutes.home: (_) => const LoginScreen(),

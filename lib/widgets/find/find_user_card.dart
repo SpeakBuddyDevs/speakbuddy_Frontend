@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/find_user.dart';
 import '../../theme/app_theme.dart';
 import '../../constants/dimensions.dart';
+import '../../constants/countries.dart';
 
 /// Card de usuario para la pantalla Encontrar
 class FindUserCard extends StatelessWidget {
@@ -87,7 +88,7 @@ class FindUserCard extends StatelessWidget {
                     ),
                     const SizedBox(height: AppDimensions.spacingXS),
                     Text(
-                      user.country.isEmpty ? '—' : user.country,
+                      user.country.isEmpty ? '—' : AppCountries.displayName(user.country),
                       style: TextStyle(
                         color: AppTheme.subtle,
                         fontSize: AppDimensions.fontSizeS,
@@ -132,7 +133,7 @@ class FindUserCard extends StatelessWidget {
             children: [
               _MetricChip(
                 icon: Icons.trending_up_rounded,
-                label: 'Nivel ${user.level}',
+                label: 'Level ${user.level}',
               ),
               const SizedBox(width: AppDimensions.spacingSM),
               _MetricChip(
@@ -162,7 +163,7 @@ class FindUserCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
                     ),
                   ),
-                  child: const Text('Chatear'),
+                  child: const Text('Chat'),
                 ),
               ),
               const SizedBox(width: AppDimensions.spacingMD),
@@ -177,7 +178,7 @@ class FindUserCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
                     ),
                   ),
-                  child: const Text('Ver Perfil'),
+                  child: const Text('View profile'),
                 ),
               ),
             ],

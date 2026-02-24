@@ -14,5 +14,5 @@ class VideoPlatforms {
     'Jitsi Meet',
   ];
 
-  static const String otherLabel = 'Otra';
+  static const String otherLabel = 'Other';
 }

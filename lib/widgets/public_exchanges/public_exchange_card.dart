@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/public_exchange.dart';
 import '../../theme/app_theme.dart';
 import '../../constants/dimensions.dart';
+import '../../utils/requirement_display.dart';
 import '../password_input_dialog.dart';
 
 /// Card de intercambio público para la pantalla de Intercambios Públicos
@@ -48,17 +49,17 @@ class PublicExchangeCard extends StatelessWidget {
           child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header: Avatar + Título + Badge
+          // Header: Avatar + Title + Badge
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Avatar del creador
+              // Creator avatar
               _CreatorAvatar(
                 avatarUrl: exchange.creatorAvatarUrl,
                 creatorName: exchange.creatorName,
               ),
               const SizedBox(width: AppDimensions.spacingMD),
-              // Título y creador
+              // Title and creator
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -89,7 +90,7 @@ class PublicExchangeCard extends StatelessWidget {
                     ),
                     const SizedBox(height: AppDimensions.spacingXS),
                     Text(
-                      'Por ${exchange.creatorName}',
+                      'By ${exchange.creatorName}',
                       style: TextStyle(
                         color: AppTheme.subtle,
                         fontSize: AppDimensions.fontSizeS,
@@ -98,7 +99,7 @@ class PublicExchangeCard extends StatelessWidget {
                   ],
                 ),
               ),
-              // Badge "No elegible"
+              // \"Not eligible\" badge
               if (!exchange.isEligible) ...[
                 const SizedBox(width: AppDimensions.spacingSM),
                 _NotEligibleBadge(),
@@ -106,7 +107,7 @@ class PublicExchangeCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppDimensions.spacingMD),
-          // Descripción
+          // Description
           Text(
             exchange.description,
             style: TextStyle(
@@ -118,7 +119,7 @@ class PublicExchangeCard extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: AppDimensions.spacingMD),
-          // Intercambio bidireccional de idiomas
+          // Bidirectional language exchange
           if (exchange.nativeLanguage.isNotEmpty || exchange.targetLanguage.isNotEmpty)
             Container(
               padding: const EdgeInsets.symmetric(
@@ -154,7 +155,7 @@ class PublicExchangeCard extends StatelessWidget {
               ),
             ),
           const SizedBox(height: AppDimensions.spacingMD),
-          // Tags: Nivel, Fecha
+          // Tags: Level, Date
           Wrap(
             spacing: AppDimensions.spacingSM,
             runSpacing: AppDimensions.spacingSM,
@@ -172,7 +173,7 @@ class PublicExchangeCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppDimensions.spacingSM),
-          // Tags: Duración, Participantes
+          // Tags: Duration, Participants
           Wrap(
             spacing: AppDimensions.spacingSM,
             runSpacing: AppDimensions.spacingSM,
@@ -187,7 +188,7 @@ class PublicExchangeCard extends StatelessWidget {
                 label: '$currentParticipants/${exchange.maxParticipants}',
                 borderColor: isFull ? Colors.orange : AppTheme.border,
               ),
-              // Badge "Lleno" cuando está completo
+              // \"Full\" badge when full
               if (isFull)
                 Container(
                   padding: const EdgeInsets.symmetric(
@@ -209,7 +210,7 @@ class PublicExchangeCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        'Lleno',
+                        'Full',
                         style: TextStyle(
                           color: Colors.orange,
                           fontSize: AppDimensions.fontSizeXS,
@@ -222,7 +223,7 @@ class PublicExchangeCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppDimensions.spacingMD),
-          // Detalles adicionales: Nivel mínimo y idiomas
+          // Extra details: minimum level and languages
           Wrap(
             spacing: AppDimensions.spacingSM,
             runSpacing: AppDimensions.spacingXS,
@@ -238,7 +239,7 @@ class PublicExchangeCard extends StatelessWidget {
                   ),
                   const SizedBox(width: AppDimensions.spacingXS),
                   Text(
-                    'Nivel ${exchange.minLevel}+',
+                    'Level ${exchange.minLevel}+',
                     style: TextStyle(
                       color: AppTheme.subtle,
                       fontSize: AppDimensions.fontSizeS,
@@ -256,7 +257,7 @@ class PublicExchangeCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'Ofrece: ${exchange.nativeLanguage}',
+                  'Offers: ${exchange.nativeLanguage}',
                   style: TextStyle(
                     color: AppTheme.subtle,
                     fontSize: AppDimensions.fontSizeS,
@@ -273,7 +274,7 @@ class PublicExchangeCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'Busca: ${exchange.targetLanguage}',
+                  'Looking for: ${exchange.targetLanguage}',
                   style: TextStyle(
                     color: AppTheme.subtle,
                     fontSize: AppDimensions.fontSizeS,
@@ -282,7 +283,7 @@ class PublicExchangeCard extends StatelessWidget {
               ],
             ],
           ),
-          // Temas/categorías (solo si hay temas)
+          // Topics/categories (only if present)
           if (exchange.topics != null && exchange.topics!.isNotEmpty) ...[
             const SizedBox(height: AppDimensions.spacingSM),
             Row(
@@ -307,7 +308,7 @@ class PublicExchangeCard extends StatelessWidget {
               ],
             ),
           ],
-          // Plataformas de videollamada
+          // Video platforms
           const SizedBox(height: AppDimensions.spacingSM),
           Row(
             children: [
@@ -321,7 +322,7 @@ class PublicExchangeCard extends StatelessWidget {
                 child: Text(
                   exchange.platforms != null && exchange.platforms!.isNotEmpty
                       ? exchange.platforms!.join(', ')
-                      : 'Plataforma por acordar',
+                      : 'Platform to be agreed',
                   style: TextStyle(
                     color: AppTheme.subtle,
                     fontSize: AppDimensions.fontSizeS,
@@ -332,7 +333,7 @@ class PublicExchangeCard extends StatelessWidget {
               ),
             ],
           ),
-          // Caja de requisitos no cumplidos
+          // Box for unmet requirements
           if (!exchange.isEligible && exchange.unmetRequirements != null && exchange.unmetRequirements!.isNotEmpty) ...[
             const SizedBox(height: AppDimensions.spacingMD),
             Container(
@@ -346,7 +347,7 @@ class PublicExchangeCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'No cumples estos requisitos:',
+                    'You do not meet these requirements:',
                     style: TextStyle(
                       color: AppTheme.text,
                       fontSize: AppDimensions.fontSizeS,
@@ -366,7 +367,7 @@ class PublicExchangeCard extends StatelessWidget {
                             const SizedBox(width: AppDimensions.spacingSM),
                             Expanded(
                               child: Text(
-                                req,
+                                translateRequirement(req),
                                 style: TextStyle(
                                   color: AppTheme.gold,
                                   fontSize: AppDimensions.fontSizeS,
@@ -381,7 +382,7 @@ class PublicExchangeCard extends StatelessWidget {
             ),
           ],
           const SizedBox(height: AppDimensions.spacingL),
-          // Botones
+          // Buttons
           Row(
             children: [
               Expanded(
@@ -399,7 +400,7 @@ class PublicExchangeCard extends StatelessWidget {
                             side: BorderSide(color: AppTheme.border),
                           ),
                         ),
-                        child: const Text('Te has unido'),
+                        child: const Text('Joined'),
                       )
                     : exchange.hasPendingJoinRequest
                         ? ElevatedButton(
@@ -415,7 +416,7 @@ class PublicExchangeCard extends StatelessWidget {
                                 side: BorderSide(color: AppTheme.border),
                               ),
                             ),
-                            child: const Text('Solicitud enviada'),
+                            child: const Text('Request sent'),
                           )
                         : ElevatedButton(
                             onPressed: isFull ? null : () => _handleJoin(context),
@@ -453,10 +454,10 @@ class PublicExchangeCard extends StatelessWidget {
                                 ],
                                 Text(
                                   isFull
-                                      ? 'Lleno'
+                                      ? 'Full'
                                       : (!exchange.isPublic
-                                          ? 'Unirse'
-                                          : (exchange.isEligible ? 'Unirse' : 'Solicitar unirse')),
+                                          ? 'Join'
+                                          : (exchange.isEligible ? 'Join' : 'Request to join')),
                                 ),
                               ],
                             ),
@@ -476,7 +477,7 @@ class PublicExchangeCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
                     ),
                   ),
-                  child: const Text('Ver perfil'),
+                  child: const Text('View profile'),
                 ),
               ),
             ],
@@ -484,7 +485,7 @@ class PublicExchangeCard extends StatelessWidget {
         ],
       ),
         ),
-        // Icono rojo para abandonar intercambio (solo cuando está unido)
+        // Red icon to leave exchange (only when joined)
         if (isJoined && onLeave != null)
           Positioned(
             top: AppDimensions.spacingSM,
@@ -494,7 +495,7 @@ class PublicExchangeCard extends StatelessWidget {
               color: Colors.redAccent,
               iconSize: 24,
               onPressed: onLeave,
-              tooltip: 'Abandonar intercambio',
+              tooltip: 'Leave exchange',
               style: IconButton.styleFrom(
                 backgroundColor: AppTheme.card.withValues(alpha: 0.9),
                 padding: const EdgeInsets.all(AppDimensions.spacingXS),
@@ -528,53 +529,53 @@ class PublicExchangeCard extends StatelessWidget {
     final dayAfterTomorrow = today.add(const Duration(days: 2));
 
     final months = [
-      'enero',
-      'febrero',
-      'marzo',
-      'abril',
-      'mayo',
-      'junio',
-      'julio',
-      'agosto',
-      'septiembre',
-      'octubre',
-      'noviembre',
-      'diciembre'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December'
     ];
 
     final weekdays = [
-      'Lunes',
-      'Martes',
-      'Miércoles',
-      'Jueves',
-      'Viernes',
-      'Sábado',
-      'Domingo'
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday'
     ];
 
     final hour = date.hour.toString().padLeft(2, '0');
     final minute = date.minute.toString().padLeft(2, '0');
     final timeStr = '$hour:$minute';
 
-    // Si es hoy
+    // Today
     if (dateOnly == today) {
-      return 'Hoy, $timeStr';
+      return 'Today, $timeStr';
     }
-    // Si es mañana
+    // Tomorrow
     if (dateOnly == tomorrow) {
-      return 'Mañana, $timeStr';
+      return 'Tomorrow, $timeStr';
     }
-    // Si es pasado mañana
+    // The day after tomorrow
     if (dateOnly == dayAfterTomorrow) {
-      return 'Pasado mañana, $timeStr';
+      return 'The day after tomorrow, $timeStr';
     }
-    // Si es esta semana (dentro de 7 días)
+    // Within this week (next 7 days)
     final daysDiff = dateOnly.difference(today).inDays;
     if (daysDiff > 0 && daysDiff <= 7) {
       final weekday = weekdays[date.weekday - 1];
       return '$weekday ${date.day} ${months[date.month - 1]}, $timeStr';
     }
-    // Para fechas más lejanas (mostrar año solo si es diferente al actual)
+    // For later dates (show year only if different)
     if (date.year != now.year) {
       return '${date.day} ${months[date.month - 1]} ${date.year}, $timeStr';
     }

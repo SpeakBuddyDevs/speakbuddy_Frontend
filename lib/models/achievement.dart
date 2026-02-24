@@ -112,6 +112,74 @@ class Achievement {
 
   int get progressPercentInt => (progressPercent * 100).round();
 
+  /// English title for UI (from type; falls back to backend title for unknown).
+  String get displayTitle {
+    switch (type) {
+      case AchievementType.polyglot:
+        return 'Polyglot';
+      case AchievementType.conversationalist:
+        return 'Conversationalist';
+      case AchievementType.earlyBird:
+        return 'Early Riser';
+      case AchievementType.nightOwl:
+        return 'Night Owl';
+      case AchievementType.dedicated:
+        return 'Dedicated';
+      case AchievementType.popular:
+        return 'Popular';
+      case AchievementType.perfectionist:
+        return 'Perfectionist';
+      case AchievementType.veteran:
+        return 'Veteran';
+      case AchievementType.star:
+        return 'Star';
+      case AchievementType.streak:
+        return 'Streak';
+      case AchievementType.explorer:
+        return 'Explorer';
+      case AchievementType.mentor:
+        return 'Mentor';
+      case AchievementType.host:
+        return 'Host';
+      case AchievementType.unknown:
+        return title.isNotEmpty ? title : 'Achievement';
+    }
+  }
+
+  /// English description for UI (from type + targetProgress; falls back to backend for unknown).
+  String get displayDescription {
+    switch (type) {
+      case AchievementType.polyglot:
+        return '$targetProgress languages practiced';
+      case AchievementType.conversationalist:
+        return '$targetProgress conversations';
+      case AchievementType.earlyBird:
+        return '$targetProgress morning sessions';
+      case AchievementType.nightOwl:
+        return '$targetProgress evening sessions';
+      case AchievementType.dedicated:
+        return '$targetProgress hours studied';
+      case AchievementType.popular:
+        return '$targetProgress favorites received';
+      case AchievementType.perfectionist:
+        return '$targetProgress perfect ratings';
+      case AchievementType.veteran:
+        return '$targetProgress exchanges completed';
+      case AchievementType.star:
+        return '$targetProgress 5-star ratings';
+      case AchievementType.streak:
+        return '$targetProgress day streak';
+      case AchievementType.explorer:
+        return '$targetProgress topics explored';
+      case AchievementType.mentor:
+        return '$targetProgress learners helped';
+      case AchievementType.host:
+        return '$targetProgress exchanges hosted';
+      case AchievementType.unknown:
+        return description.isNotEmpty ? description : '';
+    }
+  }
+
   factory Achievement.fromJson(Map<String, dynamic> json) {
     return Achievement(
       id: json['id']?.toString() ?? '',

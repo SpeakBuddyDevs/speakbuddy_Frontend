@@ -12,26 +12,26 @@ abstract class AuthError implements Exception {
     switch (statusCode) {
       case 401:
         return InvalidCredentialsError(
-          'Correo o contraseña incorrectos',
+          'Incorrect email or password',
         );
       case 409:
         return UserExistsError(
-          'Este correo ya está registrado',
+          'This email is already registered',
         );
       case 400:
         return InvalidCredentialsError(
-          'Datos inválidos. Revisa el formulario',
+          'Invalid data. Please check the form',
         );
       case 500:
       case 502:
       case 503:
       case 504:
         return ServerError(
-          'Error del servidor. Intenta más tarde',
+          'Server error. Please try again later',
         );
       default:
         return UnknownError(
-          'Error inesperado. Intenta nuevamente',
+          'Unexpected error. Please try again',
         );
     }
   }
@@ -39,26 +39,26 @@ abstract class AuthError implements Exception {
 
 /// Error de conexión (timeout, sin internet, etc.)
 class NetworkError extends AuthError {
-  const NetworkError([super.message = 'Error de conexión. Verifica tu internet.']);
+  const NetworkError([super.message = 'Connection error. Check your internet connection.']);
 }
 
 /// Error de credenciales incorrectas (401)
 class InvalidCredentialsError extends AuthError {
-  const InvalidCredentialsError([super.message = 'Correo o contraseña incorrectos']);
+  const InvalidCredentialsError([super.message = 'Incorrect email or password']);
 }
 
 /// Error de usuario ya registrado (409)
 class UserExistsError extends AuthError {
-  const UserExistsError([super.message = 'Este correo ya está registrado']);
+  const UserExistsError([super.message = 'This email is already registered']);
 }
 
 /// Error del servidor (500+)
 class ServerError extends AuthError {
-  const ServerError([super.message = 'Error del servidor. Intenta más tarde']);
+  const ServerError([super.message = 'Server error. Please try again later']);
 }
 
 /// Error desconocido o no categorizado
 class UnknownError extends AuthError {
-  const UnknownError([super.message = 'Error inesperado. Intenta nuevamente']);
+  const UnknownError([super.message = 'Unexpected error. Please try again']);
 }
 

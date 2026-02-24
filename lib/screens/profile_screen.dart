@@ -73,7 +73,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Bonus diario reclamado'),
+            content: Text('Daily bonus claimed'),
             backgroundColor: Colors.green,
           ),
         );
@@ -85,7 +85,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(result?['message'] ?? 'Ya has reclamado el bonus hoy'),
+          content: Text(result?['message'] ?? 'You have already claimed the bonus today'),
           backgroundColor: Colors.orange,
         ),
       );
@@ -111,7 +111,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: AppDimensions.spacingMD),
             Text(
-              'Subiste de nivel',
+              'Level up!',
               style: TextStyle(
                 color: AppTheme.text,
                 fontWeight: FontWeight.w700,
@@ -120,7 +120,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
         content: Text(
-          'Ahora eres nivel $newLevel',
+          'You are now level $newLevel',
           textAlign: TextAlign.center,
           style: TextStyle(
             color: AppTheme.subtle,
@@ -134,7 +134,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               backgroundColor: AppTheme.accent,
               minimumSize: const Size(double.infinity, 48),
             ),
-            child: const Text('Continuar'),
+            child: const Text('Continue'),
           ),
         ],
       ),
@@ -154,24 +154,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppDimensions.radiusL),
           ),
-          title: const Text('Editar descripción'),
+          title: const Text('Edit description'),
           content: TextField(
             controller: controller,
             maxLines: 6,
             decoration: const InputDecoration(
-              labelText: 'Descripción del perfil',
+              labelText: 'Profile description',
               alignLabelWithHint: true,
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancelar'),
+              child: const Text('Cancel'),
             ),
             ElevatedButton(
               onPressed: () =>
                   Navigator.of(context).pop(controller.text.trim()),
-              child: const Text('Guardar'),
+              child: const Text('Save'),
             ),
           ],
         );
@@ -203,7 +203,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Error al guardar la descripción'),
+          content: Text('Failed to save description'),
           backgroundColor: Colors.red,
         ),
       );
@@ -217,7 +217,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'No se puede añadir; recarga el perfil e inténtalo de nuevo.',
+            'Cannot add; reload profile and try again.',
           ),
         ),
       );
@@ -249,7 +249,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('No hay más idiomas disponibles para añadir'),
+          content: Text('No more languages available to add'),
         ),
       );
       return;
@@ -269,7 +269,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final newItem = LanguageItem(
       code: picked,
       name: display,
-      level: 'Principiante',
+      level: 'Beginner',
     );
 
     setState(() {
@@ -296,7 +296,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al añadir idioma $display')),
+        SnackBar(content: Text('Failed to add language $display')),
       );
       return;
     }
@@ -342,7 +342,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Error al activar el idioma'),
+            content: Text('Failed to activate language'),
             backgroundColor: Colors.red,
           ),
         );
@@ -382,7 +382,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Error al desactivar el idioma'),
+            content: Text('Failed to deactivate language'),
             backgroundColor: Colors.red,
           ),
         );
@@ -413,7 +413,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (levelId == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Nivel no válido'),
+            content: Text('Invalid level'),
             backgroundColor: Colors.red,
           ),
         );
@@ -454,7 +454,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Error al actualizar el nivel'),
+            content: Text('Failed to update level'),
             backgroundColor: Colors.red,
           ),
         );
@@ -502,7 +502,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error al eliminar ${lang.name}'),
+            content: Text('Failed to remove ${lang.name}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -518,17 +518,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusL),
         ),
-        title: const Text('Cerrar sesión'),
-        content: const Text('¿Estás seguro de que quieres cerrar sesión?'),
+        title: const Text('Sign out'),
+        content: const Text('Are you sure you want to sign out?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
+            child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             child: const Text(
-              'Cerrar sesión',
+              'Sign out',
               style: TextStyle(color: Colors.redAccent),
             ),
           ),
@@ -551,7 +551,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           backgroundColor: Colors.red,
-          content: Text('Error al cerrar sesión. Inténtalo de nuevo.'),
+          content: Text('Failed to sign out. Please try again.'),
         ),
       );
     }
@@ -571,7 +571,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (_profile == null) {
       return Scaffold(
         backgroundColor: AppTheme.background,
-        appBar: AppBar(title: const Text('Perfil')),
+        appBar: AppBar(title: const Text('Profile')),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -585,7 +585,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 16),
               TextButton(
                 onPressed: _onLogout,
-                child: const Text("Cerrar sesión"),
+                child: const Text('Sign out'),
               ),
             ],
           ),
@@ -613,7 +613,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         onProTap: () {
           ScaffoldMessenger.of(
             context,
-          ).showSnackBar(const SnackBar(content: Text('Pro próximamente')));
+          ).showSnackBar(const SnackBar(content: Text('Pro coming soon')));
         },
       ),
       body: RefreshIndicator(
@@ -658,17 +658,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ],
               const SizedBox(height: AppDimensions.spacingL),
               _Section(
-                title: 'Descripción del perfil',
+                title: 'Profile description',
                 trailing: IconButton(
                   onPressed: _editDescription,
                   icon: const Icon(Icons.edit_rounded),
-                  tooltip: 'Editar descripción',
+                  tooltip: 'Edit description',
                 ),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
                     _profile!.description.isEmpty
-                        ? 'Añade una descripción...'
+                        ? 'Add a description...'
                         : _profile!.description,
                     style: TextStyle(
                       color: AppTheme.text,
@@ -681,30 +681,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _StatsRow(profile: _profile!),
               const SizedBox(height: AppDimensions.spacingL),
               _Section(
-                title: 'Estadísticas Detalladas',
+                title: 'Detailed statistics',
                 child: Column(
                   children: [
                     _StatLine(
                       icon: Icons.access_time_rounded,
-                      label: 'Horas totales',
+                      label: 'Total hours',
                       value: '${_profile!.hoursTotal.toStringAsFixed(2)} h',
                     ),
                     Divider(color: AppTheme.border, height: 1),
                     _StatLine(
                       icon: Icons.local_fire_department_rounded,
-                      label: 'Racha actual',
-                      value: '${_profile!.currentStreakDays} días',
+                      label: 'Current streak',
+                      value: '${_profile!.currentStreakDays} days',
                     ),
                     Divider(color: AppTheme.border, height: 1),
                     _StatLine(
                       icon: Icons.emoji_events_rounded,
-                      label: 'Mejor racha',
-                      value: '${_profile!.bestStreakDays} días',
+                      label: 'Best streak',
+                      value: '${_profile!.bestStreakDays} days',
                     ),
                     Divider(color: AppTheme.border, height: 1),
                     _StatLine(
                       icon: Icons.military_tech_rounded,
-                      label: 'Medallas',
+                      label: 'Achievements',
                       value: '${_profile!.medals}',
                     ),
                   ],
@@ -712,11 +712,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: AppDimensions.spacingL),
               _Section(
-                title: 'Idiomas de Aprendizaje',
+                title: 'Learning languages',
                 trailing: TextButton.icon(
                   onPressed: _addLearningLanguage,
                   icon: const Icon(Icons.add_rounded),
-                  label: const Text('Añadir'),
+                  label: const Text('Add'),
                 ),
                 child: Column(
                   children: _profile!.learningLanguages
@@ -772,7 +772,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         context,
                                       ).showSnackBar(
                                         const SnackBar(
-                                          content: Text("Error de conexión"),
+                                          content: Text('Connection error'),
                                         ),
                                       );
                                       _loadUserProfile();
@@ -824,12 +824,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: AppDimensions.spacingL),
               _Section(
-                title: 'Configuración',
+                title: 'Settings',
                 child: Column(
                   children: [
                     _ActionTile(
                       icon: Icons.settings_rounded,
-                      label: 'Ajustes',
+                      label: 'Settings',
                       onTap: () async {
                         final result = await Navigator.push(
                           context,
@@ -862,7 +862,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   return LanguageItem(
                                     code: code,
                                     name: display,
-                                    level: 'Principiante',
+                                    level: 'Beginner',
                                   );
                                 })
                                 .toList();
@@ -897,7 +897,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Divider(color: AppTheme.border, height: 1),
                     _ActionTile(
                       icon: Icons.logout_rounded,
-                      label: 'Cerrar sesión',
+                      label: 'Sign out',
                       danger: true,
                       onTap: () => _onLogout(),
                     ),
@@ -1020,7 +1020,7 @@ class _UserCard extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Nivel ${profile.level}',
+                      'Level ${profile.level}',
                       style: TextStyle(
                         color: AppTheme.text,
                         fontWeight: FontWeight.w600,
@@ -1070,7 +1070,7 @@ class _UserCard extends StatelessWidget {
                 ),
                 const SizedBox(height: AppDimensions.spacingSM),
                 Text(
-                  '${profile.experiencePoints} / ${profile.xpToNextLevel} XP para nivel ${profile.level + 1}',
+                  '${profile.experiencePoints} / ${profile.xpToNextLevel} XP to level ${profile.level + 1}',
                   style: TextStyle(
                     color: AppTheme.subtle,
                     fontSize: AppDimensions.fontSizeXS,
@@ -1129,7 +1129,7 @@ class _StatsRow extends StatelessWidget {
         Expanded(
           child: _SmallStatCard(
             icon: Icons.chat_bubble_rounded,
-            label: 'Intercambios',
+            label: 'Exchanges',
             value: '${profile.exchanges}',
           ),
         ),
@@ -1137,7 +1137,7 @@ class _StatsRow extends StatelessWidget {
         Expanded(
           child: _SmallStatCard(
             icon: Icons.star_rounded,
-            label: 'Valoración',
+            label: 'Rating',
             value: profile.rating.toStringAsFixed(1),
           ),
         ),
@@ -1145,7 +1145,7 @@ class _StatsRow extends StatelessWidget {
         Expanded(
           child: _SmallStatCard(
             icon: Icons.language_rounded,
-            label: 'Idiomas',
+            label: 'Languages',
             value: '${profile.languagesCount}',
           ),
         ),

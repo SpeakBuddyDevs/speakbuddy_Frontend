@@ -12,6 +12,7 @@ import '../repositories/fake_exchange_participants_repository.dart';
 import '../services/current_user_service.dart';
 import '../services/exchange_chat_read_service.dart';
 import '../constants/app_constants.dart';
+import '../constants/countries.dart';
 import '../constants/routes.dart';
 import '../theme/app_theme.dart';
 import '../constants/dimensions.dart';
@@ -137,7 +138,7 @@ class _ChatScreenState extends State<ChatScreen> {
       senderNamesMap[participant.id] = participant.name;
     }
     // Añadir nombre para mensajes del sistema
-    senderNamesMap['system_bot'] = 'Sistema';
+    senderNamesMap['system_bot'] = 'System';
 
     if (!mounted) return;
 
@@ -267,7 +268,7 @@ class _ChatScreenState extends State<ChatScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  user?.name ?? 'Usuario',
+                  user?.name ?? 'User',
                   style: TextStyle(
                     color: AppTheme.text,
                     fontSize: AppDimensions.fontSizeM,
@@ -276,7 +277,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
                 if (user?.isOnline == true)
                   Text(
-                    'En línea',
+                    'Online',
                     style: TextStyle(
                       color: Colors.green,
                       fontSize: AppDimensions.fontSizeXS,
@@ -302,7 +303,7 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
           const SizedBox(height: AppDimensions.spacingL),
           Text(
-            'Inicia la conversación',
+            'Start the conversation',
             style: TextStyle(
               color: AppTheme.subtle,
               fontSize: AppDimensions.fontSizeM,
@@ -334,7 +335,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   PreferredSizeWidget _buildExchangeAppBar() {
     final exchange = _exchange;
-    final title = exchange?.title ?? 'Chat del intercambio';
+    final title = exchange?.title ?? 'Exchange chat';
     final languages = exchange != null
         ? '${exchange.nativeLanguage} → ${exchange.targetLanguage}'
         : '';
@@ -378,7 +379,7 @@ class _ChatScreenState extends State<ChatScreen> {
             size: AppDimensions.iconSizeM,
           ),
           onPressed: _showParticipantsBottomSheet,
-          tooltip: 'Ver participantes',
+          tooltip: 'View participants',
         ),
         const SizedBox(width: AppDimensions.spacingSM),
       ],
@@ -444,7 +445,7 @@ class _ParticipantsBottomSheet extends StatelessWidget {
           ),
           // Título
           Text(
-            'Participantes (${participants.length})',
+            'Participants (${participants.length})',
             style: TextStyle(
               color: AppTheme.text,
               fontSize: AppDimensions.fontSizeL,
@@ -585,7 +586,7 @@ class _ParticipantTile extends StatelessWidget {
                       ),
                       const SizedBox(width: AppDimensions.spacingXS),
                       Text(
-                        participant.country,
+                        AppCountries.displayName(participant.country),
                         style: TextStyle(
                           color: AppTheme.subtle,
                           fontSize: AppDimensions.fontSizeXS,

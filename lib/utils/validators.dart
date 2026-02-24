@@ -6,20 +6,20 @@ class FormValidators {
   /// Retorna null si es válido, o un mensaje de error si no lo es
   static String? validateEmail(String? value) {
     if (value == null || value.isEmpty) {
-      return 'Introduce tu correo';
+      return 'Enter your email';
     }
     final ok = RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value.trim());
-    return ok ? null : 'Correo no válido';
+    return ok ? null : 'Invalid email';
   }
 
   /// Valida una contraseña con longitud mínima
   /// Retorna null si es válido, o un mensaje de error si no lo es
   static String? validatePassword(String? value, {int minLength = 6}) {
     if (value == null || value.isEmpty) {
-      return 'Introduce tu contraseña';
+      return 'Enter your password';
     }
     if (value.length < minLength) {
-      return 'Mínimo $minLength caracteres';
+      return 'Minimum $minLength characters';
     }
     return null;
   }
@@ -28,7 +28,7 @@ class FormValidators {
   /// Retorna null si es válido, o un mensaje de error si no lo es
   static String? validatePasswordRequired(String? value) {
     if (value == null || value.isEmpty) {
-      return 'Introduce tu contraseña';
+      return 'Enter your password';
     }
     return null;
   }
@@ -37,10 +37,10 @@ class FormValidators {
   /// Retorna null si es válido, o un mensaje de error si no lo es
   static String? validateName(String? value, {int minLength = 3}) {
     if (value == null || value.trim().isEmpty) {
-      return 'Escribe tu nombre';
+      return 'Enter your name';
     }
     if (value.trim().length < minLength) {
-      return 'Introduce tu nombre';
+      return 'Enter your name';
     }
     return null;
   }
@@ -49,7 +49,7 @@ class FormValidators {
   /// Retorna null si es válido, o un mensaje de error si no lo es
   static String? validateNameRequired(String? value) {
     if (value == null || value.trim().isEmpty) {
-      return 'Escribe tu nombre';
+      return 'Enter your name';
     }
     return null;
   }
@@ -58,10 +58,10 @@ class FormValidators {
   /// Retorna null si es válido, o un mensaje de error si no lo es
   static String? validatePasswordMatch(String? value, String? otherPassword) {
     if (value == null || value.isEmpty) {
-      return 'Repite la contraseña';
+      return 'Repeat the password';
     }
     if (value != otherPassword) {
-      return 'Las contraseñas no coinciden';
+      return 'Passwords do not match';
     }
     return null;
   }

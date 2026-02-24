@@ -63,7 +63,7 @@ class AppBottomSheetScaffold extends StatelessWidget {
                   TextButton(
                     onPressed: onReset,
                     child: Text(
-                      'Restablecer',
+                      'Reset',
                       style: TextStyle(color: AppTheme.accent),
                     ),
                   ),

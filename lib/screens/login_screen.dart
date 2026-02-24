@@ -66,7 +66,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       const AppLogo(),
                       const SizedBox(height: AppDimensions.spacingMD),
                       Text(
-                        'Bienvenido de nuevo',
+                        'Welcome back',
                         style: TextStyle(
                           fontSize: AppDimensions.fontSizeXL,
                           fontWeight: FontWeight.w600,
@@ -75,7 +75,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: AppDimensions.spacingXS),
                       Text(
-                        'Continúa tu viaje de intercambio de idiomas',
+                        'Continue your language exchange journey',
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                           color: AppTheme.subtle,
@@ -86,7 +86,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          'Correo electrónico',
+                          'Email',
                           style: TextStyle(color: AppTheme.text),
                         ),
                       ),
@@ -105,7 +105,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       Row(
                         children: [
                           Text(
-                            'Contraseña',
+                            'Password',
                             style: TextStyle(color: AppTheme.text),
                           ),
                           const Spacer(),
@@ -116,7 +116,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               minimumSize: Size.zero,
                             ),
                             child: Text(
-                              '¿Olvidaste tu contraseña?',
+                              'Forgot your password?',
                               style: TextStyle(color: AppTheme.accent),
                             ),
                           ),
@@ -163,7 +163,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               padding: EdgeInsets.zero,
                             ),
                             child: const Text(
-                              'Iniciar sesión',
+                              'Sign in',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w600,
@@ -179,7 +179,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           Navigator.pushReplacementNamed(context, AppRoutes.main);
                         },
                         child: Text(
-                          'Ver perfil (modo prueba)',
+                          'View profile (test mode)',
                           style: TextStyle(color: AppTheme.accent),
                         ),
                       ),
@@ -193,7 +193,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           Padding(
                             padding: AppDimensions.paddingDivider,
                             child: Text(
-                              'o continúa con',
+                              'or continue with',
                               style: TextStyle(color: AppTheme.subtle),
                             ),
                           ),
@@ -223,14 +223,14 @@ class _LoginScreenState extends State<LoginScreen> {
                         alignment: WrapAlignment.center,
                         children: [
                           Text(
-                            '¿No tienes una cuenta? ',
+                            'Don\'t have an account? ',
                             style: TextStyle(color: AppTheme.subtle),
                           ),
                           InkWell(
                             onTap: () =>
                                 Navigator.pushNamed(context, AppRoutes.register),
                             child: Text(
-                              'Regístrate aquí',
+                              'Sign up here',
                               style: TextStyle(
                                 color: AppTheme.accent,
                                 fontWeight: FontWeight.w600,
@@ -256,9 +256,10 @@ class _LoginScreenState extends State<LoginScreen> {
     final ok = FormValidators.isFormValid(_formKey);
     if (!ok) return;
 
-    // Mostrar feedback visual
-    ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text('Conectando con servidor...')));
+    // Visual feedback
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Connecting to server...')),
+    );
 
     // Llamar al backend
     final result = await _authService.login(
@@ -269,18 +270,18 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return; // Buena práctica en Flutter async
 
     if (result.success) {
-      // Si el login es correcto, navegamos a la pantalla principal
+      // If login is correct, navigate to main screen
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('¡Login correcto! Token guardado.')));
-          
+        const SnackBar(content: Text('Login successful! Token saved.')),
+      );
       Navigator.pushReplacementNamed(context, AppRoutes.main);
     } else {
-      // Mostrar mensaje específico según el tipo de error
+      // Show specific message depending on error type
       String errorMessage;
       if (result.error != null) {
         errorMessage = result.error!.message;
       } else {
-        errorMessage = 'Error inesperado. Intenta nuevamente.';
+        errorMessage = 'Unexpected error. Please try again.';
       }
       
       ScaffoldMessenger.of(context).showSnackBar(

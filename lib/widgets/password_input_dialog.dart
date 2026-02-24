@@ -96,11 +96,11 @@ class _PasswordInputDialogState extends State<PasswordInputDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancelar'),
+          child: const Text('Cancel'),
         ),
         FilledButton(
           onPressed: _onSubmit,
-          child: const Text('Unirse'),
+          child: const Text('Join'),
         ),
       ],
     );

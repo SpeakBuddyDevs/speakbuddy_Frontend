@@ -6,23 +6,23 @@ import '../common/app_bottom_sheet_scaffold.dart';
 import '../common/filter_widgets.dart';
 
 const List<String> _availableLanguages = [
-  'Español',
-  'Inglés',
-  'Francés',
-  'Alemán',
-  'Italiano',
-  'Portugués',
-  'Chino',
-  'Japonés',
-  'Ruso',
-  'Árabe',
-  'Coreano',
+  'Spanish',
+  'English',
+  'French',
+  'German',
+  'Italian',
+  'Portuguese',
+  'Chinese',
+  'Japanese',
+  'Russian',
+  'Arabic',
+  'Korean',
 ];
 
 const List<String> _availableLevels = [
-  'Principiante',
-  'Intermedio',
-  'Avanzado',
+  'Beginner',
+  'Intermediate',
+  'Advanced',
 ];
 
 /// Bottom sheet para filtros de búsqueda de intercambios públicos
@@ -106,22 +106,22 @@ class _PublicExchangeFiltersBottomSheetState
   @override
   Widget build(BuildContext context) {
     return AppBottomSheetScaffold(
-      title: 'Filtros',
+      title: 'Filters',
       onReset: _resetFilters,
-      actionLabel: 'Aplicar filtros',
+      actionLabel: 'Apply filters',
       onAction: _applyFilters,
       content: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const FilterSectionTitle(title: 'Nivel requerido'),
+          const FilterSectionTitle(title: 'Required level'),
           FilterDropdown(
-            label: 'Seleccionar nivel',
+            label: 'Select level',
             value: _requiredLevel,
             items: _availableLevels,
             onChanged: (v) => setState(() => _requiredLevel = v),
           ),
           const SizedBox(height: AppDimensions.spacingL),
-          const FilterSectionTitle(title: 'Fecha mínima'),
+          const FilterSectionTitle(title: 'Minimum date'),
           InkWell(
             onTap: _selectDate,
             borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
@@ -145,7 +145,7 @@ class _PublicExchangeFiltersBottomSheetState
                     child: Text(
                       _minDate != null
                           ? '${_minDate!.day}/${_minDate!.month}/${_minDate!.year}'
-                          : 'Seleccionar fecha',
+                          : 'Select date',
                       style: TextStyle(
                         color: _minDate != null
                             ? AppTheme.text
@@ -166,7 +166,7 @@ class _PublicExchangeFiltersBottomSheetState
             ),
           ),
           const SizedBox(height: AppDimensions.spacingL),
-          const FilterSectionTitle(title: 'Duración máxima (minutos)'),
+          const FilterSectionTitle(title: 'Maximum duration (minutes)'),
           Row(
             children: [
               Expanded(
@@ -190,10 +190,10 @@ class _PublicExchangeFiltersBottomSheetState
               Container(
                 width: 60,
                 alignment: Alignment.center,
-                child: Text(
-                  _maxDuration > 0
-                      ? _maxDuration.toInt().toString()
-                      : 'Sin límite',
+                  child: Text(
+                    _maxDuration > 0
+                        ? _maxDuration.toInt().toString()
+                        : 'No limit',
                   style: TextStyle(
                     color: AppTheme.text,
                     fontWeight: FontWeight.w600,
@@ -203,17 +203,17 @@ class _PublicExchangeFiltersBottomSheetState
             ],
           ),
           const SizedBox(height: AppDimensions.spacingL),
-          const FilterSectionTitle(title: 'Idioma ofrecido'),
+          const FilterSectionTitle(title: 'Offered language'),
           FilterDropdown(
-            label: 'Seleccionar idioma ofrecido',
+            label: 'Select offered language',
             value: _nativeLanguage,
             items: _availableLanguages,
             onChanged: (v) => setState(() => _nativeLanguage = v),
           ),
           const SizedBox(height: AppDimensions.spacingL),
-          const FilterSectionTitle(title: 'Idioma buscado'),
+          const FilterSectionTitle(title: 'Target language'),
           FilterDropdown(
-            label: 'Seleccionar idioma buscado',
+            label: 'Select target language',
             value: _targetLanguage,
             items: _availableLanguages,
             onChanged: (v) => setState(() => _targetLanguage = v),

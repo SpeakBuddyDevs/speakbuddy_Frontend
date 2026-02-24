@@ -29,7 +29,7 @@ class ExchangeHistoryScreen extends StatelessWidget {
           color: AppTheme.text,
         ),
         title: Text(
-          'Historial de intercambios',
+          'Exchange history',
           style: TextStyle(
             color: AppTheme.text,
             fontSize: AppDimensions.fontSizeL,
@@ -51,7 +51,7 @@ class ExchangeHistoryScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: AppDimensions.spacingL),
                     Text(
-                      'No hay intercambios completados',
+                      'No completed exchanges',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: AppTheme.subtle,

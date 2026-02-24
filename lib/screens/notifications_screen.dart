@@ -43,7 +43,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       if (!mounted) return;
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al cargar notificaciones: $e')),
+        SnackBar(content: Text('Failed to load notifications: $e')),
       );
     }
   }
@@ -116,7 +116,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   /// Extrae el título del intercambio del body "username quiere unirse a \"Título\""
   String _parseExchangeTitleFromBody(String body) {
     final match = RegExp(r'quiere unirse a "([^"]*)"').firstMatch(body);
-    return match?.group(1)?.trim() ?? 'Intercambio';
+    return match?.group(1)?.trim() ?? 'Exchange';
   }
 
   /// Extrae el otherUserId del chatId "chat_min_max" (el que no es el actual)
@@ -144,7 +144,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Notificaciones',
+          'Notifications',
           style: TextStyle(
             color: AppTheme.text,
             fontSize: AppDimensions.fontSizeL,
@@ -185,7 +185,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ),
           const SizedBox(height: AppDimensions.spacingL),
           Text(
-            'No tienes notificaciones',
+            'You have no notifications',
             style: TextStyle(
               color: AppTheme.subtle,
               fontSize: AppDimensions.fontSizeM,
@@ -249,7 +249,7 @@ class _NotificationTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    notification.title,
+                    _displayTitle(notification),
                     style: TextStyle(
                       color: AppTheme.text,
                       fontSize: AppDimensions.fontSizeM,
@@ -258,7 +258,7 @@ class _NotificationTile extends StatelessWidget {
                   ),
                   const SizedBox(height: AppDimensions.spacingXS),
                   Text(
-                    notification.body,
+                    _displayBody(notification),
                     style: TextStyle(
                       color: AppTheme.subtle,
                       fontSize: AppDimensions.fontSizeS,
@@ -292,13 +292,31 @@ class _NotificationTile extends StatelessWidget {
     );
   }
 
+  String _displayTitle(NotificationModel n) {
+    if (n.isJoinRequest) return 'Request to join exchange';
+    if (n.isJoinRequestAccepted) return 'Request accepted';
+    return n.title;
+  }
+
+  String _displayBody(NotificationModel n) {
+    if (n.isJoinRequest && n.body.contains('quiere unirse a')) {
+      return n.body.replaceFirst('quiere unirse a', 'wants to join');
+    }
+    if (n.isJoinRequestAccepted && n.body.contains('Tu solicitud para unirte a')) {
+      return n.body
+          .replaceFirst('Tu solicitud para unirte a', 'Your request to join')
+          .replaceFirst(' ha sido aceptada', ' has been accepted');
+    }
+    return n.body;
+  }
+
   String _formatTime(DateTime dt) {
     final now = DateTime.now();
     final diff = now.difference(dt);
-    if (diff.inMinutes < 1) return 'Ahora';
-    if (diff.inMinutes < 60) return 'Hace ${diff.inMinutes} min';
-    if (diff.inHours < 24) return 'Hace ${diff.inHours} h';
-    if (diff.inDays < 7) return 'Hace ${diff.inDays} días';
+    if (diff.inMinutes < 1) return 'Now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes} min ago';
+    if (diff.inHours < 24) return '${diff.inHours} h ago';
+    if (diff.inDays < 7) return '${diff.inDays} days ago';
     return '${dt.day}/${dt.month}/${dt.year}';
   }
 }

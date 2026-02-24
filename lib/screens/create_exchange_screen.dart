@@ -131,10 +131,10 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
   Future<void> _onCreate() async {
     if (!_formKey.currentState!.validate()) return;
 
-    // Validar fecha y hora
+    // Validate date and time
     if (_selectedDate == null || _selectedTime == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor, selecciona fecha y hora')),
+        const SnackBar(content: Text('Please select date and time')),
       );
       return;
     }
@@ -148,10 +148,10 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
       _selectedTime!.minute,
     );
 
-    // Validar que la fecha sea futura
+    // Ensure the scheduled date is in the future
     if (dateTime.isBefore(DateTime.now())) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('La fecha y hora deben ser futuras')),
+        const SnackBar(content: Text('Date and time must be in the future')),
       );
       return;
     }
@@ -177,7 +177,7 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
         if (otherText.isEmpty) {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Indica el nombre de la plataforma para "Otra"')),
+            const SnackBar(content: Text('Enter the platform name for \"Other\"')),
           );
           setState(() => _isCreating = false);
           return;
@@ -187,7 +187,7 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
       if (_isPublic && platformsList.isEmpty) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Selecciona al menos una plataforma de videollamada')),
+          const SnackBar(content: Text('Select at least one video call platform')),
         );
         setState(() => _isCreating = false);
         return;
@@ -203,7 +203,7 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
       final created = await _repository.createExchange(
         title: _titleController.text.trim().isNotEmpty
             ? _titleController.text.trim()
-            : 'Intercambio',
+            : 'Exchange',
         description: _descriptionController.text.trim(),
         nativeLanguage: nativeLanguage,
         targetLanguage: targetLanguage,
@@ -223,7 +223,7 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
         await showPasswordDialog(context, password: created.password!);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Intercambio creado correctamente')),
+          const SnackBar(content: Text('Exchange created successfully')),
         );
       }
       if (!mounted) return;
@@ -233,7 +233,7 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
       final message = e.toString().replaceFirst('Exception: ', '');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(message.isNotEmpty ? message : 'Error al crear intercambio'),
+          content: Text(message.isNotEmpty ? message : 'Error creating exchange'),
           backgroundColor: Colors.red.shade800,
         ),
       );
@@ -252,7 +252,7 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
         backgroundColor: AppTheme.background,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
-        title: const Text('Crear intercambio'),
+        title: const Text('Create exchange'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
           color: AppTheme.text,
@@ -288,15 +288,15 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
                 TextFormField(
                   controller: _titleController,
                   decoration: const InputDecoration(
-                    labelText: 'Título del intercambio',
-                    hintText: 'Ej: Intercambio casual de idiomas',
+                    labelText: 'Exchange title',
+                    hintText: 'e.g. Casual language exchange',
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return 'El título es requerido';
+                      return 'Title is required';
                     }
                     if (value.trim().length < 3) {
-                      return 'El título debe tener al menos 3 caracteres';
+                      return 'Title must be at least 3 characters';
                     }
                     return null;
                   },
@@ -307,16 +307,16 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
                 TextFormField(
                   controller: _descriptionController,
                   decoration: const InputDecoration(
-                    labelText: 'Descripción',
-                    hintText: 'Describe el intercambio...',
+                    labelText: 'Description',
+                    hintText: 'Describe the exchange...',
                   ),
                   maxLines: 4,
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return 'La descripción es requerida';
+                      return 'Description is required';
                     }
                     if (value.trim().length < 10) {
-                      return 'La descripción debe tener al menos 10 caracteres';
+                      return 'Description must be at least 10 characters';
                     }
                     return null;
                   },
@@ -330,7 +330,7 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
                       child: DropdownButtonFormField<String>(
                         value: _nativeLanguageCode,
                         decoration: const InputDecoration(
-                          labelText: 'Idioma ofrecido',
+                          labelText: 'Offered language',
                         ),
                         items: AppLanguages.availableCodes
                             .where((code) => code != _targetLanguageCode || _targetLanguageCode == null)
@@ -345,7 +345,7 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
                           setState(() => _nativeLanguageCode = value);
                         },
                         validator: (value) =>
-                            value == null ? 'Selecciona un idioma' : null,
+                            value == null ? 'Select a language' : null,
                       ),
                     ),
                     const SizedBox(width: AppDimensions.spacingMD),
@@ -353,7 +353,7 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
                       child: DropdownButtonFormField<String>(
                         value: _targetLanguageCode,
                         decoration: const InputDecoration(
-                          labelText: 'Idioma buscado',
+                          labelText: 'Target language',
                         ),
                         items: AppLanguages.availableCodes
                             .where((code) => code != _nativeLanguageCode || _nativeLanguageCode == null)
@@ -368,7 +368,7 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
                           setState(() => _targetLanguageCode = value);
                         },
                         validator: (value) =>
-                            value == null ? 'Selecciona un idioma' : null,
+                            value == null ? 'Select a language' : null,
                       ),
                     ),
                   ],
@@ -382,7 +382,7 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
                   Padding(
                     padding: const EdgeInsets.only(bottom: AppDimensions.spacingMD),
                     child: Text(
-                      'Los idiomas deben ser diferentes',
+                      'Languages must be different',
                       style: TextStyle(
                         color: Colors.redAccent,
                         fontSize: AppDimensions.fontSizeS,
@@ -398,7 +398,7 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
                         value: _requiredLevelMinOrder,
                         isExpanded: true,
                         decoration: const InputDecoration(
-                          labelText: 'Nivel mínimo',
+                          labelText: 'Minimum level',
                         ),
                         items: LevelIds.availableLevels.map((levelName) {
                           final id = LevelIds.getId(levelName);
@@ -422,7 +422,7 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
                           }
                         },
                         validator: (value) =>
-                            value == null ? 'Selecciona nivel mínimo' : null,
+                            value == null ? 'Select minimum level' : null,
                       ),
                     ),
                     const SizedBox(width: AppDimensions.spacingMD),
@@ -431,7 +431,7 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
                         value: _requiredLevelMaxOrder,
                         isExpanded: true,
                         decoration: const InputDecoration(
-                          labelText: 'Nivel máximo',
+                          labelText: 'Maximum level',
                         ),
                         items: LevelIds.availableLevels.map((levelName) {
                           final id = LevelIds.getId(levelName);
@@ -455,9 +455,9 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
                           }
                         },
                         validator: (value) {
-                          if (value == null) return 'Selecciona nivel máximo';
+                          if (value == null) return 'Select maximum level';
                           if (value < _requiredLevelMinOrder) {
-                            return 'Máx. debe ser ≥ mín.';
+                            return 'Max must be ≥ min';
                           }
                           return null;
                         },
@@ -470,7 +470,7 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
                 // Plataformas de videollamada (solo si es público)
                 if (_isPublic) ...[
                   Text(
-                    'Plataformas de videollamada',
+                    'Video call platforms',
                     style: TextStyle(
                       color: AppTheme.text,
                       fontSize: AppDimensions.fontSizeS,
@@ -513,13 +513,13 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
                     TextFormField(
                       controller: _otherPlatformController,
                       decoration: const InputDecoration(
-                        labelText: 'Indica el nombre de la plataforma',
-                        hintText: 'Ej: Gather, Meet.jit.si',
+                        labelText: 'Enter the name of the platform',
+                        hintText: 'e.g. Gather, Meet.jit.si',
                       ),
                       onChanged: (_) => setState(() {}),
                       validator: (_) {
                         if (_otherPlatformSelected && _otherPlatformController.text.trim().isEmpty) {
-                          return 'Escribe el nombre de la plataforma';
+                          return 'Type the platform name';
                         }
                         return null;
                       },
@@ -552,7 +552,7 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Fecha',
+                                      'Date',
                                       style: TextStyle(
                                         color: AppTheme.subtle,
                                         fontSize: AppDimensions.fontSizeXS,
@@ -562,7 +562,7 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
                                     Text(
                                       _selectedDate != null
                                           ? '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}'
-                                          : 'Seleccionar fecha',
+                                          : 'Select date',
                                       style: TextStyle(
                                         color: _selectedDate != null
                                             ? AppTheme.text
@@ -600,7 +600,7 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Hora',
+                                      'Time',
                                       style: TextStyle(
                                         color: AppTheme.subtle,
                                         fontSize: AppDimensions.fontSizeXS,
@@ -610,7 +610,7 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
                                     Text(
                                       _selectedTime != null
                                           ? '${_selectedTime!.hour.toString().padLeft(2, '0')}:${_selectedTime!.minute.toString().padLeft(2, '0')}'
-                                          : 'Seleccionar hora',
+                                          : 'Select time',
                                       style: TextStyle(
                                         color: _selectedTime != null
                                             ? AppTheme.text
@@ -637,8 +637,8 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
                       child: TextFormField(
                         controller: _durationController,
                         decoration: InputDecoration(
-                          labelText: 'Duración (min)',
-                          hintText: 'Ej: 45',
+                          labelText: 'Duration (min)',
+                          hintText: 'e.g. 45',
                           hintStyle: TextStyle(
                             color: AppTheme.subtle.withOpacity(0.5),
                           ),
@@ -649,11 +649,11 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
                         ],
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Requerido';
+                            return 'Required';
                           }
                           final duration = int.tryParse(value);
                           if (duration == null || duration < 15 || duration > 180) {
-                            return 'Entre 15 y 180 min';
+                            return 'Between 15 and 180 min';
                           }
                           return null;
                         },
@@ -664,8 +664,8 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
                       child: TextFormField(
                         controller: _maxParticipantsController,
                         decoration: InputDecoration(
-                          labelText: 'Máx. participantes',
-                          hintText: 'Ej: 10',
+                          labelText: 'Max participants',
+                          hintText: 'e.g. 10',
                           hintStyle: TextStyle(
                             color: AppTheme.subtle.withOpacity(0.5),
                           ),
@@ -676,11 +676,11 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
                         ],
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Requerido';
+                            return 'Required';
                           }
                           final max = int.tryParse(value);
                           if (max == null || max < 2 || max > 50) {
-                            return 'Entre 2 y 50';
+                            return 'Between 2 and 50';
                           }
                           return null;
                         },
@@ -690,13 +690,13 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
                 ),
                 const SizedBox(height: AppDimensions.spacingL),
 
-                // Temas (opcional)
+                // Topics (optional)
                 TextFormField(
                   controller: _topicsController,
                   decoration: const InputDecoration(
-                    labelText: 'Temas (opcional)',
-                    hintText: 'Viajes, turismo, cultura',
-                    helperText: 'Separa los temas con comas',
+                    labelText: 'Topics (optional)',
+                    hintText: 'Travel, tourism, culture',
+                    helperText: 'Separate topics with commas',
                   ),
                 ),
                 const SizedBox(height: AppDimensions.spacingL),
@@ -709,9 +709,9 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
                     border: Border.all(color: AppTheme.border),
                   ),
                   child: SwitchListTile(
-                    title: const Text('Intercambio público'),
+                    title: const Text('Public exchange'),
                     subtitle: const Text(
-                      'Si está desactivado, solo será accesible mediante enlace',
+                      'If disabled, it will only be accessible via link',
                       style: TextStyle(fontSize: AppDimensions.fontSizeXS),
                     ),
                     value: _isPublic,
@@ -742,7 +742,7 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
                                 BorderRadius.circular(AppDimensions.radiusMD),
                           ),
                         ),
-                        child: const Text('Cancelar'),
+                        child: const Text('Cancel'),
                       ),
                     ),
                     const SizedBox(width: AppDimensions.spacingMD),
@@ -770,7 +770,7 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
                                       AlwaysStoppedAnimation<Color>(Colors.white),
                                 ),
                               )
-                            : const Text('Crear intercambio'),
+                            : const Text('Create exchange'),
                       ),
                     ),
                   ],

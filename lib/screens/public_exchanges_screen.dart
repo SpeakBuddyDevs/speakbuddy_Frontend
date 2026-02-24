@@ -88,7 +88,7 @@ class _PublicExchangesScreenState extends State<PublicExchangesScreen> {
       if (!mounted) return;
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error al cargar intercambios')),
+        const SnackBar(content: Text('Failed to load exchanges')),
       );
     }
   }
@@ -143,7 +143,7 @@ class _PublicExchangesScreenState extends State<PublicExchangesScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
-              'Solicitud enviada. El creador te notificará si la acepta.',
+              'Request sent. The creator will notify you if they accept.',
             ),
           ),
         );
@@ -205,17 +205,17 @@ class _PublicExchangesScreenState extends State<PublicExchangesScreen> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusL),
         ),
-        title: const Text('Abandonar intercambio'),
-        content: const Text('¿Estás seguro de que quieres abandonar este intercambio?'),
+        title: const Text('Leave exchange'),
+        content: const Text('Are you sure you want to leave this exchange?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
+            child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             child: Text(
-              'Abandonar',
+              'Leave',
               style: TextStyle(color: Colors.redAccent),
             ),
           ),
@@ -313,7 +313,7 @@ class _PublicExchangesScreenState extends State<PublicExchangesScreen> {
             },
         onProTap: () {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Pro próximamente')),
+            const SnackBar(content: Text('Pro coming soon')),
           );
         },
       ),
@@ -342,7 +342,7 @@ class _PublicExchangesScreenState extends State<PublicExchangesScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Intercambios Públicos',
+                                'Public Exchanges',
                                 style: TextStyle(
                                   color: AppTheme.text,
                                   fontSize: AppDimensions.fontSizeXL,
@@ -351,7 +351,7 @@ class _PublicExchangesScreenState extends State<PublicExchangesScreen> {
                               ),
                               const SizedBox(height: AppDimensions.spacingXS),
                               Text(
-                                'Únete a sesiones grupales',
+                                'Join group sessions',
                                 style: TextStyle(
                                   color: AppTheme.subtle,
                                   fontSize: AppDimensions.fontSizeS,
@@ -366,7 +366,7 @@ class _PublicExchangesScreenState extends State<PublicExchangesScreen> {
                     FindSearchBar(
                       controller: _searchController,
                       onChanged: _onSearchChanged,
-                      hintText: 'Buscar intercambios...',
+                      hintText: 'Search exchanges...',
                     ),
                     const SizedBox(height: AppDimensions.spacingMD),
                     Row(
@@ -375,7 +375,7 @@ class _PublicExchangesScreenState extends State<PublicExchangesScreen> {
                           child: ElevatedButton.icon(
                             onPressed: _onCreateExchange,
                             icon: const Icon(Icons.add_rounded),
-                            label: const Text('Crear intercambio'),
+                            label: const Text('Create exchange'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppTheme.accent,
                               foregroundColor: Colors.white,
@@ -417,7 +417,7 @@ class _PublicExchangesScreenState extends State<PublicExchangesScreen> {
                       ),
                       const SizedBox(height: AppDimensions.spacingL),
                       Text(
-                        'No se encontraron intercambios',
+                        'No exchanges found',
                         style: TextStyle(
                           color: AppTheme.subtle,
                           fontSize: AppDimensions.fontSizeM,

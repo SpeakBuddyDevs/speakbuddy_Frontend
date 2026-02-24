@@ -6,6 +6,7 @@ import '../repositories/api_users_repository.dart';
 import '../constants/routes.dart';
 import '../theme/app_theme.dart';
 import '../constants/dimensions.dart';
+import '../constants/countries.dart';
 
 /// Pantalla de perfil público de un usuario
 class PublicProfileScreen extends StatefulWidget {
@@ -63,7 +64,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
       setState(() {
         _isLoading = false;
         if (_profile == null) {
-          _error = 'Error al cargar el perfil';
+          _error = 'Failed to load profile';
         }
       });
     }
@@ -90,7 +91,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         title: Text(
-          'Perfil',
+          'Profile',
           style: TextStyle(color: AppTheme.text),
         ),
         leading: IconButton(
@@ -227,7 +228,7 @@ class _ProfileHeader extends StatelessWidget {
               Icon(Icons.location_on_outlined, size: 16, color: AppTheme.subtle),
               const SizedBox(width: AppDimensions.spacingXS),
               Text(
-                profile.country.isEmpty ? '—' : profile.country,
+                profile.country.isEmpty ? '—' : AppCountries.displayName(profile.country),
                 style: TextStyle(color: AppTheme.subtle, fontSize: AppDimensions.fontSizeM),
               ),
             ],
@@ -296,7 +297,7 @@ class _StatsRow extends StatelessWidget {
         Expanded(
           child: _StatCard(
             icon: Icons.trending_up_rounded,
-            label: 'Nivel',
+            label: 'Level',
             value: '${profile.level}',
           ),
         ),
@@ -313,7 +314,7 @@ class _StatsRow extends StatelessWidget {
         Expanded(
           child: _StatCard(
             icon: Icons.chat_bubble_outline_rounded,
-            label: 'Intercambios',
+            label: 'Exchanges',
             value: '${profile.exchanges}',
           ),
         ),
@@ -389,7 +390,7 @@ class _LanguagesCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Idiomas',
+            'Languages',
             style: TextStyle(
               color: AppTheme.text,
               fontWeight: FontWeight.bold,
@@ -406,12 +407,12 @@ class _LanguagesCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Nativo: ${profile.nativeLanguage.isEmpty ? '—' : profile.nativeLanguage}',
+                      'Native: ${profile.nativeLanguage.isEmpty ? '—' : profile.nativeLanguage}',
                       style: TextStyle(color: AppTheme.text),
                     ),
                     const SizedBox(height: AppDimensions.spacingS),
                     Text(
-                      'Aprendiendo:',
+                      'Learning:',
                       style: TextStyle(color: AppTheme.text),
                     ),
                     if (profile.learningLanguages.isEmpty)
@@ -448,7 +449,7 @@ class _LanguagesCard extends StatelessWidget {
                                   ),
                                 ),
                                 child: Text(
-                                  'Activo',
+                                  'Active',
                                   style: TextStyle(
                                     color: AppTheme.accent,
                                     fontWeight: FontWeight.w600,
@@ -521,7 +522,7 @@ class _ChatButton extends StatelessWidget {
       child: ElevatedButton.icon(
         onPressed: onPressed,
         icon: const Icon(Icons.chat_rounded),
-        label: const Text('Chatear'),
+        label: const Text('Chat'),
         style: ElevatedButton.styleFrom(
           backgroundColor: AppTheme.accent,
           foregroundColor: Colors.white,

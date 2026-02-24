@@ -31,7 +31,7 @@ Future<String?> showLanguageSelectorBottomSheet(
                   dropdownColor: AppTheme.card,
                   style: TextStyle(color: AppTheme.text),
                   decoration: const InputDecoration(
-                    labelText: 'Selecciona un idioma',
+                    labelText: 'Select a language',
                     floatingLabelBehavior: FloatingLabelBehavior.always,
                   ),
                   items: availableCodes
@@ -56,7 +56,7 @@ Future<String?> showLanguageSelectorBottomSheet(
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () => Navigator.pop(ctx, selected),
-                    child: const Text('Añadir'),
+                    child: const Text('Add'),
                   ),
                 ),
               ],

@@ -38,9 +38,9 @@ class UnlockedAchievementCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppDimensions.spacingMD),
-          // Título
+          // Title
           Text(
-            achievement.title,
+            achievement.displayTitle,
             style: const TextStyle(
               color: AppTheme.text,
               fontSize: AppDimensions.fontSizeM,
@@ -51,9 +51,9 @@ class UnlockedAchievementCard extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: AppDimensions.spacingXS),
-          // Descripción
+          // Description
           Text(
-            achievement.description,
+            achievement.displayDescription,
             style: const TextStyle(
               color: AppTheme.subtle,
               fontSize: AppDimensions.fontSizeXS,
@@ -83,7 +83,7 @@ class UnlockedAchievementCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  'Desbloqueada',
+                  'Unlocked',
                   style: TextStyle(
                     color: Colors.green.shade400,
                     fontSize: AppDimensions.fontSizeXS,

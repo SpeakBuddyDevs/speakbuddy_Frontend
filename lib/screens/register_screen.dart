@@ -41,19 +41,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (!_isFormValid) return;
 
     ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text('Creando cuenta...')));
+        .showSnackBar(const SnackBar(content: Text('Creating account...')));
 
     // Convertir código a ID del backend
     int? nativeId = LanguageIds.getId(_nativeLang ?? '');
     int? learnId = LanguageIds.getId(_learningLang ?? ''); // Aunque el registro backend actual igual no lo usa aún
 
     if (nativeId == null) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error: Idioma no válido')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error: Invalid language')));
         return;
     }
 
     if (_country == null || _country!.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Selecciona tu país')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Select your country')));
         return;
     }
 
@@ -70,7 +70,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     if (result.success) {
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Cuenta creada. Por favor inicia sesión.')));
+          const SnackBar(content: Text('Account created. Please sign in.')));
       // Volver al login
       Navigator.pop(context); 
     } else {
@@ -79,7 +79,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (result.error != null) {
         errorMessage = result.error!.message;
       } else {
-        errorMessage = 'Error inesperado. Intenta nuevamente.';
+        errorMessage = 'Unexpected error. Please try again.';
       }
       
       ScaffoldMessenger.of(context).showSnackBar(
@@ -126,11 +126,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     child: Column(mainAxisSize: MainAxisSize.min, children: [
                       const AppLogo(),
                       const SizedBox(height: AppDimensions.spacingMD),
-                      const Text('Únete a la comunidad',
+                      const Text('Join the community',
                           style: TextStyle(
                               fontSize: AppDimensions.fontSizeXL, fontWeight: FontWeight.w600)),
                       const SizedBox(height: AppDimensions.spacingXS),
-                      Text('Comienza tu aventura de aprendizaje de idiomas',
+                      Text('Start your language learning journey',
                           textAlign: TextAlign.center,
                           style: Theme.of(context)
                               .textTheme
@@ -138,19 +138,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               .copyWith(color: AppTheme.subtle)),
                       const SizedBox(height: AppDimensions.spacingXXL),
 
-                      _label('Nombre completo'),
+                      _label('Full name'),
                       TextFormField(
                         controller: _nameCtrl,
                         textCapitalization: TextCapitalization.words,
                         validator: (v) => FormValidators.validateName(v, minLength: 3),
                         decoration: const InputDecoration(
                           prefixIcon: Icon(Icons.person_outline),
-                          hintText: 'Tu nombre',
+                          hintText: 'Your name',
                         ),
                       ),
                       const SizedBox(height: AppDimensions.spacingML),
 
-                      _label('Correo electrónico'),
+                      _label('Email'),
                       TextFormField(
                         controller: _emailCtrl,
                         keyboardType: TextInputType.emailAddress,
@@ -167,7 +167,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _label('Idioma nativo'),
+                              _label('Native language'),
                               DropdownButtonFormField<String>(
                                 initialValue: _nativeLang,
                                 items: AppLanguages.availableCodes
@@ -179,9 +179,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 onChanged: (v) => setState(() => _nativeLang = v),
                                 decoration: const InputDecoration(
                                   prefixIcon: Icon(Icons.public),
-                                  hintText: 'Selecciona',
+                                  hintText: 'Select',
                                 ),
-                                validator: (v) => FormValidators.validateRequired(v, 'Selecciona un idioma'),
+                                validator: (v) => FormValidators.validateRequired(v, 'Select a language'),
                               ),
                             ],
                           ),
@@ -191,7 +191,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _label('Aprendiendo'),
+                              _label('Learning'),
                               DropdownButtonFormField<String>(
                                 initialValue: _learningLang,
                                 items: AppLanguages.availableCodes
@@ -203,9 +203,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 onChanged: (v) => setState(() => _learningLang = v),
                                 decoration: const InputDecoration(
                                   prefixIcon: Icon(Icons.public),
-                                  hintText: 'Selecciona',
+                                  hintText: 'Select',
                                 ),
-                                validator: (v) => FormValidators.validateRequired(v, 'Selecciona un idioma'),
+                                validator: (v) => FormValidators.validateRequired(v, 'Select a language'),
                               ),
                             ],
                           ),
@@ -213,7 +213,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ]),
                       const SizedBox(height: AppDimensions.spacingML),
 
-                      _label('País'),
+                      _label('Country'),
                       DropdownButtonFormField<String>(
                         value: _country,
                         items: AppCountries.available
@@ -225,14 +225,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         onChanged: (v) => setState(() => _country = v),
                         decoration: const InputDecoration(
                           prefixIcon: Icon(Icons.location_on_outlined),
-                          hintText: 'Selecciona tu país',
+                          hintText: 'Select your country',
                         ),
                         validator: (v) =>
-                            (v == null || v.isEmpty) ? 'Selecciona tu país' : null,
+                            (v == null || v.isEmpty) ? 'Select your country' : null,
                       ),
                       const SizedBox(height: AppDimensions.spacingML),
 
-                      _label('Contraseña'),
+                      _label('Password'),
                       TextFormField(
                         controller: _passCtrl,
                         obscureText: _obscure1,
@@ -251,7 +251,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: AppDimensions.spacingML),
 
-                      _label('Confirmar contraseña'),
+                      _label('Confirm password'),
                       TextFormField(
                         controller: _pass2Ctrl,
                         obscureText: _obscure2,
@@ -286,17 +286,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   .bodyMedium!
                                   .copyWith(color: AppTheme.text),
                               children: [
-                                const TextSpan(text: 'Acepto los '),
+                                const TextSpan(text: 'I accept the '),
                                 TextSpan(
-                                  text: 'términos y condiciones',
+                                  text: 'terms and conditions',
                                   style: const TextStyle(
                                       color: gradientStart,
                                       fontWeight: FontWeight.w600),
                                   recognizer: TapGestureRecognizer()..onTap = () {},
                                 ),
-                                const TextSpan(text: ' y la '),
+                                const TextSpan(text: ' and the '),
                                 TextSpan(
-                                  text: 'política de privacidad',
+                                  text: 'privacy policy',
                                   style: const TextStyle(
                                       color: gradientStart,
                                       fontWeight: FontWeight.w600),
@@ -329,7 +329,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     borderRadius: BorderRadius.circular(AppDimensions.radiusMD)),
                                 padding: EdgeInsets.zero,
                               ),
-                              child: const Text('Crear cuenta',
+                              child: const Text('Create account',
                                   style: TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.w600)),
@@ -343,7 +343,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         Expanded(child: Divider(color: AppTheme.border.withValues(alpha: AppDimensions.opacityDivider))),
                         Padding(
                           padding: AppDimensions.paddingDivider,
-                          child: Text('o regístrate con',
+                          child: Text('or sign up with',
                               style: TextStyle(color: AppTheme.subtle)),
                         ),
                         Expanded(child: Divider(color: AppTheme.border.withValues(alpha: AppDimensions.opacityDivider))),
@@ -358,10 +358,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       const SizedBox(height: AppDimensions.spacingL),
 
                       Wrap(alignment: WrapAlignment.center, children: [
-                        const Text('¿Ya tienes una cuenta? '),
+                        const Text('Already have an account? '),
                         InkWell(
                           onTap: () => Navigator.pushReplacementNamed(context, AppRoutes.login),
-                          child: const Text('Inicia sesión',
+                          child: const Text('Sign in',
                               style: TextStyle(
                                   color: gradientStart,
                                   fontWeight: FontWeight.w600)),

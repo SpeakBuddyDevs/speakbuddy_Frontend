@@ -21,7 +21,7 @@ class PasswordDialog extends StatelessWidget {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Contraseña copiada al portapapeles'),
+          content: Text('Password copied to clipboard'),
           duration: Duration(seconds: 2),
         ),
       );
@@ -79,12 +79,12 @@ class PasswordDialog extends StatelessWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cerrar'),
+          child: const Text('Close'),
         ),
         FilledButton.icon(
           onPressed: () => _copyToClipboard(context),
           icon: const Icon(Icons.copy_rounded, size: 18),
-          label: const Text('Copiar'),
+          label: const Text('Copy'),
         ),
       ],
     );

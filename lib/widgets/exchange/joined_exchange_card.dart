@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/joined_exchange.dart';
 import '../../theme/app_theme.dart';
 import '../../constants/dimensions.dart';
+import '../../constants/countries.dart';
 import '../../utils/date_formatters.dart';
 
 /// Tarjeta que muestra un intercambio (JoinedExchange).
@@ -83,19 +84,19 @@ class JoinedExchangeCard extends StatelessWidget {
               // Filas de información
               _InfoRow(
                 icon: Icons.calendar_today_outlined,
-                label: 'Fecha y hora',
+                label: 'Date and time',
                 value: dateStr,
               ),
               const SizedBox(height: AppDimensions.spacingMD),
               _InfoRow(
                 icon: Icons.videocam_outlined,
-                label: 'Plataforma',
+                label: 'Platform',
                 value: platformsStr,
               ),
               const SizedBox(height: AppDimensions.spacingMD),
               _InfoRow(
                 icon: Icons.translate_outlined,
-                label: 'Idioma y duración',
+                label: 'Language and duration',
                 value: '$languagesStr • ${exchange.durationMinutes} min',
               ),
               // Tema (solo si hay topics configurados)
@@ -103,7 +104,7 @@ class JoinedExchangeCard extends StatelessWidget {
                 const SizedBox(height: AppDimensions.spacingMD),
                 _InfoRow(
                   icon: Icons.description_outlined,
-                  label: 'Tema',
+                  label: 'Topic',
                   value: exchange.topics.join(', '),
                 ),
               ],
@@ -117,7 +118,7 @@ class JoinedExchangeCard extends StatelessWidget {
                 ),
               ],
 
-              // Botón Abrir chat
+              // Button: Open chat
               if (showOpenChat) ...[
                 const SizedBox(height: AppDimensions.spacingL),
                 Row(
@@ -149,7 +150,7 @@ class JoinedExchangeCard extends StatelessWidget {
                       child: OutlinedButton.icon(
                         onPressed: onOpenChat,
                         icon: const Icon(Icons.chat_bubble_outline_rounded),
-                        label: const Text('Abrir chat'),
+                        label: const Text('Open chat'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppTheme.text,
                           padding: const EdgeInsets.symmetric(vertical: AppDimensions.spacingMD),
@@ -218,7 +219,7 @@ class JoinedExchangeCard extends StatelessWidget {
     } else if (target != null) {
       return target;
     }
-    return 'No especificado';
+    return 'Not specified';
   }
 
   String _buildParticipantsCountString() {
@@ -226,11 +227,11 @@ class JoinedExchangeCard extends StatelessWidget {
     final max = exchange.maxParticipants;
     if (max != null) {
       if (current >= max) {
-        return '$current/$max (lleno)';
+        return '$current/$max (full)';
       }
       return '$current/$max';
     }
-    return '$current participantes';
+    return '$current participants';
   }
 }
 
@@ -334,7 +335,7 @@ class _ParticipantHeader extends StatelessWidget {
       children: [
         if (hasCountry)
           Text(
-            p.country!,
+            AppCountries.displayName(p.country),
             style: TextStyle(
               color: AppTheme.subtle,
               fontSize: AppDimensions.fontSizeS,
@@ -405,7 +406,7 @@ class _ParticipantsRow extends StatelessWidget {
               Row(
                 children: [
                   Text(
-                    'Participantes',
+                    'Participants',
                     style: TextStyle(
                       color: AppTheme.subtle,
                       fontSize: AppDimensions.fontSizeXS,

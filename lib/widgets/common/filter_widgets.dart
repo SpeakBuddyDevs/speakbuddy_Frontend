@@ -68,7 +68,7 @@ class FilterDropdown extends StatelessWidget {
             DropdownMenuItem<String>(
               value: null,
               child: Text(
-                'Todos',
+                'All',
                 style: TextStyle(color: AppTheme.subtle),
               ),
             ),

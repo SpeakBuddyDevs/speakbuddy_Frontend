@@ -98,7 +98,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       } else {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Intercambio confirmado')),
+          const SnackBar(content: Text('Exchange confirmed')),
         );
         await _viewModel.loadExchanges();
       }
@@ -119,19 +119,19 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusL),
         ),
-        title: const Text('Abandonar intercambio'),
+        title: const Text('Leave exchange'),
         content: const Text(
-          '¿Estás seguro de que quieres abandonar este intercambio?',
+          'Are you sure you want to leave this exchange?',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
+            child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             child: Text(
-              'Abandonar',
+              'Leave',
               style: TextStyle(color: Colors.redAccent),
             ),
           ),
@@ -146,7 +146,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Has abandonado "${exchange.title ?? 'Intercambio'}"'),
+          content: Text('You left "${exchange.title ?? 'Exchange'}"'),
         ),
       );
     } catch (e) {
@@ -193,7 +193,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             },
         onProTap: () {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Pro próximamente')),
+            const SnackBar(content: Text('Pro coming soon')),
           );
         },
       ),
@@ -215,7 +215,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 const SizedBox(height: AppDimensions.spacingL),
               ],
               // Tarjetas de estadísticas
-              _StatsRow(
+            _StatsRow(
                 exchangesThisMonth: _viewModel.exchangesThisMonth,
                 exchangesLastMonth: _viewModel.exchangesLastMonth,
                 hoursThisWeek: _viewModel.hoursThisWeek,
@@ -267,7 +267,7 @@ class _StatsRow extends StatelessWidget {
         Expanded(
           child: _StatsCard(
             icon: Icons.chat_bubble_outline_rounded,
-            title: 'Intercambios',
+            title: 'Exchanges',
             value: '$exchangesThisMonth',
             comparison: _calculateComparison(
               exchangesThisMonth.toDouble(),
@@ -280,7 +280,7 @@ class _StatsRow extends StatelessWidget {
         Expanded(
           child: _StatsCard(
             icon: Icons.access_time_rounded,
-            title: 'Horas',
+            title: 'Hours',
             value: '${hoursThisWeek.toStringAsFixed(0)}h',
             comparison: _calculateComparison(
               hoursThisWeek,
@@ -306,10 +306,10 @@ class _StatsRow extends StatelessWidget {
     String text;
     if (isMonthly) {
       final diffInt = diff.abs().round();
-      text = isPositive ? '+$diffInt mes' : '-$diffInt mes';
+      text = isPositive ? '+$diffInt month' : '-$diffInt month';
     } else {
       final diffStr = diff.abs().toStringAsFixed(0);
-      text = isPositive ? '+${diffStr}h sem.' : '-${diffStr}h sem.';
+      text = isPositive ? '+${diffStr}h week' : '-${diffStr}h week';
     }
 
     return _ComparisonData(text: text, color: color, icon: icon);
@@ -407,8 +407,8 @@ class _PendingConfirmBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final label = count == 1
-        ? 'Tienes 1 intercambio pendiente de confirmar'
-        : 'Tienes $count intercambios pendientes de confirmar';
+        ? 'You have 1 exchange pending confirmation'
+        : 'You have $count exchanges pending confirmation';
 
     return Material(
       color: Colors.transparent,
@@ -446,7 +446,7 @@ class _PendingConfirmBanner extends StatelessWidget {
               TextButton(
                 onPressed: onTap,
                 child: Text(
-                  'Ver',
+                  'View',
                   style: TextStyle(
                     color: AppTheme.accent,
                     fontWeight: FontWeight.w600,
@@ -495,7 +495,7 @@ class _PendingExchangesSection extends StatelessWidget {
         Row(
           children: [
             Text(
-              'Intercambios Pendientes',
+              'Pending exchanges',
               style: TextStyle(
                 color: AppTheme.text,
                 fontSize: AppDimensions.fontSizeL,
@@ -554,7 +554,7 @@ class _EmptyExchangesButton extends StatelessWidget {
       child: ElevatedButton.icon(
         onPressed: onPressed,
         icon: const Icon(Icons.search_rounded),
-        label: const Text('Ir a Intercambios Públicos'),
+        label: const Text('Go to Public Exchanges'),
         style: ElevatedButton.styleFrom(
           backgroundColor: AppTheme.accent,
           foregroundColor: Colors.white,

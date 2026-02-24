@@ -23,7 +23,7 @@ class FiltersButton extends StatelessWidget {
         size: AppDimensions.iconSizeM,
       ),
       label: Text(
-        'Filtros',
+        'Filters',
         style: TextStyle(
           color: hasActiveFilters ? AppTheme.accent : AppTheme.subtle,
         ),

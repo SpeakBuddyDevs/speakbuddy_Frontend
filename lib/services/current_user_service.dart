@@ -56,7 +56,7 @@ class CurrentUserService {
   String getDisplayName() {
     // Dispara carga en segundo plano si aún no se ha hecho.
     _loadFromBackendIfNeeded();
-    return _profile?.name ?? 'Usuario';
+    return _profile?.name ?? 'User';
   }
 
   /// Obtiene el nivel actual del usuario.

@@ -50,7 +50,7 @@ class _TopicsScreenState extends State<TopicsScreen> {
       if (!mounted) return;
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al generar tema: $e')),
+        SnackBar(content: Text('Failed to generate topic: $e')),
       );
     }
   }
@@ -91,7 +91,7 @@ class _TopicsScreenState extends State<TopicsScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Tema copiado al portapapeles'),
+        content: Text('Topic copied to clipboard'),
         duration: Duration(seconds: 2),
       ),
     );
@@ -110,14 +110,14 @@ class _TopicsScreenState extends State<TopicsScreen> {
         });
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Eliminado de favoritos')),
+          const SnackBar(content: Text('Removed from favorites')),
         );
       } else {
         final savedTopic = await _repository.addToFavorites(_currentTopic!);
         setState(() => _currentTopic = savedTopic);
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Guardado en favoritos')),
+          const SnackBar(content: Text('Saved to favorites')),
         );
       }
     } catch (e) {
@@ -149,7 +149,7 @@ class _TopicsScreenState extends State<TopicsScreen> {
         },
         onProTap: () {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Pro próximamente')),
+            const SnackBar(content: Text('Pro coming soon')),
           );
         },
       ),
@@ -211,13 +211,13 @@ class _TopicGeneratorHeader extends StatelessWidget {
                 Icons.bookmark_outline,
                 color: AppTheme.subtle,
               ),
-              tooltip: 'Ver favoritos',
+              tooltip: 'View favorites',
             ),
           ],
         ),
         const SizedBox(height: AppDimensions.spacingL),
         Text(
-          'Generador de Temas IA',
+          'AI Topic Generator',
           style: TextStyle(
             color: AppTheme.text,
             fontSize: 22,
@@ -226,7 +226,7 @@ class _TopicGeneratorHeader extends StatelessWidget {
         ),
         const SizedBox(height: AppDimensions.spacingSM),
         Text(
-          'Temas generados por IA para tus conversaciones',
+          'AI-generated topics for your conversations',
           style: TextStyle(
             color: AppTheme.subtle,
             fontSize: AppDimensions.fontSizeS,
@@ -515,7 +515,7 @@ class _VocabularySection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Vocabulario sugerido:',
+          'Suggested vocabulary:',
           style: TextStyle(
             color: AppTheme.subtle,
             fontSize: AppDimensions.fontSizeS,
@@ -588,7 +588,7 @@ class _ActionButtons extends StatelessWidget {
               Icons.auto_awesome,
               size: 18,
             ),
-            label: const Text('Nuevo Tema'),
+            label: const Text('New Topic'),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.accent,
               foregroundColor: Colors.white,
@@ -606,13 +606,13 @@ class _ActionButtons extends StatelessWidget {
           isLoading: isSavingFavorite,
           isActive: isFavorite,
           onTap: onToggleFavorite,
-          tooltip: isFavorite ? 'Quitar de favoritos' : 'Guardar en favoritos',
+          tooltip: isFavorite ? 'Remove from favorites' : 'Save to favorites',
         ),
         const SizedBox(width: AppDimensions.spacingSM),
         _IconActionButton(
           icon: Icons.copy,
           onTap: onCopy,
-          tooltip: 'Copiar tema',
+          tooltip: 'Copy topic',
         ),
       ],
     );

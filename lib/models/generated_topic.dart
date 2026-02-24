@@ -7,7 +7,7 @@ enum TopicCategory {
   String get displayName {
     switch (this) {
       case TopicCategory.conversation:
-        return 'Conversación';
+        return 'Conversation';
       case TopicCategory.debate:
         return 'Debate';
       case TopicCategory.roleplay:

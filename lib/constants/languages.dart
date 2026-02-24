@@ -1,28 +1,25 @@
 class AppLanguages {
   static const Map<String, String> codeToName = {
-    'es': 'Español',
+    'es': 'Spanish',
     'en': 'English',
-    'fr': 'Français',
-    'de': 'Deutsch',
-    'it': 'Italiano',
-    'pt': 'Portugués',
-    'zh': 'Chino',
-    'ja': 'Japonés',
+    'fr': 'French',
+    'de': 'German',
+    'it': 'Italian',
+    'pt': 'Portuguese',
+    'zh': 'Chinese',
+    'ja': 'Japanese',
   };
 
-  /// Mapeo nombre → código para filtros (admite nombres en español e inglés)
+  /// Mapeo nombre → código para filtros
   static const Map<String, String> nameToCode = {
-    'Español': 'es',
+    'Spanish': 'es',
     'English': 'en',
-    'Inglés': 'en',
-    'Français': 'fr',
-    'Francés': 'fr',
-    'Deutsch': 'de',
-    'Alemán': 'de',
-    'Italiano': 'it',
-    'Portugués': 'pt',
-    'Chino': 'zh',
-    'Japonés': 'ja',
+    'French': 'fr',
+    'German': 'de',
+    'Italian': 'it',
+    'Portuguese': 'pt',
+    'Chinese': 'zh',
+    'Japanese': 'ja',
   };
 
   /// Obtiene el nombre del idioma a partir de su código.
@@ -39,11 +36,11 @@ class AppLanguages {
 
   /// Idiomas soportados por el backend en la búsqueda (DataInitializer: es, en, fr, de, it)
   static const List<String> searchFilterLanguageNames = [
-    'Español',
-    'Inglés',
-    'Francés',
-    'Alemán',
-    'Italiano',
+    'Spanish',
+    'English',
+    'French',
+    'German',
+    'Italian',
   ];
 
   /// Obtiene el código a partir del nombre del idioma (ej. "Español" → "es").

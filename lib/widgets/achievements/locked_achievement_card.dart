@@ -43,9 +43,9 @@ class LockedAchievementCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Título
+                // Title
                 Text(
-                  achievement.title,
+                  achievement.displayTitle,
                   style: const TextStyle(
                     color: AppTheme.text,
                     fontSize: AppDimensions.fontSizeM,
@@ -55,9 +55,9 @@ class LockedAchievementCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: AppDimensions.spacingXS),
-                // Descripción
+                // Description
                 Text(
-                  achievement.description,
+                  achievement.displayDescription,
                   style: const TextStyle(
                     color: AppTheme.subtle,
                     fontSize: AppDimensions.fontSizeS,
@@ -87,7 +87,7 @@ class LockedAchievementCard extends StatelessWidget {
                     const SizedBox(width: AppDimensions.spacingSM),
                     // Porcentaje
                     Text(
-                      '${achievement.progressPercentInt}% completado',
+                      '${achievement.progressPercentInt}% completed',
                       style: const TextStyle(
                         color: AppTheme.subtle,
                         fontSize: AppDimensions.fontSizeXS,

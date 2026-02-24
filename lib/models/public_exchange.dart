@@ -23,7 +23,7 @@ class PublicExchange {
   final String creatorName;
   final String? creatorAvatarUrl;
   final bool creatorIsPro; // Si el creador tiene suscripción PRO
-  final String requiredLevel; // "Principiante", "Intermedio", "Avanzado"
+  final String requiredLevel; // e.g. "Beginner", "Intermediate", "Advanced"
   final int minLevel; // Nivel numérico mínimo (1-10) para el idioma objetivo
   final DateTime date;
   final int durationMinutes;
@@ -108,13 +108,13 @@ class PublicExchange {
 
     return PublicExchange(
       id: (json['id'] ?? '').toString(),
-      title: (json['title'] ?? 'Intercambio').toString(),
+      title: (json['title'] ?? 'Exchange').toString(),
       description: (json['description'] ?? '').toString(),
       creatorId: (json['creatorId'] ?? '').toString(),
       creatorName: (json['creatorName'] ?? '').toString(),
       creatorAvatarUrl: _nonEmptyString(json['creatorAvatarUrl']),
       creatorIsPro: json['creatorIsPro'] == true,
-      requiredLevel: (json['requiredLevel'] ?? 'Principiante').toString(),
+      requiredLevel: (json['requiredLevel'] ?? 'Beginner').toString(),
       minLevel: (json['minLevel'] is int)
           ? json['minLevel'] as int
           : int.tryParse((json['minLevel'] ?? '1').toString()) ?? 1,

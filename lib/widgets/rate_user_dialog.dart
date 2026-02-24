@@ -79,7 +79,7 @@ class _RateUserDialogState extends State<RateUserDialog> {
     } else {
       setState(() {
         _isSubmitting = false;
-        _error = 'Error al enviar la valoración. Inténtalo de nuevo.';
+        _error = 'Failed to send rating. Please try again.';
       });
     }
   }
@@ -92,7 +92,7 @@ class _RateUserDialogState extends State<RateUserDialog> {
         borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
       ),
       title: const Text(
-        'Valorar usuario',
+        'Rate user',
         style: TextStyle(color: AppTheme.text),
       ),
       content: SingleChildScrollView(
@@ -193,7 +193,7 @@ class _RateUserDialogState extends State<RateUserDialog> {
                     color: Colors.white,
                   ),
                 )
-              : const Text('Enviar'),
+              : const Text('Send'),
         ),
       ],
     );

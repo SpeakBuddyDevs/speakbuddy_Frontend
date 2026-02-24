@@ -107,10 +107,34 @@ class CurrentUserService {
     return _profile?.avatarPath;
   }
 
+  /// Obtiene el código ISO del idioma de aprendizaje activo del usuario.
+  ///
+  /// Si hay varios idiomas activos, devuelve el que va primero en orden
+  /// alfabético por código. Si no hay ninguno activo, usa todos los
+  /// idiomas de aprendizaje y devuelve igualmente el primero en orden
+  /// alfabético. Devuelve `null` si el usuario no tiene idiomas de
+  /// aprendizaje configurados.
+  String? getActiveLearningLanguageCode() {
+    _loadFromBackendIfNeeded();
+    final langs = _profile?.learningLanguages;
+    if (langs == null || langs.isEmpty) return null;
+
+    final actives = langs.where((l) => l.active).toList();
+    final source = actives.isNotEmpty ? actives : List.of(langs);
+
+    source.sort(
+      (a, b) => a.code.toLowerCase().compareTo(b.code.toLowerCase()),
+    );
+
+    return source.first.code.toLowerCase();
+  }
+
   /// Obtiene el código ISO del idioma nativo del usuario.
   String getNativeLanguageCode() {
     _loadFromBackendIfNeeded();
-    return _profile?.nativeLanguage ?? 'es';
+    final code = _profile?.nativeLanguage;
+    if (code == null || code.isEmpty) return 'es';
+    return code.toLowerCase();
   }
 }
 

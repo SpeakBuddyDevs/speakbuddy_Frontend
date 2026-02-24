@@ -619,8 +619,8 @@ class _ExchangesCarouselState extends State<_ExchangesCarousel> {
 
     return Column(
       children: [
-        SizedBox(
-          height: 450,
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: 520),
           child: PageView.builder(
             controller: _pageController,
             itemCount: widget.exchanges.length,
@@ -633,12 +633,14 @@ class _ExchangesCarouselState extends State<_ExchangesCarousel> {
               final exchange = widget.exchanges[index];
               return Padding(
                 padding: const EdgeInsets.only(right: AppDimensions.spacingMD),
-                child: JoinedExchangeCard(
-                  exchange: exchange,
-                  onConfirm: widget.onConfirm,
-                  onLeave: () => widget.onLeave(exchange),
-                  onOpenChat: () => widget.onOpenChat(exchange),
-                  hasNewMessages: widget.hasNewMessages[exchange.id] ?? false,
+                child: SingleChildScrollView(
+                  child: JoinedExchangeCard(
+                    exchange: exchange,
+                    onConfirm: widget.onConfirm,
+                    onLeave: () => widget.onLeave(exchange),
+                    onOpenChat: () => widget.onOpenChat(exchange),
+                    hasNewMessages: widget.hasNewMessages[exchange.id] ?? false,
+                  ),
                 ),
               );
             },

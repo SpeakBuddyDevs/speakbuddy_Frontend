@@ -7,6 +7,7 @@ import '../widgets/password_dialog.dart';
 import '../constants/level_ids.dart';
 import '../constants/video_platforms.dart';
 import '../repositories/api_public_exchanges_repository.dart';
+import '../services/current_user_service.dart';
 
 /// Pantalla para crear un nuevo intercambio (público o privado).
 ///
@@ -48,11 +49,24 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
   @override
   void initState() {
     super.initState();
-    // Pre-seleccionar idiomas del usuario (mock)
-    // BACKEND: Obtener desde perfil del usuario
-    // Nota: availableCodes usa minúsculas (es, en, fr...), el value del Dropdown debe coincidir
-    _nativeLanguageCode = 'es'; // Mock: idioma nativo del usuario
-    _targetLanguageCode = 'en'; // Mock: primer idioma de aprendizaje activo
+    // Pre-seleccionar idiomas del usuario usando su perfil real.
+    // Nota: availableCodes usa minúsculas (es, en, fr...), el value del Dropdown debe coincidir.
+    final userService = CurrentUserService();
+    _nativeLanguageCode = userService.getNativeLanguageCode();
+    _targetLanguageCode =
+        userService.getActiveLearningLanguageCode() ?? 'en';
+
+    // Asegurar que, si el perfil aún no estaba cargado, se actualicen
+    // los valores cuando llegue la respuesta del backend.
+    Future.microtask(() async {
+      await userService.preload();
+      if (!mounted) return;
+      setState(() {
+        _nativeLanguageCode = userService.getNativeLanguageCode();
+        _targetLanguageCode =
+            userService.getActiveLearningLanguageCode() ?? _targetLanguageCode;
+      });
+    });
   }
 
   @override
@@ -179,12 +193,12 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
         return;
       }
 
-      final nativeLanguage = _nativeLanguageCode != null
-          ? AppLanguages.getName(_nativeLanguageCode!)
-          : 'Español';
-      final targetLanguage = _targetLanguageCode != null
-          ? AppLanguages.getName(_targetLanguageCode!)
-          : 'Inglés';
+      // Resolver códigos de idioma con valores por defecto seguros.
+      final nativeCode = (_nativeLanguageCode ?? 'es').toLowerCase();
+      final targetCode = (_targetLanguageCode ?? 'en').toLowerCase();
+
+      final nativeLanguage = AppLanguages.getName(nativeCode);
+      final targetLanguage = AppLanguages.getName(targetCode);
 
       final created = await _repository.createExchange(
         title: _titleController.text.trim().isNotEmpty
@@ -382,6 +396,7 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
                     Expanded(
                       child: DropdownButtonFormField<int>(
                         value: _requiredLevelMinOrder,
+                        isExpanded: true,
                         decoration: const InputDecoration(
                           labelText: 'Nivel mínimo',
                         ),
@@ -414,6 +429,7 @@ class _CreateExchangeScreenState extends State<CreateExchangeScreen> {
                     Expanded(
                       child: DropdownButtonFormField<int>(
                         value: _requiredLevelMaxOrder,
+                        isExpanded: true,
                         decoration: const InputDecoration(
                           labelText: 'Nivel máximo',
                         ),

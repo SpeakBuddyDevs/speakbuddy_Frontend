@@ -53,24 +53,9 @@ class PublicExchangeCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Avatar del creador
-              CircleAvatar(
-                radius: 24,
-                backgroundColor: AppTheme.panel,
-                backgroundImage: exchange.creatorAvatarUrl != null
-                    ? NetworkImage(exchange.creatorAvatarUrl!)
-                    : null,
-                child: exchange.creatorAvatarUrl == null
-                    ? Text(
-                        exchange.creatorName.isNotEmpty
-                            ? exchange.creatorName[0].toUpperCase()
-                            : '?',
-                        style: TextStyle(
-                          color: AppTheme.text,
-                          fontSize: AppDimensions.fontSizeL,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      )
-                    : null,
+              _CreatorAvatar(
+                avatarUrl: exchange.creatorAvatarUrl,
+                creatorName: exchange.creatorName,
               ),
               const SizedBox(width: AppDimensions.spacingMD),
               // Título y creador
@@ -134,36 +119,40 @@ class PublicExchangeCard extends StatelessWidget {
           ),
           const SizedBox(height: AppDimensions.spacingMD),
           // Intercambio bidireccional de idiomas
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppDimensions.spacingMD,
-              vertical: AppDimensions.spacingSM,
-            ),
-            decoration: BoxDecoration(
-              color: AppTheme.panel,
-              borderRadius: BorderRadius.circular(AppDimensions.radiusS),
-              border: Border.all(color: AppTheme.accent),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.swap_horiz_rounded,
-                  size: 16,
-                  color: AppTheme.accent,
-                ),
-                const SizedBox(width: AppDimensions.spacingSM),
-                Text(
-                  '${exchange.nativeLanguage} ↔ ${exchange.targetLanguage}',
-                  style: TextStyle(
-                    color: AppTheme.text,
-                    fontSize: AppDimensions.fontSizeS,
-                    fontWeight: FontWeight.w500,
+          if (exchange.nativeLanguage.isNotEmpty || exchange.targetLanguage.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppDimensions.spacingMD,
+                vertical: AppDimensions.spacingSM,
+              ),
+              decoration: BoxDecoration(
+                color: AppTheme.panel,
+                borderRadius: BorderRadius.circular(AppDimensions.radiusS),
+                border: Border.all(color: AppTheme.accent),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.swap_horiz_rounded,
+                    size: 16,
+                    color: AppTheme.accent,
                   ),
-                ),
-              ],
+                  const SizedBox(width: AppDimensions.spacingSM),
+                  Flexible(
+                    child: Text(
+                      '${exchange.nativeLanguage} ↔ ${exchange.targetLanguage}',
+                      style: TextStyle(
+                        color: AppTheme.text,
+                        fontSize: AppDimensions.fontSizeS,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
           const SizedBox(height: AppDimensions.spacingMD),
           // Tags: Nivel, Fecha
           Wrap(
@@ -234,55 +223,63 @@ class PublicExchangeCard extends StatelessWidget {
           ),
           const SizedBox(height: AppDimensions.spacingMD),
           // Detalles adicionales: Nivel mínimo y idiomas
-          Row(
+          Wrap(
+            spacing: AppDimensions.spacingSM,
+            runSpacing: AppDimensions.spacingXS,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              Icon(
-                Icons.star_rounded,
-                size: AppDimensions.iconSizeS,
-                color: AppTheme.gold,
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.star_rounded,
+                    size: AppDimensions.iconSizeS,
+                    color: AppTheme.gold,
+                  ),
+                  const SizedBox(width: AppDimensions.spacingXS),
+                  Text(
+                    'Nivel ${exchange.minLevel}+',
+                    style: TextStyle(
+                      color: AppTheme.subtle,
+                      fontSize: AppDimensions.fontSizeS,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: AppDimensions.spacingXS),
-              Text(
-                'Nivel ${exchange.minLevel}+',
-                style: TextStyle(
-                  color: AppTheme.subtle,
-                  fontSize: AppDimensions.fontSizeS,
+              if (exchange.nativeLanguage.isNotEmpty) ...[
+                Container(
+                  width: 4,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppTheme.subtle,
+                    shape: BoxShape.circle,
+                  ),
                 ),
-              ),
-              const SizedBox(width: AppDimensions.spacingSM),
-              Container(
-                width: 4,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppTheme.subtle,
-                  shape: BoxShape.circle,
+                Text(
+                  'Ofrece: ${exchange.nativeLanguage}',
+                  style: TextStyle(
+                    color: AppTheme.subtle,
+                    fontSize: AppDimensions.fontSizeS,
+                  ),
                 ),
-              ),
-              const SizedBox(width: AppDimensions.spacingSM),
-              Text(
-                'Ofrece: ${exchange.nativeLanguage}',
-                style: TextStyle(
-                  color: AppTheme.subtle,
-                  fontSize: AppDimensions.fontSizeS,
+              ],
+              if (exchange.targetLanguage.isNotEmpty) ...[
+                Container(
+                  width: 4,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppTheme.subtle,
+                    shape: BoxShape.circle,
+                  ),
                 ),
-              ),
-              const SizedBox(width: AppDimensions.spacingSM),
-              Container(
-                width: 4,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppTheme.subtle,
-                  shape: BoxShape.circle,
+                Text(
+                  'Busca: ${exchange.targetLanguage}',
+                  style: TextStyle(
+                    color: AppTheme.subtle,
+                    fontSize: AppDimensions.fontSizeS,
+                  ),
                 ),
-              ),
-              const SizedBox(width: AppDimensions.spacingSM),
-              Text(
-                'Busca: ${exchange.targetLanguage}',
-                style: TextStyle(
-                  color: AppTheme.subtle,
-                  fontSize: AppDimensions.fontSizeS,
-                ),
-              ),
+              ],
             ],
           ),
           // Temas/categorías (solo si hay temas)
@@ -661,6 +658,58 @@ class _InfoTag extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _CreatorAvatar extends StatelessWidget {
+  final String? avatarUrl;
+  final String creatorName;
+
+  const _CreatorAvatar({
+    required this.avatarUrl,
+    required this.creatorName,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final hasAvatar = avatarUrl != null && avatarUrl!.isNotEmpty;
+    final initials = creatorName.isNotEmpty
+        ? creatorName[0].toUpperCase()
+        : '?';
+
+    return Container(
+      width: 48,
+      height: 48,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: AppTheme.panel,
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: hasAvatar
+          ? Image.network(
+              avatarUrl!,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => _buildInitials(initials),
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return _buildInitials(initials);
+              },
+            )
+          : _buildInitials(initials),
+    );
+  }
+
+  Widget _buildInitials(String initials) {
+    return Center(
+      child: Text(
+        initials,
+        style: TextStyle(
+          color: AppTheme.text,
+          fontSize: AppDimensions.fontSizeL,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }

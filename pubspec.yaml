@@ -22,4 +22,4 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - lib\assets\images\image.png
+    - lib/assets/images/

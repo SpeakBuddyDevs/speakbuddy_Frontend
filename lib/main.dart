@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
-import 'screens/profile_screen.dart';
 import 'screens/main_shell.dart';
 import 'screens/public_profile_screen.dart';
 import 'screens/chat_screen.dart';
@@ -30,7 +29,6 @@ class MyApp extends StatelessWidget {
         AppRoutes.home: (_) => const LoginScreen(),
         AppRoutes.register: (_) => const RegisterScreen(),
         AppRoutes.login: (_) => const LoginScreen(),
-        AppRoutes.profile: (_) => const ProfileScreen(),
         AppRoutes.main: (context) {
           final args = ModalRoute.of(context)?.settings.arguments;
           final initialIndex = args is int ? args : null;

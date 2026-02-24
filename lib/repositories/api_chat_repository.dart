@@ -6,17 +6,15 @@ import 'package:http/http.dart' as http;
 
 import '../constants/api_endpoints.dart';
 import '../models/chat_message.dart';
-import '../services/auth_service.dart';
+import 'base_api_repository.dart';
 import 'chat_repository.dart';
 
 /// Implementación que usa la API para chat de intercambios y chat 1:1.
 /// Chat de intercambio: chatId con formato "exchange_{exchangeId}".
 /// Chat 1:1: chatId con formato "chat_{minUserId}_{maxUserId}".
-class ApiChatRepository implements ChatRepository {
+class ApiChatRepository extends BaseApiRepository implements ChatRepository {
   static const String _exchangePrefix = 'exchange_';
   static const String _directChatPrefix = 'chat_';
-
-  final _authService = AuthService();
 
   bool _isExchangeChat(String chatId) => chatId.startsWith(_exchangePrefix);
 
@@ -27,9 +25,9 @@ class ApiChatRepository implements ChatRepository {
 
   @override
   Future<String> getOrCreateChatId({required String otherUserId}) async {
-    final headers = await _authService.headersWithAuth();
+    final auth = await buildAuthContext();
     final uri = Uri.parse(ApiEndpoints.chatsWithUser(otherUserId));
-    final response = await http.get(uri, headers: headers);
+    final response = await http.get(uri, headers: auth.headers);
 
     if (response.statusCode != 200) {
       throw Exception('Error ${response.statusCode}: ${response.body}');
@@ -87,9 +85,9 @@ class ApiChatRepository implements ChatRepository {
   }
 
   Future<List<ChatMessage>> _fetchDirectChatMessages(String chatId) async {
-    final headers = await _authService.headersWithAuth();
+    final auth = await buildAuthContext();
     final uri = Uri.parse(ApiEndpoints.chatMessages(chatId));
-    final response = await http.get(uri, headers: headers);
+    final response = await http.get(uri, headers: auth.headers);
 
     if (response.statusCode != 200) {
       throw Exception('Error ${response.statusCode}: ${response.body}');
@@ -124,9 +122,9 @@ class ApiChatRepository implements ChatRepository {
   }
 
   Future<List<ChatMessage>> _fetchExchangeMessages(String exchangeId) async {
-    final headers = await _authService.headersWithAuth();
+    final auth = await buildAuthContext();
     final uri = Uri.parse(ApiEndpoints.exchangeMessages(exchangeId));
-    final response = await http.get(uri, headers: headers);
+    final response = await http.get(uri, headers: auth.headers);
 
     if (response.statusCode != 200) {
       throw Exception('Error ${response.statusCode}: ${response.body}');
@@ -203,12 +201,13 @@ class ApiChatRepository implements ChatRepository {
       throw Exception('chatId inválido: $chatId');
     }
 
-    final headers = await _authService.headersWithAuth();
-    headers['Content-Type'] = 'application/json';
+    final auth = await buildAuthContext(extraHeaders: {
+      'Content-Type': 'application/json',
+    });
 
     final response = await http.post(
       Uri.parse(uri),
-      headers: headers,
+      headers: auth.headers,
       body: jsonEncode({'content': text}),
     );
 

@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import '../../models/public_exchange_filters.dart';
 import '../../theme/app_theme.dart';
 import '../../constants/dimensions.dart';
+import '../common/app_bottom_sheet_scaffold.dart';
+import '../common/filter_widgets.dart';
 
-/// Lista de idiomas disponibles para filtrar
 const List<String> _availableLanguages = [
   'Español',
   'Inglés',
@@ -18,7 +19,6 @@ const List<String> _availableLanguages = [
   'Coreano',
 ];
 
-/// Lista de niveles disponibles
 const List<String> _availableLevels = [
   'Principiante',
   'Intermedio',
@@ -105,282 +105,121 @@ class _PublicExchangeFiltersBottomSheetState
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.background,
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(AppDimensions.radiusXL),
-        ),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+    return AppBottomSheetScaffold(
+      title: 'Filtros',
+      onReset: _resetFilters,
+      actionLabel: 'Aplicar filtros',
+      onAction: _applyFilters,
+      content: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Handle
-          Container(
-            margin: const EdgeInsets.only(top: AppDimensions.spacingMD),
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: AppTheme.border,
-              borderRadius: BorderRadius.circular(2),
-            ),
+          const FilterSectionTitle(title: 'Nivel requerido'),
+          FilterDropdown(
+            label: 'Seleccionar nivel',
+            value: _requiredLevel,
+            items: _availableLevels,
+            onChanged: (v) => setState(() => _requiredLevel = v),
           ),
-          // Header
-          Padding(
-            padding: const EdgeInsets.all(AppDimensions.spacingL),
-            child: Row(
-              children: [
-                Text(
-                  'Filtros',
-                  style: TextStyle(
-                    color: AppTheme.text,
-                    fontSize: AppDimensions.fontSizeXL,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const Spacer(),
-                TextButton(
-                  onPressed: _resetFilters,
-                  child: Text(
-                    'Restablecer',
-                    style: TextStyle(color: AppTheme.accent),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Divider(color: AppTheme.border, height: 1),
-          // Content
-          Flexible(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(AppDimensions.spacingL),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+          const SizedBox(height: AppDimensions.spacingL),
+          const FilterSectionTitle(title: 'Fecha mínima'),
+          InkWell(
+            onTap: _selectDate,
+            borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
+            child: Container(
+              decoration: BoxDecoration(
+                color: AppTheme.card,
+                borderRadius:
+                    BorderRadius.circular(AppDimensions.radiusMD),
+                border: Border.all(color: AppTheme.border),
+              ),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppDimensions.spacingL,
+                vertical: AppDimensions.spacingMD,
+              ),
+              child: Row(
                 children: [
-                  // Nivel requerido
-                  _SectionTitle(title: 'Nivel requerido'),
-                  _FilterDropdown(
-                    label: 'Seleccionar nivel',
-                    value: _requiredLevel,
-                    items: _availableLevels,
-                    onChanged: (v) => setState(() => _requiredLevel = v),
-                  ),
-                  const SizedBox(height: AppDimensions.spacingL),
-                  // Fecha mínima
-                  _SectionTitle(title: 'Fecha mínima'),
-                  InkWell(
-                    onTap: _selectDate,
-                    borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: AppTheme.card,
-                        borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
-                        border: Border.all(color: AppTheme.border),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppDimensions.spacingL,
-                        vertical: AppDimensions.spacingMD,
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.calendar_today_rounded,
-                              color: AppTheme.subtle, size: 20),
-                          const SizedBox(width: AppDimensions.spacingMD),
-                          Expanded(
-                            child: Text(
-                              _minDate != null
-                                  ? '${_minDate!.day}/${_minDate!.month}/${_minDate!.year}'
-                                  : 'Seleccionar fecha',
-                              style: TextStyle(
-                                color: _minDate != null
-                                    ? AppTheme.text
-                                    : AppTheme.subtle,
-                              ),
-                            ),
-                          ),
-                          if (_minDate != null)
-                            IconButton(
-                              icon: Icon(Icons.close_rounded,
-                                  color: AppTheme.subtle, size: 20),
-                              onPressed: () => setState(() => _minDate = null),
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
-                            ),
-                        ],
+                  Icon(Icons.calendar_today_rounded,
+                      color: AppTheme.subtle, size: 20),
+                  const SizedBox(width: AppDimensions.spacingMD),
+                  Expanded(
+                    child: Text(
+                      _minDate != null
+                          ? '${_minDate!.day}/${_minDate!.month}/${_minDate!.year}'
+                          : 'Seleccionar fecha',
+                      style: TextStyle(
+                        color: _minDate != null
+                            ? AppTheme.text
+                            : AppTheme.subtle,
                       ),
                     ),
                   ),
-                  const SizedBox(height: AppDimensions.spacingL),
-                  // Duración máxima
-                  _SectionTitle(title: 'Duración máxima (minutos)'),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: SliderTheme(
-                          data: SliderTheme.of(context).copyWith(
-                            activeTrackColor: AppTheme.accent,
-                            inactiveTrackColor: AppTheme.border,
-                            thumbColor: AppTheme.accent,
-                            overlayColor:
-                                AppTheme.accent.withValues(alpha: 0.2),
-                          ),
-                          child: Slider(
-                            value: _maxDuration,
-                            min: 0.0,
-                            max: 120.0,
-                            divisions: 24,
-                            onChanged: (v) => setState(() => _maxDuration = v),
-                          ),
-                        ),
-                      ),
-                      Container(
-                        width: 60,
-                        alignment: Alignment.center,
-                        child: Text(
-                          _maxDuration > 0
-                              ? _maxDuration.toInt().toString()
-                              : 'Sin límite',
-                          style: TextStyle(
-                            color: AppTheme.text,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppDimensions.spacingL),
-                  // Idioma ofrecido
-                  _SectionTitle(title: 'Idioma ofrecido'),
-                  _FilterDropdown(
-                    label: 'Seleccionar idioma ofrecido',
-                    value: _nativeLanguage,
-                    items: _availableLanguages,
-                    onChanged: (v) => setState(() => _nativeLanguage = v),
-                  ),
-                  const SizedBox(height: AppDimensions.spacingL),
-                  // Idioma buscado
-                  _SectionTitle(title: 'Idioma buscado'),
-                  _FilterDropdown(
-                    label: 'Seleccionar idioma buscado',
-                    value: _targetLanguage,
-                    items: _availableLanguages,
-                    onChanged: (v) => setState(() => _targetLanguage = v),
-                  ),
-                  const SizedBox(height: AppDimensions.spacingXXXL),
+                  if (_minDate != null)
+                    IconButton(
+                      icon: Icon(Icons.close_rounded,
+                          color: AppTheme.subtle, size: 20),
+                      onPressed: () => setState(() => _minDate = null),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
                 ],
               ),
             ),
           ),
-          // Botón aplicar
-          Padding(
-            padding: EdgeInsets.fromLTRB(
-              AppDimensions.spacingL,
-              AppDimensions.spacingMD,
-              AppDimensions.spacingL,
-              AppDimensions.spacingL +
-                  MediaQuery.of(context).padding.bottom,
-            ),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _applyFilters,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.accent,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                      vertical: AppDimensions.spacingL),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
+          const SizedBox(height: AppDimensions.spacingL),
+          const FilterSectionTitle(title: 'Duración máxima (minutos)'),
+          Row(
+            children: [
+              Expanded(
+                child: SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    activeTrackColor: AppTheme.accent,
+                    inactiveTrackColor: AppTheme.border,
+                    thumbColor: AppTheme.accent,
+                    overlayColor:
+                        AppTheme.accent.withValues(alpha: 0.2),
+                  ),
+                  child: Slider(
+                    value: _maxDuration,
+                    min: 0.0,
+                    max: 120.0,
+                    divisions: 24,
+                    onChanged: (v) => setState(() => _maxDuration = v),
                   ),
                 ),
-                child: const Text(
-                  'Aplicar filtros',
-                  style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+              Container(
+                width: 60,
+                alignment: Alignment.center,
+                child: Text(
+                  _maxDuration > 0
+                      ? _maxDuration.toInt().toString()
+                      : 'Sin límite',
+                  style: TextStyle(
+                    color: AppTheme.text,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
+          const SizedBox(height: AppDimensions.spacingL),
+          const FilterSectionTitle(title: 'Idioma ofrecido'),
+          FilterDropdown(
+            label: 'Seleccionar idioma ofrecido',
+            value: _nativeLanguage,
+            items: _availableLanguages,
+            onChanged: (v) => setState(() => _nativeLanguage = v),
+          ),
+          const SizedBox(height: AppDimensions.spacingL),
+          const FilterSectionTitle(title: 'Idioma buscado'),
+          FilterDropdown(
+            label: 'Seleccionar idioma buscado',
+            value: _targetLanguage,
+            items: _availableLanguages,
+            onChanged: (v) => setState(() => _targetLanguage = v),
+          ),
+          const SizedBox(height: AppDimensions.spacingXXXL),
         ],
-      ),
-    );
-  }
-}
-
-class _SectionTitle extends StatelessWidget {
-  final String title;
-
-  const _SectionTitle({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppDimensions.spacingSM),
-      child: Text(
-        title,
-        style: TextStyle(
-          color: AppTheme.subtle,
-          fontSize: AppDimensions.fontSizeS,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-}
-
-class _FilterDropdown extends StatelessWidget {
-  final String label;
-  final String? value;
-  final List<String> items;
-  final ValueChanged<String?> onChanged;
-
-  const _FilterDropdown({
-    required this.label,
-    required this.value,
-    required this.items,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.card,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
-        border: Border.all(color: AppTheme.border),
-      ),
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppDimensions.spacingL,
-        vertical: AppDimensions.spacingXS,
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: value,
-          hint: Text(
-            label,
-            style: TextStyle(color: AppTheme.subtle),
-          ),
-          isExpanded: true,
-          dropdownColor: AppTheme.card,
-          icon: Icon(Icons.keyboard_arrow_down_rounded,
-              color: AppTheme.subtle),
-          items: [
-            DropdownMenuItem<String>(
-              value: null,
-              child: Text(
-                'Todos',
-                style: TextStyle(color: AppTheme.subtle),
-              ),
-            ),
-            ...items.map((item) => DropdownMenuItem<String>(
-                  value: item,
-                  child: Text(
-                    item,
-                    style: TextStyle(color: AppTheme.text),
-                  ),
-                )),
-          ],
-          onChanged: onChanged,
-        ),
       ),
     );
   }

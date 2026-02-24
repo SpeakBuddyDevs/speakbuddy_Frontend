@@ -7,22 +7,20 @@ import '../constants/languages.dart';
 import '../models/user_profile.dart';
 import '../models/language_item.dart';
 import '../models/public_user_profile.dart';
-import '../services/auth_service.dart';
+import 'base_api_repository.dart';
 import 'users_repository.dart';
 
-class ApiUsersRepository implements UsersRepository {
-  final _authService = AuthService();
+class ApiUsersRepository extends BaseApiRepository implements UsersRepository {
   Map<String, int>? _languageIdCache;
 
   Future<Map<String, int>> _fetchLanguageIds() async {
     if (_languageIdCache != null) return _languageIdCache!;
     try {
-      final headers = await _authService.headersWithAuth();
-      final token = await _authService.getToken();
-      if (token == null || token.isEmpty) return {};
+      final auth = await buildAuthContext();
+      if (!auth.hasValidToken) return {};
 
       final url = Uri.parse(ApiEndpoints.languages);
-      final response = await http.get(url, headers: headers);
+      final response = await http.get(url, headers: auth.headers);
       if (response.statusCode != 200) return {};
 
       final list =
@@ -51,17 +49,16 @@ class ApiUsersRepository implements UsersRepository {
   @override
   Future<PublicUserProfile?> getPublicProfile(String userId) async {
     try {
-      final headers = await _authService.headersWithAuth();
-      final token = await _authService.getToken();
-      if (token == null || token.isEmpty) return null;
+      final auth = await buildAuthContext();
+      if (!auth.hasValidToken) return null;
 
       final url = Uri.parse(ApiEndpoints.userProfile(userId));
-      final response = await http.get(url, headers: headers);
+      final response = await http.get(url, headers: auth.headers);
 
       if (response.statusCode != 200) return null;
 
       final data =
-          jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+          decodeJsonBody(response) as Map<String, dynamic>;
       return _mapProfileResponseToPublic(data);
     } catch (e, st) {
       print('🔴 [PublicProfile] Error: $e');
@@ -149,9 +146,8 @@ class ApiUsersRepository implements UsersRepository {
     String? description,
   }) async {
     try {
-      final headers = await _authService.headersWithAuth();
-      final token = await _authService.getToken();
-      if (token == null || token.isEmpty) return false;
+      final auth = await buildAuthContext();
+      if (!auth.hasValidToken) return false;
 
       final body = <String, dynamic>{};
       if (name != null) body['name'] = name;
@@ -163,7 +159,7 @@ class ApiUsersRepository implements UsersRepository {
       final url = Uri.parse(ApiEndpoints.userProfile(userId));
       final response = await http.put(
         url,
-        headers: headers,
+        headers: auth.headers,
         body: jsonEncode(body),
       );
       if (response.statusCode != 200) {
@@ -188,14 +184,13 @@ class ApiUsersRepository implements UsersRepository {
     final languageId = LanguageIds.getId(code);
     if (languageId == null) return false;
     try {
-      final headers = await _authService.headersWithAuth();
-      final token = await _authService.getToken();
-      if (token == null || token.isEmpty) return false;
+      final auth = await buildAuthContext();
+      if (!auth.hasValidToken) return false;
 
       final url = Uri.parse(ApiEndpoints.userLanguagesNative(userId));
       final response = await http.put(
         url,
-        headers: headers,
+        headers: auth.headers,
         body: jsonEncode({'newNativeLanguageId': languageId}),
       );
       if (response.statusCode != 200) {
@@ -222,14 +217,13 @@ class ApiUsersRepository implements UsersRepository {
     final languageId = ids[code] ?? LanguageIds.getId(code);
     if (languageId == null || languageId == 0) return false;
     try {
-      final headers = await _authService.headersWithAuth();
-      final token = await _authService.getToken();
-      if (token == null || token.isEmpty) return false;
+      final auth = await buildAuthContext();
+      if (!auth.hasValidToken) return false;
 
       final url = Uri.parse(ApiEndpoints.userLanguagesLearn(userId));
       final response = await http.post(
         url,
-        headers: headers,
+        headers: auth.headers,
         body: jsonEncode({'languageId': languageId, 'levelId': levelId}),
       );
       if (response.statusCode != 200) {
@@ -251,9 +245,8 @@ class ApiUsersRepository implements UsersRepository {
     String languageCode,
   ) async {
     try {
-      final headers = await _authService.headersWithAuth();
-      final token = await _authService.getToken();
-      if (token == null || token.isEmpty) return false;
+      final auth = await buildAuthContext();
+      if (!auth.hasValidToken) return false;
 
       // URL: /api/users/{userId}/languages/{code}/active
       final url = Uri.parse(
@@ -261,7 +254,7 @@ class ApiUsersRepository implements UsersRepository {
       );
 
       // Usamos PATCH porque así lo definimos en el backend (@PatchMapping)
-      final response = await http.patch(url, headers: headers);
+      final response = await http.patch(url, headers: auth.headers);
 
       if (response.statusCode != 200) {
         print('🔴 [Profile] Error al activar idioma: ${response.statusCode}');
@@ -279,14 +272,14 @@ class ApiUsersRepository implements UsersRepository {
     String languageCode,
   ) async {
     try {
-      final headers = await _authService.headersWithAuth();
+      final auth = await buildAuthContext();
       // URL: /api/users/{userId}/languages/{code}/inactive
       final url = Uri.parse(
         '${ApiEndpoints.apiBase}/users/$userId/languages/$languageCode/inactive',
       );
 
       // Usamos PATCH
-      final response = await http.patch(url, headers: headers);
+      final response = await http.patch(url, headers: auth.headers);
 
       return response.statusCode == 200;
     } catch (e) {
@@ -301,15 +294,14 @@ class ApiUsersRepository implements UsersRepository {
     String languageCode,
   ) async {
     try {
-      final headers = await _authService.headersWithAuth();
-      final token = await _authService.getToken();
-      if (token == null || token.isEmpty) return false;
+      final auth = await buildAuthContext();
+      if (!auth.hasValidToken) return false;
 
       final url = Uri.parse(
         ApiEndpoints.userLanguagesLearnByCode(userId, languageCode),
       );
 
-      final response = await http.delete(url, headers: headers);
+      final response = await http.delete(url, headers: auth.headers);
 
       if (response.statusCode != 200) {
         print(
@@ -332,9 +324,8 @@ class ApiUsersRepository implements UsersRepository {
     int newLevelId,
   ) async {
     try {
-      final headers = await _authService.headersWithAuth();
-      final token = await _authService.getToken();
-      if (token == null || token.isEmpty) return false;
+      final auth = await buildAuthContext();
+      if (!auth.hasValidToken) return false;
 
       final url = Uri.parse(
         ApiEndpoints.userLanguagesLevelByCode(userId, languageCode),
@@ -342,7 +333,7 @@ class ApiUsersRepository implements UsersRepository {
 
       final response = await http.put(
         url,
-        headers: headers,
+        headers: auth.headers,
         body: jsonEncode({'newLevelId': newLevelId}),
       );
 
@@ -363,12 +354,11 @@ class ApiUsersRepository implements UsersRepository {
   /// Eliminar la cuenta del usuario autenticado
   Future<bool> deleteAccount() async {
     try {
-      final headers = await _authService.headersWithAuth();
-      final token = await _authService.getToken();
-      if (token == null || token.isEmpty) return false;
+      final auth = await buildAuthContext();
+      if (!auth.hasValidToken) return false;
 
       final url = Uri.parse(ApiEndpoints.me);
-      final response = await http.delete(url, headers: headers);
+      final response = await http.delete(url, headers: auth.headers);
 
       if (response.statusCode != 200 && response.statusCode != 204) {
         print(
@@ -387,16 +377,15 @@ class ApiUsersRepository implements UsersRepository {
   /// Obtener mi perfil completo
   Future<UserProfile?> getMyProfile() async {
     try {
-      final headers = await _authService.headersWithAuth();
-      final token = await _authService.getToken();
-      if (token == null || token.isEmpty) return null;
+      final auth = await buildAuthContext();
+      if (!auth.hasValidToken) return null;
 
       final url = Uri.parse(ApiEndpoints.me);
 
-      final response = await http.get(url, headers: headers);
+      final response = await http.get(url, headers: auth.headers);
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(utf8.decode(response.bodyBytes));
+        final data = decodeJsonBody(response);
         return _mapJsonToProfile(data);
       }
       return null;
@@ -411,7 +400,7 @@ class ApiUsersRepository implements UsersRepository {
   /// Devuelve la URL completa de la imagen subida, o null si falla
   Future<String?> uploadProfilePicture(String userId, String filePath) async {
     try {
-      final token = await _authService.getToken();
+      final token = await authService.getToken();
       if (token == null || token.isEmpty) return null;
 
       final url = Uri.parse(ApiEndpoints.userProfilePicture(userId));
@@ -530,15 +519,14 @@ class ApiUsersRepository implements UsersRepository {
   /// Devuelve un mapa con información del resultado, o null si hay error.
   Future<Map<String, dynamic>?> claimDailyBonus() async {
     try {
-      final headers = await _authService.headersWithAuth();
-      final token = await _authService.getToken();
-      if (token == null || token.isEmpty) return null;
+      final auth = await buildAuthContext();
+      if (!auth.hasValidToken) return null;
 
       final url = Uri.parse('${ApiEndpoints.me}/daily-bonus');
-      final response = await http.post(url, headers: headers);
+      final response = await http.post(url, headers: auth.headers);
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(utf8.decode(response.bodyBytes));
+        final data = decodeJsonBody(response);
         return data as Map<String, dynamic>;
       } else if (response.statusCode == 400) {
         final data = jsonDecode(utf8.decode(response.bodyBytes));

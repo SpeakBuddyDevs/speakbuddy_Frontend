@@ -2,12 +2,11 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../constants/api_endpoints.dart';
 import '../models/joined_exchange.dart';
-import '../services/auth_service.dart';
+import 'base_api_repository.dart';
 
 /// Repositorio para crear y confirmar intercambios.
 /// POST /api/exchanges, GET /api/exchanges/{id}, POST /api/exchanges/{id}/confirm
-class ApiExchangeRepository {
-  final _authService = AuthService();
+class ApiExchangeRepository extends BaseApiRepository {
 
   Future<JoinedExchange?> create({
     required DateTime scheduledAt,
@@ -16,11 +15,10 @@ class ApiExchangeRepository {
     List<int>? participantUserIds,
   }) async {
     try {
-      final headers = await _authService.headersWithAuth();
-      headers['Content-Type'] = 'application/json';
-
-      final token = await _authService.getToken();
-      if (token == null || token.isEmpty) return null;
+      final auth = await buildAuthContext(extraHeaders: {
+        'Content-Type': 'application/json',
+      });
+      if (!auth.hasValidToken) return null;
 
       final body = {
         'scheduledAt': scheduledAt.toIso8601String(),
@@ -32,7 +30,7 @@ class ApiExchangeRepository {
 
       final response = await http.post(
         Uri.parse(ApiEndpoints.exchanges),
-        headers: headers,
+        headers: auth.headers,
         body: jsonEncode(body),
       );
 
@@ -50,13 +48,12 @@ class ApiExchangeRepository {
 
   Future<JoinedExchange?> getById(String exchangeId) async {
     try {
-      final headers = await _authService.headersWithAuth();
-      final token = await _authService.getToken();
-      if (token == null || token.isEmpty) return null;
+      final auth = await buildAuthContext();
+      if (!auth.hasValidToken) return null;
 
       final response = await http.get(
         Uri.parse(ApiEndpoints.exchangeDetail(exchangeId)),
-        headers: headers,
+        headers: auth.headers,
       );
 
       if (response.statusCode != 200) return null;
@@ -73,13 +70,12 @@ class ApiExchangeRepository {
 
   Future<JoinedExchange?> confirm(String exchangeId) async {
     try {
-      final headers = await _authService.headersWithAuth();
-      final token = await _authService.getToken();
-      if (token == null || token.isEmpty) return null;
+      final auth = await buildAuthContext();
+      if (!auth.hasValidToken) return null;
 
       final response = await http.post(
         Uri.parse(ApiEndpoints.exchangeConfirm(exchangeId)),
-        headers: headers,
+        headers: auth.headers,
       );
 
       if (response.statusCode != 200) return null;

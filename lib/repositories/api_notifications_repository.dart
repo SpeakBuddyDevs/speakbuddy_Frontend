@@ -4,18 +4,17 @@ import 'package:http/http.dart' as http;
 
 import '../constants/api_endpoints.dart';
 import '../models/notification_model.dart';
-import '../services/auth_service.dart';
+import 'base_api_repository.dart';
 
 /// Repositorio de notificaciones que consume la API REST
-class ApiNotificationsRepository {
-  final _authService = AuthService();
+class ApiNotificationsRepository extends BaseApiRepository {
 
   /// Obtiene el número de notificaciones no leídas
   Future<int> getUnreadCount() async {
-    final headers = await _authService.headersWithAuth();
+    final auth = await buildAuthContext();
     final response = await http.get(
       Uri.parse(ApiEndpoints.notificationsUnreadCount),
-      headers: headers,
+      headers: auth.headers,
     );
 
     if (response.statusCode != 200) return 0;
@@ -33,7 +32,7 @@ class ApiNotificationsRepository {
     int page = 0,
     int size = 20,
   }) async {
-    final headers = await _authService.headersWithAuth();
+    final auth = await buildAuthContext();
     final queryParams = <String, String>{
       'page': page.toString(),
       'size': size.toString(),
@@ -42,7 +41,7 @@ class ApiNotificationsRepository {
     final uri = Uri.parse(ApiEndpoints.notifications).replace(
       queryParameters: queryParams,
     );
-    final response = await http.get(uri, headers: headers);
+    final response = await http.get(uri, headers: auth.headers);
 
     if (response.statusCode != 200) return [];
 
@@ -57,10 +56,10 @@ class ApiNotificationsRepository {
 
   /// Marca una notificación como leída
   Future<void> markAsRead(int id) async {
-    final headers = await _authService.headersWithAuth();
+    final auth = await buildAuthContext();
     final response = await http.put(
       Uri.parse(ApiEndpoints.notificationMarkRead(id.toString())),
-      headers: headers,
+      headers: auth.headers,
     );
 
     if (response.statusCode != 204) {
@@ -72,11 +71,12 @@ class ApiNotificationsRepository {
   Future<void> markAsReadIds(List<int> ids) async {
     if (ids.isEmpty) return;
 
-    final headers = await _authService.headersWithAuth();
-    headers['Content-Type'] = 'application/json';
+    final auth = await buildAuthContext(extraHeaders: {
+      'Content-Type': 'application/json',
+    });
     final response = await http.post(
       Uri.parse(ApiEndpoints.notificationsMarkRead),
-      headers: headers,
+      headers: auth.headers,
       body: jsonEncode({'ids': ids}),
     );
 

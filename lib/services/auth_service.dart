@@ -9,8 +9,6 @@ import '../models/auth_error.dart';
 import 'current_user_service.dart';
 import 'stats_service.dart';
 
-// --- VARIABLE GLOBAL (A prueba de fallos de instancia) ---
-String? globalAccessToken;
 
 class AuthService {
   static final AuthService _instance = AuthService._internal();
@@ -21,8 +19,8 @@ class AuthService {
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
   );
 
-  /// ID del usuario actual (cacheado tras GET /me). Se usa para chat (isMine).
-  String? _cachedUserId;
+  /// Token cacheado en memoria para evitar lecturas repetidas de SecureStorage.
+  String? _cachedToken;
 
   Future<AuthResult> login(String email, String password) async {
     final url = Uri.parse(ApiEndpoints.login);
@@ -37,19 +35,9 @@ class AuthService {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
-        // --- DIAGNÓSTICO: Imprimimos el JSON crudo ---
-        debugPrint("📦 JSON Recibido del Back: $data");
-
-        // Intentamos obtener el token
         final token = data['access_token'];
 
-        // --- DIAGNÓSTICO: ¿Qué vale el token? ---
-        debugPrint("🔑 Valor del token extraído: '$token'");
-
-        // Guardamos en la variable global
-        globalAccessToken = token;
-
-        // Guardamos en disco
+        _cachedToken = token;
         if (token != null) {
           await _storage.write(key: AppConstants.jwtTokenKey, value: token);
         }
@@ -77,56 +65,20 @@ class AuthService {
   }
 
   Future<String?> getToken() async {
-    // 1. Mirar variable global
-    if (globalAccessToken != null) {
-      debugPrint("💎 Token recuperado de variable GLOBAL.");
-      return globalAccessToken;
-    }
+    if (_cachedToken != null) return _cachedToken;
 
-    // 2. Mirar disco
-    debugPrint("⚠️ Variable global vacía. Leyendo disco...");
-    String? token = await _storage.read(key: AppConstants.jwtTokenKey);
-
+    final token = await _storage.read(key: AppConstants.jwtTokenKey);
     if (token != null) {
-      globalAccessToken = token; // Restaurar global
-      debugPrint("💾 Token recuperado del disco.");
-    } else {
-      debugPrint("💀 Token NO encontrado en disco.");
+      _cachedToken = token;
     }
-
     return token;
   }
 
   Future<void> logout() async {
-    globalAccessToken = null;
-    _cachedUserId = null;
+    _cachedToken = null;
     await _storage.delete(key: AppConstants.jwtTokenKey);
     CurrentUserService().clearCache();
     StatsService().clearCache();
-  }
-
-  /// Obtiene el ID del usuario actual (para chat, etc.). Usa caché tras la primera llamada.
-  /// Devuelve null si no hay sesión o el backend no devuelve id.
-  Future<String?> getCurrentUserId() async {
-    if (_cachedUserId != null) return _cachedUserId;
-    final headers = await headersWithAuth();
-    final token = await getToken();
-    if (token == null || token.isEmpty) return null;
-    try {
-      final response = await http.get(
-        Uri.parse(ApiEndpoints.me),
-        headers: headers,
-      );
-      if (response.statusCode != 200) return null;
-      final data = jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>?;
-      final id = data?['id'];
-      if (id == null) return null;
-      _cachedUserId = id.toString();
-      return _cachedUserId;
-    } catch (e) {
-      debugPrint('AuthService getCurrentUserId error: $e');
-      return null;
-    }
   }
 
   Future<AuthResult> register(

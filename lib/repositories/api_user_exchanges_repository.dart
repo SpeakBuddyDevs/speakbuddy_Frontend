@@ -2,23 +2,22 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../constants/api_endpoints.dart';
 import '../models/joined_exchange.dart';
-import '../services/auth_service.dart';
+import 'base_api_repository.dart';
 import 'user_exchanges_repository.dart';
 
 /// Implementación API: GET /api/exchanges/joined
-class ApiUserExchangesRepository implements UserExchangesRepository {
-  final _authService = AuthService();
+class ApiUserExchangesRepository extends BaseApiRepository
+    implements UserExchangesRepository {
 
   @override
   Future<List<JoinedExchange>> getJoinedExchanges() async {
     try {
-      final headers = await _authService.headersWithAuth();
-      final token = await _authService.getToken();
-      if (token == null || token.isEmpty) return [];
+      final auth = await buildAuthContext();
+      if (!auth.hasValidToken) return [];
 
       final response = await http.get(
         Uri.parse(ApiEndpoints.exchangesJoined),
-        headers: headers,
+        headers: auth.headers,
       );
 
       if (response.statusCode != 200) return [];

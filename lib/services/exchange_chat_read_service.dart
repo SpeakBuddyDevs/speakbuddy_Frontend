@@ -1,6 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'auth_service.dart';
+import 'current_user_service.dart';
 
 /// Guarda la última fecha de mensaje "vista" por el usuario en cada chat de intercambio.
 /// Se usa para mostrar el indicador "mensajes nuevos" en la tarjeta.
@@ -10,7 +10,7 @@ class ExchangeChatReadService {
   static const String _prefix = 'chat_last_seen_';
 
   Future<String> _key(String exchangeId) async {
-    final userId = await AuthService().getCurrentUserId();
+    final userId = await CurrentUserService().getCurrentUserId();
     return '$_prefix${userId ?? 'anon'}_$exchangeId';
   }
 

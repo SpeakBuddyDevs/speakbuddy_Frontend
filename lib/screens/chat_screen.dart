@@ -9,7 +9,7 @@ import '../models/public_exchange.dart';
 import '../repositories/api_chat_repository.dart';
 import '../repositories/api_users_repository.dart';
 import '../repositories/fake_exchange_participants_repository.dart';
-import '../services/auth_service.dart';
+import '../services/current_user_service.dart';
 import '../services/exchange_chat_read_service.dart';
 import '../constants/app_constants.dart';
 import '../constants/routes.dart';
@@ -85,7 +85,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
     if (!mounted) return;
 
-    final currentUserId = await AuthService().getCurrentUserId();
+    final currentUserId = await CurrentUserService().getCurrentUserId();
     if (!mounted) return;
 
     setState(() {
@@ -141,8 +141,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
     if (!mounted) return;
 
-    // Obtener ID del usuario actual para alinear "mis mensajes" a la derecha
-    final currentUserId = await AuthService().getCurrentUserId();
+    final currentUserId = await CurrentUserService().getCurrentUserId();
 
     if (!mounted) return;
 

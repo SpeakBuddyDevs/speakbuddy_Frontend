@@ -6,7 +6,7 @@ import '../models/notification_model.dart';
 import '../navigation/chat_args.dart';
 import '../navigation/exchange_chat_args.dart';
 import '../repositories/api_notifications_repository.dart';
-import '../services/auth_service.dart';
+import '../services/current_user_service.dart';
 import '../services/unread_notifications_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/join_request/join_request_action_bottom_sheet.dart';
@@ -124,7 +124,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     if (!chatId.startsWith('chat_')) return null;
     final parts = chatId.substring(5).split('_');
     if (parts.length != 2) return null;
-    final currentId = await AuthService().getCurrentUserId();
+    final currentId = await CurrentUserService().getCurrentUserId();
     if (currentId == null) return parts[1];
     final id1 = parts[0];
     final id2 = parts[1];

@@ -2,18 +2,12 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common/app_header.dart';
 import '../services/current_user_service.dart';
-import '../services/stats_service.dart';
-import '../repositories/api_user_exchanges_repository.dart';
-import '../repositories/api_exchange_repository.dart';
-import '../repositories/api_public_exchanges_repository.dart';
-import '../repositories/user_exchanges_repository.dart';
-import '../services/unread_notifications_service.dart';
 import '../models/joined_exchange.dart';
 import '../constants/routes.dart';
 import '../constants/dimensions.dart';
 import '../navigation/exchange_chat_args.dart';
 import '../navigation/rate_participants_args.dart';
-import '../services/exchange_chat_read_service.dart';
+import '../viewmodels/home_view_model.dart';
 import '../widgets/exchange/joined_exchange_card.dart';
 
 /// Pantalla principal de la aplicación
@@ -25,129 +19,46 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
-  final UserExchangesRepository _repository = ApiUserExchangesRepository();
-  final ApiExchangeRepository _exchangeRepo = ApiExchangeRepository();
-  final ApiPublicExchangesRepository _leaveRepo = ApiPublicExchangesRepository();
-  final StatsService _statsService = StatsService();
-  final ExchangeChatReadService _chatReadService = ExchangeChatReadService();
-  final _unreadService = UnreadNotificationsService();
-
-  List<JoinedExchange>? _joinedExchanges;
-  Map<String, bool> _hasNewMessages = {};
-  bool _isLoadingExchanges = true;
-  int _exchangesThisMonth = 0;
-  int _exchangesLastMonth = 0;
-  double _hoursThisWeek = 0.0;
-  double _hoursLastWeek = 0.0;
+  final HomeViewModel _viewModel = HomeViewModel();
   final GlobalKey _exchangesSectionKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _loadData();
+    _viewModel.addListener(_onViewModelChanged);
+    _viewModel.loadInitialData();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _viewModel.removeListener(_onViewModelChanged);
+    _viewModel.dispose();
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      _loadExchanges();
+      _viewModel.loadExchanges();
     }
   }
 
-  Future<void> _loadData() async {
-    // Precargar datos del usuario actual para que el header
-    // pueda mostrar nombre y estado PRO reales.
-    await CurrentUserService().preload();
-
-    await Future.wait([
-      _loadExchanges(),
-      _loadStats(),
-      _unreadService.refresh(),
-    ]);
-  }
-
-  Future<void> _loadExchanges() async {
-    setState(() {
-      _isLoadingExchanges = true;
-    });
-
-    try {
-      final exchanges = await _repository.getJoinedExchanges();
-      if (!mounted) return;
-      setState(() {
-        _joinedExchanges = exchanges;
-        _isLoadingExchanges = false;
-      });
-      _refreshHasNewMessages();
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _joinedExchanges = [];
-        _isLoadingExchanges = false;
-      });
-    }
-  }
-
-  Future<void> _refreshHasNewMessages() async {
-    final exchanges = _joinedExchanges;
-    if (exchanges == null || exchanges.isEmpty) return;
-    final map = <String, bool>{};
-    for (final e in exchanges) {
-      map[e.id] = await _chatReadService.hasNewMessages(e.id, e.lastMessageAt);
-    }
+  void _onViewModelChanged() {
     if (!mounted) return;
-    setState(() => _hasNewMessages = map);
-  }
-
-  Future<void> _loadStats() async {
-    try {
-      final stats = await _statsService.fetchStats();
-      if (!mounted) return;
-      setState(() {
-        _exchangesThisMonth = stats.exchangesThisMonth;
-        _exchangesLastMonth = stats.exchangesLastMonth;
-        _hoursThisWeek = stats.hoursThisWeek;
-        _hoursLastWeek = stats.hoursLastWeek;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      // En caso de error, mantenemos los valores actuales (por defecto 0)
-      // y no rompemos la Home.
-    }
+    setState(() {});
   }
 
   void _onGoToPublicExchanges() {
     Navigator.pushNamed(context, AppRoutes.publicExchanges);
   }
 
-  int get _pendingConfirmCount =>
-      _joinedExchanges?.where((e) => e.canConfirm).length ?? 0;
-
-  List<JoinedExchange> get _pendingExchanges =>
-      _joinedExchanges
-          ?.where((e) =>
-              e.status != 'COMPLETED' && e.status != 'CANCELLED')
-          .toList() ??
-      [];
-
-  List<JoinedExchange> get _completedExchanges =>
-      _joinedExchanges
-          ?.where((e) => e.status == 'COMPLETED')
-          .toList() ??
-      [];
-
   void _onGoToHistory() {
     Navigator.pushNamed(
       context,
       AppRoutes.exchangeHistory,
-      arguments: _completedExchanges,
+      arguments: _viewModel.completedExchanges,
     );
   }
 
@@ -165,9 +76,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Future<void> _onConfirmExchange(JoinedExchange exchange) async {
     try {
-      await _exchangeRepo.confirm(exchange.id);
-      if (!mounted) return;
-
       final userService = CurrentUserService();
       await userService.preload();
       final currentUserId = userService.getUserId();
@@ -178,6 +86,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           .toList();
 
       if (otherParticipants.isNotEmpty) {
+        if (!mounted) return;
         Navigator.of(context).pushNamed(
           AppRoutes.rateParticipants,
           arguments: RateParticipantsArgs(
@@ -187,11 +96,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           ),
         );
       } else {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Intercambio confirmado')),
         );
-        _loadExchanges();
+        await _viewModel.loadExchanges();
       }
+      await _viewModel.confirmExchange(exchange.id);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -231,14 +142,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     if (confirm != true || !mounted) return;
 
     try {
-      await _leaveRepo.leaveExchange(exchange.id);
+      await _viewModel.leaveExchange(exchange.id);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Has abandonado "${exchange.title ?? 'Intercambio'}"'),
         ),
       );
-      _loadExchanges();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -257,7 +167,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       arguments: ExchangeChatArgs(exchangeId: exchange.id),
     ).then((_) {
       if (!mounted) return;
-      _loadExchanges();
+      _viewModel.loadExchanges();
     });
   }
 
@@ -266,7 +176,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     final userService = CurrentUserService();
 
     return ValueListenableBuilder<int>(
-      valueListenable: _unreadService.count,
+      valueListenable: _viewModel.unreadNotificationsService.count,
       builder: (context, unreadCount, _) {
         return Scaffold(
           backgroundColor: AppTheme.background,
@@ -279,7 +189,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             unreadNotificationsCount: unreadCount,
             onNotificationsTap: () {
               Navigator.pushNamed(context, AppRoutes.notifications)
-                  .then((_) => _unreadService.refresh());
+                  .then((_) => _viewModel.unreadNotificationsService.refresh());
             },
         onProTap: () {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -288,7 +198,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         },
       ),
       body: RefreshIndicator(
-        onRefresh: _loadData,
+        onRefresh: _viewModel.loadInitialData,
         color: AppTheme.accent,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -297,33 +207,33 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Banner: intercambios pendientes de confirmar
-              if (_pendingConfirmCount > 0) ...[
+              if (_viewModel.pendingConfirmCount > 0) ...[
                 _PendingConfirmBanner(
-                  count: _pendingConfirmCount,
+                  count: _viewModel.pendingConfirmCount,
                   onTap: _onScrollToExchanges,
                 ),
                 const SizedBox(height: AppDimensions.spacingL),
               ],
               // Tarjetas de estadísticas
               _StatsRow(
-                exchangesThisMonth: _exchangesThisMonth,
-                exchangesLastMonth: _exchangesLastMonth,
-                hoursThisWeek: _hoursThisWeek,
-                hoursLastWeek: _hoursLastWeek,
+                exchangesThisMonth: _viewModel.exchangesThisMonth,
+                exchangesLastMonth: _viewModel.exchangesLastMonth,
+                hoursThisWeek: _viewModel.hoursThisWeek,
+                hoursLastWeek: _viewModel.hoursLastWeek,
               ),
               const SizedBox(height: AppDimensions.spacingL),
               // Sección de intercambios pendientes
               _PendingExchangesSection(
                 key: _exchangesSectionKey,
-                pendingExchanges: _pendingExchanges,
-                isLoading: _isLoadingExchanges,
+                pendingExchanges: _viewModel.pendingExchanges,
+                isLoading: _viewModel.isLoadingExchanges,
                 onGoToPublicExchanges: _onGoToPublicExchanges,
                 onGoToHistory: _onGoToHistory,
-                onRefresh: _loadExchanges,
+                onRefresh: _viewModel.loadExchanges,
                 onConfirm: _onConfirmExchange,
                 onLeave: _onLeaveExchange,
                 onOpenChat: _onOpenExchangeChat,
-                hasNewMessages: _hasNewMessages,
+                hasNewMessages: _viewModel.hasNewMessages,
               ),
               const SizedBox(height: AppDimensions.spacingL),
             ],

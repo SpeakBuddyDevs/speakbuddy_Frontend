@@ -86,9 +86,18 @@ class CurrentUserService {
     return _profile?.isPro ?? false;
   }
 
-  /// Obtiene el ID del usuario actual.
+  /// Obtiene el ID del usuario actual (síncrono, devuelve null si no se ha cargado).
   String? getUserId() {
     _loadFromBackendIfNeeded();
+    return _profile?.id;
+  }
+
+  /// Obtiene el ID del usuario actual, asegurándose de cargar el perfil primero.
+  ///
+  /// Usar este método cuando se necesita el ID con garantía de que estará disponible
+  /// (por ejemplo en chat para saber qué mensajes son propios).
+  Future<String?> getCurrentUserId() async {
+    await _loadFromBackendIfNeeded();
     return _profile?.id;
   }
 

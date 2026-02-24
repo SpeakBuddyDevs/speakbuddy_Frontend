@@ -5,12 +5,12 @@ import '../constants/languages.dart';
 import '../models/join_request.dart';
 import '../models/public_exchange.dart';
 import '../models/public_exchange_filters.dart';
-import '../services/auth_service.dart';
+import 'base_api_repository.dart';
 import 'public_exchanges_repository.dart';
 
 /// Implementacion API: GET /api/exchanges/public con filtros y paginacion.
-class ApiPublicExchangesRepository implements PublicExchangesRepository {
-  final _authService = AuthService();
+class ApiPublicExchangesRepository extends BaseApiRepository
+    implements PublicExchangesRepository {
 
   @override
   Future<List<PublicExchange>> searchExchanges({
@@ -20,7 +20,7 @@ class ApiPublicExchangesRepository implements PublicExchangesRepository {
     int pageSize = 10,
   }) async {
     try {
-      final headers = await _authService.headersWithAuth();
+      final auth = await buildAuthContext();
 
       String? nativeLang;
       String? targetLang;
@@ -52,16 +52,17 @@ class ApiPublicExchangesRepository implements PublicExchangesRepository {
         if (targetLang != null) 'targetLang': targetLang,
       };
 
-      final uri =
-          Uri.parse(ApiEndpoints.exchangesPublic).replace(queryParameters: queryParams);
+      final uri = Uri.parse(ApiEndpoints.exchangesPublic)
+          .replace(queryParameters: queryParams);
 
-      final response = await http.get(uri, headers: headers);
+      final response = await http.get(uri, headers: auth.headers);
 
       if (response.statusCode != 200) {
         return [];
       }
 
-      final data = jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+      final data =
+          decodeJsonBody(response) as Map<String, dynamic>;
       final content = data['content'] as List?;
       if (content == null) return [];
 
@@ -92,11 +93,10 @@ class ApiPublicExchangesRepository implements PublicExchangesRepository {
     List<String>? platforms,
     required bool isPublic,
   }) async {
-    final headers = await _authService.headersWithAuth();
-    headers['Content-Type'] = 'application/json';
-
-    final token = await _authService.getToken();
-    if (token == null || token.isEmpty) {
+    final auth = await buildAuthContext(extraHeaders: {
+      'Content-Type': 'application/json',
+    });
+    if (!auth.hasValidToken) {
       throw Exception('Debes iniciar sesion para crear un intercambio');
     }
 
@@ -126,7 +126,7 @@ class ApiPublicExchangesRepository implements PublicExchangesRepository {
 
     final response = await http.post(
       Uri.parse(ApiEndpoints.exchanges),
-      headers: headers,
+      headers: auth.headers,
       body: jsonEncode(body),
     );
 
@@ -136,7 +136,7 @@ class ApiPublicExchangesRepository implements PublicExchangesRepository {
     }
 
     final data =
-        jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+        decodeJsonBody(response) as Map<String, dynamic>;
     return _exchangeResponseToPublicExchange(
       data,
       description: description,
@@ -209,15 +209,14 @@ class ApiPublicExchangesRepository implements PublicExchangesRepository {
 
   @override
   Future<void> joinExchange(String id) async {
-    final headers = await _authService.headersWithAuth();
-    final token = await _authService.getToken();
-    if (token == null || token.isEmpty) {
+    final auth = await buildAuthContext();
+    if (!auth.hasValidToken) {
       throw Exception('Debes iniciar sesion para unirte a un intercambio');
     }
 
     final response = await http.post(
       Uri.parse(ApiEndpoints.exchangeJoin(id)),
-      headers: headers,
+      headers: auth.headers,
     );
 
     if (response.statusCode != 200) {
@@ -228,15 +227,14 @@ class ApiPublicExchangesRepository implements PublicExchangesRepository {
 
   @override
   Future<void> leaveExchange(String id) async {
-    final headers = await _authService.headersWithAuth();
-    final token = await _authService.getToken();
-    if (token == null || token.isEmpty) {
+    final auth = await buildAuthContext();
+    if (!auth.hasValidToken) {
       throw Exception('Debes iniciar sesion para abandonar un intercambio');
     }
 
     final response = await http.delete(
       Uri.parse(ApiEndpoints.exchangeLeave(id)),
-      headers: headers,
+      headers: auth.headers,
     );
 
     if (response.statusCode != 204 && response.statusCode != 200) {
@@ -247,15 +245,14 @@ class ApiPublicExchangesRepository implements PublicExchangesRepository {
 
   /// Usuario no elegible solicita unirse. BACKEND: POST /api/exchanges/{id}/join-request
   Future<void> requestToJoin(String exchangeId) async {
-    final headers = await _authService.headersWithAuth();
-    final token = await _authService.getToken();
-    if (token == null || token.isEmpty) {
+    final auth = await buildAuthContext();
+    if (!auth.hasValidToken) {
       throw Exception('Debes iniciar sesion para solicitar unirte');
     }
 
     final response = await http.post(
       Uri.parse(ApiEndpoints.exchangeJoinRequest(exchangeId)),
-      headers: headers,
+      headers: auth.headers,
     );
 
     if (response.statusCode != 204 && response.statusCode != 200) {
@@ -266,15 +263,14 @@ class ApiPublicExchangesRepository implements PublicExchangesRepository {
 
   /// Lista solicitudes pendientes (solo creador). BACKEND: GET /api/exchanges/{id}/join-requests
   Future<List<JoinRequest>> getJoinRequests(String exchangeId) async {
-    final headers = await _authService.headersWithAuth();
-    final token = await _authService.getToken();
-    if (token == null || token.isEmpty) {
+    final auth = await buildAuthContext();
+    if (!auth.hasValidToken) {
       throw Exception('Debes iniciar sesion para ver las solicitudes');
     }
 
     final response = await http.get(
       Uri.parse(ApiEndpoints.exchangeJoinRequests(exchangeId)),
-      headers: headers,
+      headers: auth.headers,
     );
 
     if (response.statusCode != 200) {
@@ -282,22 +278,21 @@ class ApiPublicExchangesRepository implements PublicExchangesRepository {
       throw Exception(msg);
     }
 
-    final data = jsonDecode(utf8.decode(response.bodyBytes));
+    final data = decodeJsonBody(response);
     if (data is! List) return [];
     return data.map<JoinRequest>((e) => JoinRequest.fromJson(Map<String, dynamic>.from(e as Map))).toList();
   }
 
   /// Aceptar solicitud (solo creador). BACKEND: POST .../join-requests/{requestId}/accept
   Future<void> acceptJoinRequest(String exchangeId, String requestId) async {
-    final headers = await _authService.headersWithAuth();
-    final token = await _authService.getToken();
-    if (token == null || token.isEmpty) {
+    final auth = await buildAuthContext();
+    if (!auth.hasValidToken) {
       throw Exception('Debes iniciar sesion');
     }
 
     final response = await http.post(
       Uri.parse(ApiEndpoints.exchangeJoinRequestAccept(exchangeId, requestId)),
-      headers: headers,
+      headers: auth.headers,
     );
 
     if (response.statusCode != 204 && response.statusCode != 200) {
@@ -308,15 +303,14 @@ class ApiPublicExchangesRepository implements PublicExchangesRepository {
 
   /// Rechazar solicitud (solo creador). BACKEND: POST .../join-requests/{requestId}/reject
   Future<void> rejectJoinRequest(String exchangeId, String requestId) async {
-    final headers = await _authService.headersWithAuth();
-    final token = await _authService.getToken();
-    if (token == null || token.isEmpty) {
+    final auth = await buildAuthContext();
+    if (!auth.hasValidToken) {
       throw Exception('Debes iniciar sesion');
     }
 
     final response = await http.post(
       Uri.parse(ApiEndpoints.exchangeJoinRequestReject(exchangeId, requestId)),
-      headers: headers,
+      headers: auth.headers,
     );
 
     if (response.statusCode != 204 && response.statusCode != 200) {
@@ -328,16 +322,16 @@ class ApiPublicExchangesRepository implements PublicExchangesRepository {
   /// Unirse a un intercambio privado usando contrasenya.
   /// BACKEND: POST /api/exchanges/{id}/join-with-password con body { "password": "..." }
   Future<void> joinWithPassword(String exchangeId, String password) async {
-    final headers = await _authService.headersWithAuth();
-    headers['Content-Type'] = 'application/json';
-    final token = await _authService.getToken();
-    if (token == null || token.isEmpty) {
+    final auth = await buildAuthContext(extraHeaders: {
+      'Content-Type': 'application/json',
+    });
+    if (!auth.hasValidToken) {
       throw Exception('Debes iniciar sesion para unirte');
     }
 
     final response = await http.post(
       Uri.parse(ApiEndpoints.exchangeJoinWithPassword(exchangeId)),
-      headers: headers,
+      headers: auth.headers,
       body: jsonEncode({'password': password}),
     );
 

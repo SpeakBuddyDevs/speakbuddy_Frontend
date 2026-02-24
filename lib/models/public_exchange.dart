@@ -8,6 +8,12 @@
 // a cambio de practicar otro idioma (targetLanguage). La conversación se divide a partes
 // iguales entre ambos idiomas.
 
+String? _nonEmptyString(dynamic value) {
+  if (value == null) return null;
+  final s = value.toString();
+  return s.isEmpty ? null : s;
+}
+
 /// Modelo para intercambios públicos (sesiones grupales de intercambio mutuo de idiomas)
 class PublicExchange {
   final String id;
@@ -106,7 +112,7 @@ class PublicExchange {
       description: (json['description'] ?? '').toString(),
       creatorId: (json['creatorId'] ?? '').toString(),
       creatorName: (json['creatorName'] ?? '').toString(),
-      creatorAvatarUrl: json['creatorAvatarUrl']?.toString(),
+      creatorAvatarUrl: _nonEmptyString(json['creatorAvatarUrl']),
       creatorIsPro: json['creatorIsPro'] == true,
       requiredLevel: (json['requiredLevel'] ?? 'Principiante').toString(),
       minLevel: (json['minLevel'] is int)

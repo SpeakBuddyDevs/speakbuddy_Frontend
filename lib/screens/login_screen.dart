@@ -39,17 +39,18 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       backgroundColor: AppTheme.background,
       body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: isLargeScreen ? AppDimensions.maxCardWidth : double.infinity,
-            ),
-            child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: isLargeScreen ? 0 : AppDimensions.spacingL,
-                vertical: AppDimensions.spacingXXXL,
+        child: SingleChildScrollView(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: isLargeScreen ? AppDimensions.maxCardWidth : double.infinity,
               ),
-              child: Card(
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isLargeScreen ? 0 : AppDimensions.spacingL,
+                  vertical: AppDimensions.spacingXXXL,
+                ),
+                child: Card(
                 elevation: 0,
                 color: AppTheme.card,
                 shape: RoundedRectangleBorder(
@@ -246,6 +247,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
       ),
+    ),
     ),
     );
   }

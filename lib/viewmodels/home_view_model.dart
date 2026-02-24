@@ -85,6 +85,24 @@ class HomeViewModel extends ChangeNotifier {
           .toList() ??
       [];
 
+  /// Recarga las estadísticas de uso del usuario.
+  ///
+  /// Usa la caché de `StatsService` por defecto y permite forzar refresco
+  /// desde el backend pasando `force: true` después de acciones que
+  /// alteran las estadísticas (por ejemplo, confirmar un intercambio).
+  Future<void> reloadStats({bool force = false}) async {
+    try {
+      final stats = await _statsService.fetchStats(forceRefresh: force);
+      _exchangesThisMonth = stats.exchangesThisMonth;
+      _exchangesLastMonth = stats.exchangesLastMonth;
+      _hoursThisWeek = stats.hoursThisWeek;
+      _hoursLastWeek = stats.hoursLastWeek;
+      notifyListeners();
+    } catch (_) {
+      // En caso de error, mantener los valores actuales.
+    }
+  }
+
   /// Carga inicial de datos para la Home:
   /// - Datos del usuario actual (para header).
   /// - Intercambios unidos + nuevos mensajes.
@@ -95,7 +113,7 @@ class HomeViewModel extends ChangeNotifier {
 
     await Future.wait([
       loadExchanges(),
-      _loadStats(),
+      reloadStats(),
       _unreadNotificationsService.refresh(),
     ]);
   }
@@ -130,27 +148,16 @@ class HomeViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> _loadStats() async {
-    try {
-      final stats = await _statsService.fetchStats();
-      _exchangesThisMonth = stats.exchangesThisMonth;
-      _exchangesLastMonth = stats.exchangesLastMonth;
-      _hoursThisWeek = stats.hoursThisWeek;
-      _hoursLastWeek = stats.hoursLastWeek;
-      notifyListeners();
-    } catch (_) {
-      // En caso de error, mantenemos los valores actuales (por defecto 0)
-      // y no propagamos la excepción a la UI.
-    }
-  }
-
   /// Lanza la confirmación de un intercambio en el backend.
   ///
   /// La lógica de navegación y snackbars se deja en la capa de UI.
   Future<void> confirmExchange(String exchangeId) async {
     await _exchangeRepository.confirm(exchangeId);
     await _currentUserService.preload();
-    await loadExchanges();
+    await Future.wait([
+      loadExchanges(),
+      reloadStats(force: true),
+    ]);
   }
 
   /// Abandona un intercambio en el backend.

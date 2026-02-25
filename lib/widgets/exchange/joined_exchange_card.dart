@@ -55,6 +55,7 @@ class JoinedExchangeCard extends StatelessWidget {
     final dateStr = DateFormatters.formatExchangeDate(exchange.scheduledAt);
     final showLeave = exchange.status == 'SCHEDULED' && onLeave != null;
     final showOpenChat = exchange.status != 'CANCELLED' && onOpenChat != null;
+    final useTitleHeader = exchange.status != 'CANCELLED';
     final creator = _getCreator();
     final joinedParticipants = _getJoinedParticipants();
 
@@ -78,7 +79,11 @@ class JoinedExchangeCard extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               // Header con avatar del creador, nombre, PRO badge, rating y país
-              _ParticipantHeader(participant: creator),
+              _ParticipantHeader(
+                participant: creator,
+                exchangeTitle: exchange.title,
+                showTitleAndByLine: useTitleHeader,
+              ),
               const SizedBox(height: AppDimensions.spacingL),
 
               // Filas de información
@@ -235,11 +240,17 @@ class JoinedExchangeCard extends StatelessWidget {
   }
 }
 
-/// Header con avatar, nombre, badge PRO, rating y país del creador
+/// Header con avatar, nombre/título, badge PRO, rating y país del creador
 class _ParticipantHeader extends StatelessWidget {
   final JoinedExchangeParticipant? participant;
+  final String? exchangeTitle;
+  final bool showTitleAndByLine;
 
-  const _ParticipantHeader({required this.participant});
+  const _ParticipantHeader({
+    required this.participant,
+    this.exchangeTitle,
+    this.showTitleAndByLine = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -277,32 +288,58 @@ class _ParticipantHeader extends StatelessWidget {
               : _buildInitials(initials),
         ),
         const SizedBox(width: AppDimensions.spacingMD),
-        // Nombre, país, rating y badges
+        // Nombre/título, país, rating y badges
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Flexible(
-                    child: Text(
-                      p.username,
-                      style: TextStyle(
-                        color: AppTheme.text,
-                        fontSize: AppDimensions.fontSizeM,
-                        fontWeight: FontWeight.bold,
+              if (showTitleAndByLine) ...[
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        (exchangeTitle != null && exchangeTitle!.isNotEmpty)
+                            ? exchangeTitle!
+                            : p.username,
+                        style: TextStyle(
+                          color: AppTheme.text,
+                          fontSize: AppDimensions.fontSizeM,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                  if (p.isPro) ...[
-                    const SizedBox(width: AppDimensions.spacingSM),
-                    const _ProBadge(),
+                    if (p.isPro) ...[
+                      const SizedBox(width: AppDimensions.spacingSM),
+                      const _ProBadge(),
+                    ],
                   ],
-                ],
-              ),
-              const SizedBox(height: 2),
-              _buildCountryAndRating(p),
+                ),
+                const SizedBox(height: 2),
+                _buildByCreatorAndRating(p),
+              ] else ...[
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        p.username,
+                        style: TextStyle(
+                          color: AppTheme.text,
+                          fontSize: AppDimensions.fontSizeM,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (p.isPro) ...[
+                      const SizedBox(width: AppDimensions.spacingSM),
+                      const _ProBadge(),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 2),
+                _buildCountryAndRating(p),
+              ],
             ],
           ),
         ),
@@ -350,6 +387,45 @@ class _ParticipantHeader extends StatelessWidget {
             ),
           ),
         if (hasRating) ...[
+          Icon(
+            Icons.star_rounded,
+            color: Colors.amber,
+            size: 14,
+          ),
+          const SizedBox(width: 2),
+          Text(
+            p.rating!.toStringAsFixed(1),
+            style: TextStyle(
+              color: AppTheme.subtle,
+              fontSize: AppDimensions.fontSizeS,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildByCreatorAndRating(JoinedExchangeParticipant p) {
+    final hasRating = p.rating != null && p.rating! > 0;
+
+    return Row(
+      children: [
+        Text(
+          'By ${p.username}',
+          style: TextStyle(
+            color: AppTheme.subtle,
+            fontSize: AppDimensions.fontSizeS,
+          ),
+        ),
+        if (hasRating) ...[
+          Text(
+            ' - ',
+            style: TextStyle(
+              color: AppTheme.subtle,
+              fontSize: AppDimensions.fontSizeS,
+            ),
+          ),
           Icon(
             Icons.star_rounded,
             color: Colors.amber,

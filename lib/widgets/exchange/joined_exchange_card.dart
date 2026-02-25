@@ -178,7 +178,7 @@ class JoinedExchangeCard extends StatelessWidget {
                   child: ElevatedButton.icon(
                     onPressed: () => onConfirm!(exchange),
                     icon: const Icon(Icons.check_circle_outline_rounded),
-                    label: const Text('Confirmar intercambio'),
+                    label: const Text('Confirm Exchange'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.accent,
                       foregroundColor: Colors.white,

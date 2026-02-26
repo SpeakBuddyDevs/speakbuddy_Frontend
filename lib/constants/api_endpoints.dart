@@ -118,6 +118,10 @@ class ApiEndpoints {
   /// Mensajes del chat 1:1: GET/POST /api/chats/{chatId}/messages
   static String chatMessages(String chatId) => '$apiBase/chats/$chatId/messages';
 
+  /// WebSocket (SockJS) para chat 1:1 en tiempo real.
+  /// SockJS usa HTTP para el handshake inicial.
+  static String get wsChatEndpoint => '$baseUrl/ws';
+
   // --- Notificaciones ---
 
   /// Lista notificaciones: GET /api/notifications?unreadOnly=&page=&size=

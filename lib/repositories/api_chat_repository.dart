@@ -6,15 +6,23 @@ import 'package:http/http.dart' as http;
 
 import '../constants/api_endpoints.dart';
 import '../models/chat_message.dart';
+import '../services/current_user_service.dart';
+import '../services/websocket_chat_service.dart';
 import 'base_api_repository.dart';
 import 'chat_repository.dart';
 
 /// Implementación que usa la API para chat de intercambios y chat 1:1.
-/// Chat de intercambio: chatId con formato "exchange_{exchangeId}".
-/// Chat 1:1: chatId con formato "chat_{minUserId}_{maxUserId}".
+/// Chat de intercambio: chatId con formato "exchange_{exchangeId}" (REST + polling).
+/// Chat 1:1: chatId con formato "chat_{minUserId}_{maxUserId}" (WebSocket en tiempo real).
 class ApiChatRepository extends BaseApiRepository implements ChatRepository {
   static const String _exchangePrefix = 'exchange_';
   static const String _directChatPrefix = 'chat_';
+
+  final _wsService = WebSocketChatService();
+
+  /// Controllers activos por chatId (solo para chat 1:1) para optimistic updates.
+  final _directChatControllers = <String, StreamController<List<ChatMessage>>>{};
+  final _directChatMessages = <String, List<ChatMessage>>{};
 
   bool _isExchangeChat(String chatId) => chatId.startsWith(_exchangePrefix);
 
@@ -22,6 +30,18 @@ class ApiChatRepository extends BaseApiRepository implements ChatRepository {
 
   String _exchangeIdFromChatId(String chatId) =>
       chatId.replaceFirst(_exchangePrefix, '');
+
+  int? _recipientIdFromChatId(String chatId) {
+    if (!_isDirectChat(chatId)) return null;
+    final parts = chatId.replaceFirst(_directChatPrefix, '').split('_');
+    if (parts.length != 2) return null;
+    final me = CurrentUserService().getUserId();
+    if (me == null) return null;
+    final a = int.tryParse(parts[0]);
+    final b = int.tryParse(parts[1]);
+    if (a == null || b == null) return null;
+    return int.parse(me) == a ? b : a;
+  }
 
   @override
   Future<String> getOrCreateChatId({required String otherUserId}) async {
@@ -49,27 +69,30 @@ class ApiChatRepository extends BaseApiRepository implements ChatRepository {
   @override
   Stream<List<ChatMessage>> watchMessages({required String chatId}) {
     final controller = StreamController<List<ChatMessage>>.broadcast();
+
+    if (_isExchangeChat(chatId)) {
+      _watchExchangeMessages(chatId, controller);
+    } else if (_isDirectChat(chatId)) {
+      _watchDirectChatMessages(chatId, controller);
+    } else {
+      controller.add([]);
+    }
+
+    return controller.stream;
+  }
+
+  /// Chat de intercambio: REST + polling (no hay WebSocket en backend).
+  void _watchExchangeMessages(String chatId, StreamController<List<ChatMessage>> controller) {
     Timer? pollTimer;
 
     Future<void> fetchAndEmit() async {
       try {
-        List<ChatMessage> list;
-        if (_isExchangeChat(chatId)) {
-          final exchangeId = _exchangeIdFromChatId(chatId);
-          list = await _fetchExchangeMessages(exchangeId);
-        } else if (_isDirectChat(chatId)) {
-          list = await _fetchDirectChatMessages(chatId);
-        } else {
-          list = [];
-        }
-        if (!controller.isClosed) {
-          controller.add(list);
-        }
+        final exchangeId = _exchangeIdFromChatId(chatId);
+        final list = await _fetchExchangeMessages(exchangeId);
+        if (!controller.isClosed) controller.add(list);
       } catch (e) {
         debugPrint('ApiChatRepository watchMessages error: $e');
-        if (!controller.isClosed) {
-          controller.addError(e);
-        }
+        if (!controller.isClosed) controller.addError(e);
       }
     }
 
@@ -80,8 +103,46 @@ class ApiChatRepository extends BaseApiRepository implements ChatRepository {
     controller.onCancel = () {
       pollTimer?.cancel();
     };
+  }
 
-    return controller.stream;
+  /// Chat 1:1: REST (carga inicial) + WebSocket (tiempo real).
+  void _watchDirectChatMessages(String chatId, StreamController<List<ChatMessage>> controller) {
+    StreamSubscription<ChatMessage>? wsSub;
+
+    Future<void> run() async {
+      try {
+        List<ChatMessage> initial = await _fetchDirectChatMessages(chatId);
+        if (controller.isClosed) return;
+        _directChatMessages[chatId] = initial;
+        _directChatControllers[chatId] = controller;
+        controller.add(initial);
+
+        await _wsService.connect();
+
+        if (controller.isClosed) return;
+        wsSub = _wsService.incomingMessages
+            .where((m) => m.chatId == chatId)
+            .listen((msg) {
+          if (controller.isClosed) return;
+          final list = _directChatMessages[chatId] ?? [];
+          if (list.any((m) => m.id == msg.id)) return;
+          final updated = [...list, msg];
+          _directChatMessages[chatId] = updated;
+          controller.add(updated);
+        });
+      } catch (e) {
+        debugPrint('ApiChatRepository watchDirectChat error: $e');
+        if (!controller.isClosed) controller.addError(e);
+      }
+    }
+
+    run();
+
+    controller.onCancel = () {
+      wsSub?.cancel();
+      _directChatControllers.remove(chatId);
+      _directChatMessages.remove(chatId);
+    };
   }
 
   Future<List<ChatMessage>> _fetchDirectChatMessages(String chatId) async {
@@ -191,29 +252,66 @@ class ApiChatRepository extends BaseApiRepository implements ChatRepository {
 
   @override
   Future<void> sendMessage({required String chatId, required String text}) async {
-    String uri;
     if (_isExchangeChat(chatId)) {
       final exchangeId = _exchangeIdFromChatId(chatId);
-      uri = ApiEndpoints.exchangeMessages(exchangeId);
-    } else if (_isDirectChat(chatId)) {
-      uri = ApiEndpoints.chatMessages(chatId);
-    } else {
-      throw Exception('chatId inválido: $chatId');
+      final auth = await buildAuthContext(extraHeaders: {
+        'Content-Type': 'application/json',
+      });
+      final response = await http.post(
+        Uri.parse(ApiEndpoints.exchangeMessages(exchangeId)),
+        headers: auth.headers,
+        body: jsonEncode({'content': text}),
+      );
+      if (response.statusCode != 200) {
+        throw Exception('Error ${response.statusCode}: ${response.body}');
+      }
+      return;
     }
 
-    final auth = await buildAuthContext(extraHeaders: {
-      'Content-Type': 'application/json',
-    });
+    if (_isDirectChat(chatId)) {
+      final recipientId = _recipientIdFromChatId(chatId);
+      if (recipientId == null) {
+        throw Exception('No se pudo determinar el destinatario');
+      }
 
-    final response = await http.post(
-      Uri.parse(uri),
-      headers: auth.headers,
-      body: jsonEncode({'content': text}),
-    );
+      final currentUserId = CurrentUserService().getUserId();
+      if (currentUserId == null) throw Exception('Usuario no identificado');
 
-    if (response.statusCode != 200) {
-      final body = response.body;
-      throw Exception('Error ${response.statusCode}: $body');
+      final optimistic = ChatMessage(
+        id: 'opt_${DateTime.now().millisecondsSinceEpoch}',
+        chatId: chatId,
+        senderId: currentUserId,
+        text: text,
+        createdAt: DateTime.now(),
+        senderName: null,
+      );
+
+      final ctrl = _directChatControllers[chatId];
+      if (ctrl != null && !ctrl.isClosed) {
+        final list = _directChatMessages[chatId] ?? [];
+        final updated = [...list, optimistic];
+        _directChatMessages[chatId] = updated;
+        ctrl.add(updated);
+      }
+
+      if (_wsService.isConnected) {
+        _wsService.sendMessage(recipientId: recipientId, content: text);
+        return;
+      }
+
+      final auth = await buildAuthContext(extraHeaders: {
+        'Content-Type': 'application/json',
+      });
+      final response = await http.post(
+        Uri.parse(ApiEndpoints.chatMessages(chatId)),
+        headers: auth.headers,
+        body: jsonEncode({'content': text}),
+      );
+      if (response.statusCode != 200) {
+        throw Exception('Error ${response.statusCode}: ${response.body}');
+      }
     }
+
+    throw Exception('chatId inválido: $chatId');
   }
 }

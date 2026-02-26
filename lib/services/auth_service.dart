@@ -8,6 +8,7 @@ import '../models/auth_result.dart';
 import '../models/auth_error.dart';
 import 'current_user_service.dart';
 import 'stats_service.dart';
+import 'websocket_chat_service.dart';
 
 
 class AuthService {
@@ -79,6 +80,7 @@ class AuthService {
     await _storage.delete(key: AppConstants.jwtTokenKey);
     CurrentUserService().clearCache();
     StatsService().clearCache();
+    WebSocketChatService().disconnect();
   }
 
   Future<AuthResult> register(

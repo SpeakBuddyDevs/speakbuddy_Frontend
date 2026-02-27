@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common/app_header.dart';
@@ -21,6 +23,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   final HomeViewModel _viewModel = HomeViewModel();
   final GlobalKey _exchangesSectionKey = GlobalKey();
+  Timer? _pollTimer;
 
   @override
   void initState() {
@@ -28,10 +31,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     _viewModel.addListener(_onViewModelChanged);
     _viewModel.loadInitialData();
+    _startPollingIfNeeded();
   }
 
   @override
   void dispose() {
+    _pollTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _viewModel.removeListener(_onViewModelChanged);
     _viewModel.dispose();
@@ -42,7 +47,22 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _viewModel.loadExchanges();
+      _startPollingIfNeeded();
+    } else if (state == AppLifecycleState.paused) {
+      _pollTimer?.cancel();
     }
+  }
+
+  void _startPollingIfNeeded() {
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      final hasActiveExchanges = _viewModel.pendingExchanges.any(
+        (e) => e.status == 'SCHEDULED' || e.status == 'ENDED_PENDING_CONFIRMATION',
+      );
+      if (hasActiveExchanges) {
+        _viewModel.loadExchanges();
+      }
+    });
   }
 
   void _onViewModelChanged() {

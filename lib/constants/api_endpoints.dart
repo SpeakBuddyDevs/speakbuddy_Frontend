@@ -7,7 +7,7 @@
 /// o configuración según el entorno (desarrollo/staging/producción).
 class ApiEndpoints {
   /// URL base del servidor
-  static const String baseUrl = 'http://10.0.2.2:8080';
+  static const String baseUrl = 'https://speakbuddy.ngrok.app';
 
   /// Base de la API
   static const String apiBase = '$baseUrl/api';

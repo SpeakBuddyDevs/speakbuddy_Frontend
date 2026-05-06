@@ -7,7 +7,10 @@
 /// o configuración según el entorno (desarrollo/staging/producción).
 class ApiEndpoints {
   /// URL base del servidor
-  static const String baseUrl = 'https://speakbuddy.ngrok.app';
+  static const String baseUrl = String.fromEnvironment(
+    'BASE_URL',
+    defaultValue: 'https://speakbuddy.ngrok.app',
+  );
 
   /// Base de la API
   static const String apiBase = '$baseUrl/api';
